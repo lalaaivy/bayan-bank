@@ -18,20 +18,23 @@
     </button>
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
-        {% if user.is_authenticated %}
-          {% with role=user.role.name %}
+        {% if request.user.is_authenticated %}
+          {% with role=request.user.role.name %}
             {% if role == "client" %}
-              <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="/portal/">Dashboard</a></li>
               <li class="nav-item"><a class="nav-link" href="#">My Loans</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Savings</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Notifications</a></li>
             {% elif role == "staff" %}
+              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Clients</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Payments</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Savings</a></li>
             {% elif role == "loan_officer" %}
+              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Applications</a></li>
             {% elif role == "admin" %}
+              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Loan Products</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Reports</a></li>
@@ -40,9 +43,15 @@
           {% endwith %}
         {% endif %}
       </ul>
-      {% if user.is_authenticated %}
-        <span class="navbar-text me-3">{{ user.get_full_name|default:user.username }}</span>
-        <a class="btn btn-outline-light btn-sm" href="#">Logout</a>
+
+      {% if request.user.is_authenticated %}
+        <span class="navbar-text me-3">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </span>
+        <form method="post" action="{% url 'logout' %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+        </form>
       {% endif %}
     </div>
   </div>
@@ -50,11 +59,12 @@
 
 <main class="container py-4">
   {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show">
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   {% endfor %}
+
   {% block content %}{% endblock %}
 </main>
 
