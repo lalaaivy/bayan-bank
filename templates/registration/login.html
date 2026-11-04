@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Login - Bayan Bank{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+
+        <h4 class="text-center mb-1">Welcome back</h4>
+        <p class="text-center text-muted mb-4">Sign in to your account</p>
+
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            Invalid username or password. Please try again.
+          </div>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
+
+          <div class="mb-3">
+            <label class="form-label" for="id_username">Username</label>
+            <input type="text" name="username" id="id_username"
+                   class="form-control" required autofocus>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="id_password">Password</label>
+            <input type="password" name="password" id="id_password"
+                   class="form-control" required>
+          </div>
+
+          <button type="submit" class="btn btn-dark w-100">Login</button>
+        </form>
+
+        {# GOOGLE BUTTON SPOT: Aivy will add "Continue with Google" here later #}
+
+        <p class="text-center mt-3 mb-0">
+          No account yet? <a href="#">Register</a>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+<!-- Notes
+The next hidden field lets Django send people back to the page they originally wanted after login.
+The # on the Register link is a placeholder. Replace it with the URL name from docs/contract.md once you’ve read it.
+The comment marks where Aivy will add the Google button, so don’t put anything else there.
+This page extends base.html, so make sure templates/base.html exists first. -->
