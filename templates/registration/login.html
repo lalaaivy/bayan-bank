@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html" %}
 {% block title %}Login - Bayan Bank{% endblock %}
 
@@ -62,3 +63,7 @@ The next hidden field lets Django send people back to the page they originally w
 The # on the Register link is a placeholder. Replace it with the URL name from docs/contract.md once you’ve read it.
 The comment marks where Aivy will add the Google button, so don’t put anything else there.
 This page extends base.html, so make sure templates/base.html exists first. -->
+=======
+<h2>Login</h2>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Login</button></form>
+>>>>>>> main
