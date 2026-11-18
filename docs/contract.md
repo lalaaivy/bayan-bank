@@ -1,64 +1,92 @@
-# Bayan Bank UI Route Contract
+# Bayan Bank: Team Contract
 
-The application routes below are declared in `accounts/urls.py` (without an
-application namespace). Templates are presentation-only and use fixed demo data
-unless a context variable is listed. Forms submit to demo handlers; nothing is
-persisted.
+Agreement between Backend, Database and Frontend. If something here needs to
+change, change this file first, then the code.
 
-The shared `base.html` expects Django's `request` and `messages` context values.
-All rendered pages inherit those values.
+Status: DRAFT, to be confirmed by all three teammates.
 
-| URL name | Path | Template | Who can open it | Additional context |
-|---|---|---|---|---|
-| `home` | `/` | — (redirects by role) | Authenticated client, staff, loan officer, or admin | None |
-| `login` | `/login/` | `registration/login.html` | Public | `form`, `next` (Django `LoginView`) |
-| `logout` | `/logout/` | — (redirects to login) | Authenticated user | None |
-| `portal_home` | `/portal/` | `portal/home.html` | Client | None |
-| `staff_home` | `/staff/` | `staff/home.html` | Staff, admin | None |
-| `my_loans` | `/portal/loans/` | `portal/loans.html` | Client | None |
-| `savings_history` | `/portal/savings/` | `portal/savings.html` | Client | None |
-| `notifications` | `/portal/notifications/` | `portal/notifications.html` | Client | None |
-| `apply_loan` | `/portal/apply/` | `portal/apply_loan.html` | Client | None |
-| `loan_detail` | `/portal/loans/detail/` | `portal/loan_detail.html` | Client | None |
-| `upload_id` | `/portal/upload-id/` | `portal/upload_id.html` | Client | None |
-| `accept_agreement` | `/portal/accept-agreement/` | `portal/accept_agreement.html` | Client | None |
-| `client_profile` | `/portal/profile/` | `portal/profile.html` | Client | None |
-| `edit_client_profile` | `/portal/profile/edit/` | `portal/profile_edit.html` | Client | None |
-| `change_password` | `/portal/change-password/` | `portal/change_password.html` | Client | None |
-| `register` | `/register/` | `registration/register.html` | Public | None |
-| `complete_profile` | `/register/complete-profile/` | `registration/complete_profile.html` | Public | None |
-| `officer_home` | `/officer/` | `officer/home.html` | Loan officer, admin | None |
-| `admin_home` | `/admin-panel/` | `adminpanel/home.html` | Admin | None |
-| `staff_clients` | `/staff/clients/` | `staff/clients.html` | Staff, admin | None |
-| `staff_client_detail` | `/staff/clients/detail/` | `staff/client_detail.html` | Staff, admin | None |
-| `staff_add_client` | `/staff/clients/add/` | `staff/add_client.html` | Staff, admin | None |
-| `verify_clients` | `/staff/clients/verify/` | `staff/verify_clients.html` | Staff, admin | `clients` |
-| `verify_client_detail` | `/staff/clients/verify/detail/` | `staff/verify_client_detail.html` | Staff, admin | None |
-| `staff_payments` | `/staff/payments/` | `staff/payments.html` | Staff, admin | None |
-| `staff_payment_history` | `/staff/payments/history/` | `staff/payment_history.html` | Staff, admin | None |
-| `staff_receipt` | `/staff/payments/receipt/` | `staff/receipt.html` | Staff, admin | None |
-| `staff_savings` | `/staff/savings/` | `staff/savings.html` | Staff, admin | None |
-| `release_loans` | `/staff/loans/release/` | `staff/release_loan.html` | Staff, admin | None |
-| `confirm_loan_release` | `/staff/loans/release/confirm/` | `staff/release_confirmation.html` | Staff, admin | None |
-| `loan_applications` | `/officer/applications/` | `officer/applications.html` | Loan officer, admin | `applications`, `status_filter` |
-| `loan_application_detail` | `/officer/applications/detail/` | `officer/application_detail.html` | Loan officer, admin | None |
-| `officer_loans` | `/officer/loans/` | `officer/loans.html` | Loan officer, admin | None |
-| `officer_loan_detail` | `/officer/loans/detail/` | `officer/loan_detail.html` | Loan officer, admin | None |
-| `admin_users` | `/admin-panel/users/` | `adminpanel/users.html` | Admin | None |
-| `admin_clients` | `/admin-panel/clients/` | `adminpanel/clients.html` | Admin | None |
-| `admin_create_user` | `/admin-panel/users/create/` | `adminpanel/user_form.html` | Admin | None (`editing` omitted/false) |
-| `admin_edit_user` | `/admin-panel/users/edit/` | `adminpanel/user_form.html` | Admin | `editing` |
-| `admin_loan_products` | `/admin-panel/loan-products/` | `adminpanel/loan_products.html` | Admin | None |
-| `admin_product_form` | `/admin-panel/loan-products/form/` | `adminpanel/product_form.html` | Admin | None |
-| `admin_reports` | `/admin-panel/reports/` | `adminpanel/reports.html` | Admin | None |
-| `admin_audit_log` | `/admin-panel/audit-log/` | `adminpanel/audit_log.html` | Admin | None |
+## 1. Ground rules
 
-## Error handlers
+- Money is always `DecimalField(max_digits=14, decimal_places=2)`. Never float.
+- Interest rates are `DecimalField(max_digits=5, decimal_places=2)` (12.50 means 12.5%).
+- Ledger rows are never edited or deleted. Corrections are new reversing rows.
+- Foreign keys use `on_delete=PROTECT`. Nothing is deleted if it has history.
+- Only backend services (`services.py` in each app) change balances or loan status.
+  Views, admin and templates never do.
+- Database owns: models and migrations. Backend owns: services, views, permissions.
+  Frontend owns: templates and static files.
+- Sensitive client ID numbers are stored encrypted, with a separate hash for lookups.
 
-| Handler | Template | Who can open it | Context |
+## 2. Roles (already built, seeded by migration)
+
+admin, loan_officer, staff, client
+
+## 3. Models (Database team builds these)
+
+| App | Model | Fields |
+|---|---|---|
+| accounts | Role, User | (done) |
+| clients | Client | user (OneToOne to User, role=client), id_number_encrypted (BinaryField), id_number_hash (CharField 64, unique, indexed), phone, address, date_of_birth, created_at |
+| loans | LoanProduct | name, annual_rate, min_amount, max_amount, min_months, max_months, is_active |
+| loans | Loan | client (FK), product (FK), principal, annual_rate (copied from product at application), term_months, status, applied_at, decided_by (FK User, null), decided_at, disbursed_at, start_date |
+| loans | Installment | loan (FK), number, due_date, principal_due, interest_due, amount_paid (default 0), paid_at (null), status. Unique on (loan, number) |
+| savings | SavingsAccount | client (FK), account_number (unique), balance, status, opened_at |
+| accounting | LedgerEntry | entry_type, amount (always positive), balance_after, savings_account (FK, null), loan (FK, null), reference, created_by (FK User), created_at. Append-only |
+| audit | AuditLog | user (FK, null), action, object_type, object_id, details (JSONField), ip_address, created_at |
+| notifications | Notification | user (FK), kind, message, is_read (default False), created_at |
+
+Choices:
+- Loan.status: pending, approved, rejected, active, paid, defaulted
+- Installment.status: due, paid, overdue
+- SavingsAccount.status: active, frozen, closed
+- LedgerEntry.entry_type: deposit, withdrawal, transfer_in, transfer_out, loan_disbursement, loan_payment
+
+Note: SavingsAccount.balance is a cached total. It must always equal the sum of
+its ledger entries. Only services update it.
+
+## 4. Pages (Backend builds views, Frontend builds templates)
+
+Built already:
+
+| URL | Method | Roles | Notes |
 |---|---|---|---|
-| HTTP 403 (`handler403`) | `403.html` | Any user receiving `PermissionDenied` | `request`, `messages` |
-| HTTP 404 (Django default handler) | `404.html` | Any visitor requesting a missing page | `request`, `messages` |
+| / | GET | any logged in | redirects by role |
+| /login/ | GET, POST | anyone | fields: username, password |
+| /logout/ | POST | any logged in | must be a form button, not a link |
+| /portal/ | GET | client | dashboard |
+| /staff/ | GET | admin, loan_officer, staff | dashboard |
 
-Role access for staff and loan officer screens includes admin as specified for
-this UI. The built-in Django admin under `/admin/` is separate from these pages.
+Client portal (to build):
+
+| URL | Method | Roles | Template context / form fields |
+|---|---|---|---|
+| /portal/loans/ | GET | client | loans (own only) |
+| /portal/loans/apply/ | GET, POST | client | products; fields: product, principal, term_months |
+| /portal/loans/<id>/ | GET | client (owner) | loan, installments |
+| /portal/savings/ | GET | client | accounts (own only), recent_entries |
+| /portal/savings/transfer/ | POST | client | fields: from_account, to_account_number, amount |
+| /portal/notifications/ | GET | client | notifications |
+
+Staff (to build):
+
+| URL | Method | Roles | Template context / form fields |
+|---|---|---|---|
+| /staff/clients/ | GET | admin, loan_officer, staff | clients (search by name or ID) |
+| /staff/clients/new/ | GET, POST | admin, staff | fields: username, first_name, last_name, email, id_number, phone, address, date_of_birth |
+| /staff/loans/ | GET | admin, loan_officer | loans filtered by status |
+| /staff/loans/<id>/approve/ | POST | admin, loan_officer | none |
+| /staff/loans/<id>/reject/ | POST | admin, loan_officer | field: reason |
+| /staff/loans/<id>/disburse/ | POST | admin, loan_officer | none |
+| /staff/loans/<id>/payment/ | POST | admin, staff | field: amount |
+| /staff/savings/<id>/deposit/ | POST | admin, staff | field: amount |
+| /staff/savings/<id>/withdraw/ | POST | admin, staff | field: amount |
+| /staff/reports/ | GET | admin, loan_officer | download PDF or Excel |
+| /staff/audit/ | GET | admin | audit_logs |
+
+## 5. Open questions (decide together)
+
+1. Can clients sign up themselves, or does staff always create them?
+2. Can clients deposit or withdraw online, or only through staff?
+3. Is there a transfer fee or minimum balance?
+4. Late payment penalty: yes or no, and how much?
+5. Does a loan need two approvals above a certain amount?
