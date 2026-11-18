@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Audit Log - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-4">Audit Log</h3>
+<a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="row g-2 align-items-end mb-3">
+  <div class="col-md-3"><label class="form-label" for="filter_user">User</label><input id="filter_user" class="form-control" placeholder="Username"></div>
+  <div class="col-md-3"><label class="form-label" for="filter_action">Action</label><input id="filter_action" class="form-control" placeholder="Action"></div>
+  <div class="col-md-2"><label class="form-label" for="date_from">Date From</label><input id="date_from" type="date" class="form-control" value="2026-11-01"></div>
+  <div class="col-md-2"><label class="form-label" for="date_to">Date To</label><input id="date_to" type="date" class="form-control" value="2026-11-18"></div>
+  <div class="col-md-2"><a href="{% url 'admin_audit_log' %}?export=1" class="btn btn-outline-dark">Export</a></div>
+</div>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle"><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody>
+<tr><td>Nov 18, 2026 10:42 AM</td><td>Ramon Cruz</td><td><span class="badge text-bg-secondary">staff</span></td><td>Payment recorded</td><td>BB-PER-1042; &#8369; 4,250.00</td></tr>
+<tr><td>Nov 18, 2026 9:55 AM</td><td>Leah Morales</td><td><span class="badge text-bg-warning">loan_officer</span></td><td>Application approved</td><td>APP-2026-1182</td></tr>
+<tr><td>Nov 18, 2026 9:20 AM</td><td>Aivy Santos</td><td><span class="badge text-bg-dark">admin</span></td><td>User created</td><td>Created account lmorales</td></tr>
+<tr><td>Nov 17, 2026 4:10 PM</td><td>Ramon Cruz</td><td><span class="badge text-bg-secondary">staff</span></td><td>Savings withdrawal</td><td>SAV-9818; &#8369; 500.00</td></tr>
+</tbody></table></div></div>
+{% endblock %}
