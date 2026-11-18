@@ -1,0 +1,20 @@
+from django.db import migrations
+
+ROLES = ["admin", "loan_officer", "staff", "client"]
+
+
+def seed_roles(apps, schema_editor):
+    Role = apps.get_model("accounts", "Role")
+    for name in ROLES:
+        Role.objects.get_or_create(name=name)
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("accounts", "0001_initial"),
+    ]
+
+    operations = [
+        migrations.RunPython(seed_roles, migrations.RunPython.noop),
+    ]
