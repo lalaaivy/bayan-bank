@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Agreement - Bayan Bank</title>
+</head>
+<body>
+    <h1>Bayan Bank - Loan Agreement</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <h2>Agreement {{ agreement.agreement_number }}</h2>
+
+    <p><strong>Loan:</strong> #{{ loan.id }}</p>
+    <p><strong>Principal:</strong> PHP {{ loan.principal }}</p>
+    <p><strong>Annual Rate:</strong> {{ loan.annual_rate }}%</p>
+    <p><strong>Term:</strong> {{ loan.term_months }} months</p>
+
+    <h3>Terms and Conditions</h3>
+    <div style="white-space: pre-wrap;">{{ agreement.terms_and_conditions }}</div>
+
+    <p>
+        <a href="{% url 'loan_agreement_pdf' loan.id %}">
+            Download Loan Agreement PDF
+        </a>
+    </p>
+
+    {% if agreement.signed_at %}
+        <p>
+            <strong>Accepted:</strong>
+            {{ agreement.signed_at }}
+        </p>
+    {% elif loan.status == "approved" %}
+        <form method="post"
+              action="{% url 'portal_accept_agreement' loan.id %}">
+            {% csrf_token %}
+
+            <label>
+                <input type="checkbox" name="accept" value="yes" required>
+                I have read and agree to the loan agreement.
+            </label>
+
+            <p>
+                <button type="submit">
+                    Accept Loan Agreement
+                </button>
+            </p>
+        </form>
+    {% endif %}
+
+    <p>
+        <a href="{% url 'portal_loans' %}">
+            Back to My Loans
+        </a>
+    </p>
+</body>
+</html>
