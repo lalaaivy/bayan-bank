@@ -21,24 +21,24 @@
         {% if request.user.is_authenticated %}
           {% with role=request.user.role.name %}
             {% if role == "client" %}
-              <li class="nav-item"><a class="nav-link" href="/portal/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">My Loans</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Savings</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Notifications</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'portal_home' %} active{% endif %}" href="{% url 'portal_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'my_loans' %}">My Loans</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'savings_history' %}">Savings</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'notifications' %}">Notifications</a></li>
             {% elif role == "staff" %}
-              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Clients</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Payments</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Savings</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'staff_home' %} active{% endif %}" href="{% url 'staff_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_clients' %}">Clients</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_payments' %}">Payments</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_savings' %}">Savings</a></li>
             {% elif role == "loan_officer" %}
-              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Applications</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'staff_home' %} active{% endif %}" href="{% url 'staff_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'loan_applications' %}">Applications</a></li>
             {% elif role == "admin" %}
-              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Loan Products</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Reports</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Audit Log</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'staff_home' %} active{% endif %}" href="{% url 'staff_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_users' %}">Users</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_loan_products' %}">Loan Products</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_reports' %}">Reports</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_audit_log' %}">Audit Log</a></li>
             {% endif %}
           {% endwith %}
         {% endif %}

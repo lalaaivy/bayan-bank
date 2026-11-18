@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Reports - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-4">Management Reports</h3>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Loans Released</div><div class="fs-4 fw-bold">&#8369; 2,850,000.00</div></div></div></div>
+<div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Collections</div><div class="fs-4 fw-bold">&#8369; 1,420,500.00</div></div></div></div>
+<div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Overdue Amount</div><div class="fs-4 fw-bold text-danger">&#8369; 185,750.00</div></div></div></div>
+</div>
+<div class="card shadow-sm"><div class="card-header">November 2026 Summary</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Category</th><th>Current Month</th><th>Previous Month</th><th>Change</th></tr></thead><tbody>
+<tr><td>Loans released</td><td>&#8369; 2,850,000.00</td><td>&#8369; 2,610,000.00</td><td class="text-success">+9.2%</td></tr>
+<tr><td>Loan collections</td><td>&#8369; 1,420,500.00</td><td>&#8369; 1,355,200.00</td><td class="text-success">+4.8%</td></tr>
+<tr><td>Overdue loans</td><td>&#8369; 185,750.00</td><td>&#8369; 204,300.00</td><td class="text-success">-9.1%</td></tr>
+</tbody></table></div></div>
+{% endblock %}

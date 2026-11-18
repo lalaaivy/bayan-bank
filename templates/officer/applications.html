@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Loan Applications - Bayan Bank{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h3 class="mb-0">Loan Applications</h3><div class="btn-group"><button class="btn btn-sm btn-dark">All</button><button class="btn btn-sm btn-outline-dark">Pending</button><button class="btn btn-sm btn-outline-dark">Approved</button><button class="btn btn-sm btn-outline-dark">Rejected</button></div></div>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
+<thead><tr><th>Application</th><th>Applicant</th><th>Product</th><th>Requested</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+<tbody>
+<tr><td>APP-2026-1184</td><td>Liza Navarro</td><td>Business Loan</td><td>&#8369; 150,000.00</td><td>Nov 17, 2026</td><td><span class="badge text-bg-warning">Pending</span></td><td><a href="{% url 'loan_application_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
+<tr><td>APP-2026-1182</td><td>Mark Villanueva</td><td>Personal Loan</td><td>&#8369; 40,000.00</td><td>Nov 16, 2026</td><td><span class="badge text-bg-success">Approved</span></td><td><a href="{% url 'loan_application_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
+<tr><td>APP-2026-1179</td><td>Joy Mercado</td><td>Emergency Loan</td><td>&#8369; 25,000.00</td><td>Nov 14, 2026</td><td><span class="badge text-bg-danger">Rejected</span></td><td><a href="{% url 'loan_application_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
+<tr><td>APP-2026-1175</td><td>Roberto Garcia</td><td>Business Loan</td><td>&#8369; 200,000.00</td><td>Nov 12, 2026</td><td><span class="badge text-bg-warning">Pending</span></td><td><a href="{% url 'loan_application_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
+</tbody></table></div></div>
+{% endblock %}

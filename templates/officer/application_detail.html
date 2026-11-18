@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Application Review - Bayan Bank{% endblock %}
+{% block content %}
+<a href="{% url 'loan_applications' %}" class="text-decoration-none">&larr; Back to applications</a>
+<div class="d-flex justify-content-between align-items-center my-3"><h3 class="mb-0">APP-2026-1184</h3><span class="badge text-bg-warning">Pending</span></div>
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Applicant Information</div><div class="card-body"><dl class="row mb-0"><dt class="col-sm-4">Name</dt><dd class="col-sm-8">Liza Navarro</dd><dt class="col-sm-4">Contact</dt><dd class="col-sm-8">0932 778 4510</dd><dt class="col-sm-4">Address</dt><dd class="col-sm-8">Makati City, Metro Manila</dd><dt class="col-sm-4">Employment</dt><dd class="col-sm-8">Sari-sari Store Owner</dd></dl></div></div></div>
+  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Loan Request</div><div class="card-body"><dl class="row mb-0"><dt class="col-sm-5">Product</dt><dd class="col-sm-7">Business Loan</dd><dt class="col-sm-5">Amount</dt><dd class="col-sm-7">&#8369; 150,000.00</dd><dt class="col-sm-5">Term</dt><dd class="col-sm-7">18 months</dd><dt class="col-sm-5">Purpose</dt><dd class="col-sm-7">Inventory expansion and store renovation</dd></dl></div></div></div>
+</div>
+<form method="post" class="d-flex gap-2">{% csrf_token %}<button name="decision" value="approved" class="btn btn-success">Approve</button><button name="decision" value="rejected" class="btn btn-danger">Reject</button><a href="{% url 'loan_applications' %}" class="btn btn-outline-dark">Back</a></form>
+{% endblock %}

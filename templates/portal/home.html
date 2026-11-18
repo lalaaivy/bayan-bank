@@ -9,7 +9,7 @@
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Savings Balance</div>
-        <div class="fs-3 fw-bold">₱ 12,500.00</div>
+        <div class="fs-3 fw-bold">&#8369; 12,500.00</div>
       </div>
     </div>
   </div>
@@ -17,7 +17,7 @@
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Active Loan Balance</div>
-        <div class="fs-3 fw-bold">₱ 45,000.00</div>
+        <div class="fs-3 fw-bold">&#8369; 45,000.00</div>
       </div>
     </div>
   </div>
@@ -25,7 +25,7 @@
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Next Payment Due</div>
-        <div class="fs-3 fw-bold">₱ 4,250.00</div>
+        <div class="fs-3 fw-bold">&#8369; 4,250.00</div>
         <div class="text-muted small">Due Dec 5, 2026</div>
       </div>
     </div>
@@ -33,9 +33,9 @@
 </div>
 
 <div class="d-flex gap-2 mb-4">
-  <a href="#" class="btn btn-dark">Apply for a Loan</a>
-  <a href="#" class="btn btn-outline-dark">My Loans</a>
-  <a href="#" class="btn btn-outline-dark">Savings History</a>
+  <a href="{% url 'apply_loan' %}" class="btn btn-dark">Apply for a Loan</a>
+  <a href="{% url 'my_loans' %}" class="btn btn-outline-dark">My Loans</a>
+  <a href="{% url 'savings_history' %}" class="btn btn-outline-dark">Savings History</a>
 </div>
 
 <div class="card shadow-sm">

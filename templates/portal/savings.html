@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Savings - Bayan Bank{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">Savings History</h3>
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <div class="text-muted small">Current Balance</div>
+    <div class="fs-3 fw-bold">&#8369; 12,500.00</div>
+  </div>
+</div>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+  <table class="table mb-0">
+    <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
+    <tbody>
+      <tr><td>Nov 15, 2026</td><td>Deposit</td><td class="text-success">+ &#8369; 1,000.00</td><td>&#8369; 12,500.00</td></tr>
+      <tr><td>Nov 1, 2026</td><td>Deposit</td><td class="text-success">+ &#8369; 2,000.00</td><td>&#8369; 11,500.00</td></tr>
+      <tr><td>Oct 20, 2026</td><td>Withdrawal</td><td class="text-danger">- &#8369; 500.00</td><td>&#8369; 9,500.00</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Savings - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-4">Savings Transactions</h3>
+<div class="card shadow-sm mb-4"><div class="card-body"><form method="post">{% csrf_token %}<div class="row g-3">
+<div class="col-md-4"><label class="form-label">Client</label><select class="form-select"><option>Maria Santos</option><option>Juan Dela Cruz</option><option>Anna Reyes</option></select></div>
+<div class="col-md-3"><label class="form-label">Transaction</label><select class="form-select"><option>Deposit</option><option>Withdrawal</option></select></div>
+<div class="col-md-3"><label class="form-label">Amount (&#8369;)</label><input type="number" class="form-control" value="1000"></div>
+<div class="col-md-2"><label class="form-label">Date</label><input type="date" class="form-control" value="2026-11-18"></div>
+</div><button class="btn btn-dark mt-3">Save Transaction</button></form></div></div>
+<div class="card shadow-sm"><div class="card-header">Recent Transactions</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Amount</th><th>Reference</th></tr></thead><tbody><tr><td>Nov 18, 2026</td><td>Maria Santos</td><td><span class="badge text-bg-success">Deposit</span></td><td>&#8369; 1,000.00</td><td>SAV-9821</td></tr><tr><td>Nov 17, 2026</td><td>Anna Reyes</td><td><span class="badge text-bg-danger">Withdrawal</span></td><td>&#8369; 500.00</td><td>SAV-9818</td></tr></tbody></table></div></div>
+{% endblock %}
