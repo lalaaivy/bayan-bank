@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My Loans - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-4">My Loans</h3>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">Apply for a loan</div>
+  <div class="card-body">
+    <form method="post" action="{% url 'portal_apply' %}" class="row g-2">
+      {% csrf_token %}
+      <div class="col-md-4">
+        <label class="form-label">Product</label>
+        <select name="product" class="form-select" required>
+          {% for p in products %}<option value="{{ p.pk }}">{{ p.name }} ({{ p.annual_rate }}%)</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Amount (₱)</label>
+        <input name="principal" class="form-control" inputmode="decimal" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Months</label>
+        <input name="term_months" class="form-control" inputmode="numeric" required>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-dark w-100">Apply</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">My applications</div>
+  <table class="table mb-0">
+    <thead><tr><th>Applied</th><th>Product</th><th class="text-end">Amount</th><th>Months</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for l in loans %}
+      <tr>
+        <td>{{ l.applied_at|date:"M d, Y" }}</td>
+        <td>{{ l.product.name }}</td>
+        <td class="text-end">₱ {{ l.principal|floatformat:"2g" }}</td>
+        <td>{{ l.term_months }}</td>
+        <td>{{ l.get_status_display }}{% if l.reject_reason %} - {{ l.reject_reason }}{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-muted">No loans yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
