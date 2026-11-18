@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Loan {{ loan.pk }} - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-1">Loan #{{ loan.pk }}</h3>
+<p class="text-muted">{{ loan.client }} &middot; {{ loan.product.name }} &middot; ₱ {{ loan.principal|floatformat:"2g" }} &middot; {{ loan.term_months }} months at {{ loan.annual_rate }}% &middot; <strong>{{ loan.get_status_display }}</strong></p>
+
+{% if loan.status == "pending" %}
+<div class="card shadow-sm mb-4"><div class="card-body d-flex flex-wrap gap-2">
+  <form method="post" action="{% url 'staff_loan_approve' loan.pk %}">{% csrf_token %}<button class="btn btn-dark">Approve</button></form>
+  <form method="post" action="{% url 'staff_loan_reject' loan.pk %}" class="d-flex gap-2">
+    {% csrf_token %}
+    <input name="reason" class="form-control" placeholder="Reason" required>
+    <button class="btn btn-outline-danger">Reject</button>
+  </form>
+</div></div>
+{% elif loan.status == "approved" %}
+<div class="card shadow-sm mb-4"><div class="card-body">
+  <form method="post" action="{% url 'staff_loan_disburse' loan.pk %}" class="d-flex gap-2">
+    {% csrf_token %}
+    <select name="account" class="form-select" required>
+      {% for a in accounts %}<option value="{{ a.pk }}">{{ a.account_number }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-dark">Disburse</button>
+  </form>
+</div></div>
+{% elif loan.status == "active" %}
+<div class="card shadow-sm mb-4"><div class="card-body">
+  <form method="post" action="{% url 'staff_loan_pay' loan.pk %}" class="d-flex gap-2">
+    {% csrf_token %}
+    <input name="amount" class="form-control" placeholder="Payment (₱)" inputmode="decimal" required>
+    <button class="btn btn-dark">Record payment</button>
+  </form>
+</div></div>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="card-header">Installments</div>
+  <table class="table mb-0">
+    <thead><tr><th>#</th><th>Due</th><th class="text-end">Principal</th><th class="text-end">Interest</th><th class="text-end">Paid</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for i in installments %}
+      <tr>
+        <td>{{ i.number }}</td>
+        <td>{{ i.due_date|date:"M d, Y" }}</td>
+        <td class="text-end">₱ {{ i.principal_due|floatformat:"2g" }}</td>
+        <td class="text-end">₱ {{ i.interest_due|floatformat:"2g" }}</td>
+        <td class="text-end">₱ {{ i.amount_paid|floatformat:"2g" }}</td>
+        <td>{{ i.get_status_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted">Schedule is created when the loan is disbursed.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<a href="{% url 'staff_loans' %}" class="d-inline-block mt-3">&larr; All loans</a>
+{% endblock %}

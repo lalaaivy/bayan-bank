@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Loans - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-4">Loans</h3>
+<div class="card shadow-sm">
+  <table class="table mb-0">
+    <thead><tr><th>Applied</th><th>Client</th><th>Product</th><th class="text-end">Amount</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for l in loans %}
+      <tr>
+        <td>{{ l.applied_at|date:"M d, Y" }}</td>
+        <td>{{ l.client }}</td>
+        <td>{{ l.product.name }}</td>
+        <td class="text-end">₱ {{ l.principal|floatformat:"2g" }}</td>
+        <td>{{ l.get_status_display }}</td>
+        <td><a href="{% url 'staff_loan' l.pk %}">Open</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted">No loans yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
