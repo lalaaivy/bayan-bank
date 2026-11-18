@@ -3,6 +3,7 @@
 
 {% block content %}
 <h3 class="mb-4">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h3>
+<p><a class="btn btn-sm btn-outline-secondary" href="{% url 'client_profile' %}">My Profile</a> <a class="btn btn-sm btn-outline-secondary" href="{% url 'change_password' %}">Change Password</a></p>
 
 <div class="row g-3 mb-4">
   <div class="col-md-4">
@@ -45,4 +46,5 @@
     <li class="list-group-item">Your loan application was approved.</li>
   </ul>
 </div>
+<p class="mt-4"><a href="{% url 'notifications' %}" class="btn btn-outline-dark">View all notifications</a></p>
 {% endblock %}

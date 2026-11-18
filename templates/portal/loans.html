@@ -3,6 +3,7 @@
 
 {% block content %}
 <h3 class="mb-4">My Loans</h3>
+<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
 <div class="card shadow-sm">
   <div class="table-responsive">
   <table class="table mb-0">
@@ -11,7 +12,7 @@
     </thead>
     <tbody>
       <tr>
-        <td>Personal Loan</td>
+        <td><a href="{% url 'loan_detail' %}">Personal Loan</a></td>
         <td>&#8369; 50,000.00</td>
         <td>&#8369; 45,000.00</td>
         <td>Dec 5, 2026</td>

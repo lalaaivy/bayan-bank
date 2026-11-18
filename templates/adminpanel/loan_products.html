@@ -2,15 +2,10 @@
 {% block title %}Loan Products - Bayan Bank{% endblock %}
 {% block content %}
 <h3 class="mb-4">Loan Products</h3>
-<div class="card shadow-sm mb-4"><div class="card-header">Add or Edit Product</div><div class="card-body"><form method="post">{% csrf_token %}<div class="row g-3">
-<div class="col-md-3"><label class="form-label">Name</label><input class="form-control" value="Personal Loan"></div>
-<div class="col-md-3"><label class="form-label">Interest Rate</label><div class="input-group"><input type="number" class="form-control" value="18"><span class="input-group-text">% / year</span></div></div>
-<div class="col-md-3"><label class="form-label">Maximum Amount</label><input type="number" class="form-control" value="300000"></div>
-<div class="col-md-3"><label class="form-label">Maximum Term</label><div class="input-group"><input type="number" class="form-control" value="24"><span class="input-group-text">months</span></div></div>
-</div><button class="btn btn-dark mt-3">Save Product</button></form></div></div>
+<p><a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a> <a href="{% url 'admin_product_form' %}" class="btn btn-sm btn-dark">Add Product</a></p>
 <div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Name</th><th>Interest Rate</th><th>Maximum Amount</th><th>Maximum Term</th><th></th></tr></thead><tbody>
-<tr><td>Personal Loan</td><td>18% annually</td><td>&#8369; 300,000.00</td><td>24 months</td><td><button class="btn btn-sm btn-outline-dark">Edit</button></td></tr>
-<tr><td>Business Loan</td><td>16% annually</td><td>&#8369; 1,000,000.00</td><td>36 months</td><td><button class="btn btn-sm btn-outline-dark">Edit</button></td></tr>
-<tr><td>Emergency Loan</td><td>12% annually</td><td>&#8369; 50,000.00</td><td>12 months</td><td><button class="btn btn-sm btn-outline-dark">Edit</button></td></tr>
+<tr><td>Personal Loan</td><td>18% annually</td><td>&#8369; 300,000.00</td><td>24 months</td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_product_form' %}">Edit</a></td></tr>
+<tr><td>Business Loan</td><td>16% annually</td><td>&#8369; 1,000,000.00</td><td>36 months</td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_product_form' %}">Edit</a></td></tr>
+<tr><td>Emergency Loan</td><td>12% annually</td><td>&#8369; 50,000.00</td><td>12 months</td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_product_form' %}">Edit</a></td></tr>
 </tbody></table></div></div>
 {% endblock %}

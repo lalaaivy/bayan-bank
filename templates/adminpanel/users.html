@@ -2,17 +2,11 @@
 {% block title %}Manage Users - Bayan Bank{% endblock %}
 {% block content %}
 <h3 class="mb-4">Users</h3>
-<div class="card shadow-sm mb-4"><div class="card-header">Create User</div><div class="card-body"><form method="post">{% csrf_token %}<div class="row g-3">
-<div class="col-md-6"><label class="form-label">Username</label><input class="form-control" name="username" placeholder="maria.santos"></div>
-<div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" name="full_name" placeholder="Maria Santos"></div>
-<div class="col-md-4"><label class="form-label">Email</label><input type="email" class="form-control" name="email" placeholder="maria@example.ph"></div>
-<div class="col-md-4"><label class="form-label">Role</label><select class="form-select" name="role"><option>client</option><option>staff</option><option>loan_officer</option><option>admin</option></select></div>
-<div class="col-md-4"><label class="form-label">Password</label><input type="password" class="form-control" name="password" value="Demo1234!"></div>
-</div><button class="btn btn-dark mt-3">Create User</button></form></div></div>
-<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle"><thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>
-<tr><td>msantos</td><td>Maria Santos</td><td>maria.santos@example.ph</td><td><span class="badge text-bg-primary">client</span></td><td><span class="badge text-bg-success">Active</span></td></tr>
-<tr><td>rcruz</td><td>Ramon Cruz</td><td>ramon.cruz@example.ph</td><td><span class="badge text-bg-secondary">staff</span></td><td><span class="badge text-bg-success">Active</span></td></tr>
-<tr><td>lmorales</td><td>Leah Morales</td><td>leah.morales@example.ph</td><td><span class="badge text-bg-warning">loan_officer</span></td><td><span class="badge text-bg-success">Active</span></td></tr>
-<tr><td>aivy</td><td>Aivy Santos</td><td>aivy@example.ph</td><td><span class="badge text-bg-dark">admin</span></td><td><span class="badge text-bg-success">Active</span></td></tr>
+<p><a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a> <a href="{% url 'admin_create_user' %}" class="btn btn-sm btn-dark">Create User</a></p>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle"><thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+<tr><td>msantos</td><td>Maria Santos</td><td>maria.santos@example.ph</td><td><span class="badge text-bg-primary">client</span></td><td><span class="badge text-bg-success">Active</span></td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_edit_user' %}">Edit</a></td></tr>
+<tr><td>rcruz</td><td>Ramon Cruz</td><td>ramon.cruz@example.ph</td><td><span class="badge text-bg-secondary">staff</span></td><td><span class="badge text-bg-success">Active</span></td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_edit_user' %}">Edit</a></td></tr>
+<tr><td>lmorales</td><td>Leah Morales</td><td>leah.morales@example.ph</td><td><span class="badge text-bg-warning">loan_officer</span></td><td><span class="badge text-bg-success">Active</span></td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_edit_user' %}">Edit</a></td></tr>
+<tr><td>aivy</td><td>Aivy Santos</td><td>aivy@example.ph</td><td><span class="badge text-bg-dark">admin</span></td><td><span class="badge text-bg-success">Active</span></td><td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_edit_user' %}">Edit</a></td></tr>
 </tbody></table></div></div>
 {% endblock %}

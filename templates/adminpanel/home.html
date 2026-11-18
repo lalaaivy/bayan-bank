@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Administration Dashboard</h3>
+<p class="text-muted">Tuesday, November 18, 2026</p>
+<div class="row g-3 mb-4"><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Active Clients</div><div class="fs-3 fw-bold">1,248</div></div></div></div><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Active Loans</div><div class="fs-3 fw-bold">386</div></div></div></div><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Collections This Month</div><div class="fs-5 fw-bold">&#8369; 1,420,500</div></div></div></div><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Pending Applications</div><div class="fs-3 fw-bold">14</div></div></div></div></div>
+<div class="d-flex flex-wrap gap-2"><a href="{% url 'admin_users' %}" class="btn btn-dark">Manage Users</a><a href="{% url 'admin_loan_products' %}" class="btn btn-outline-dark">Loan Products</a><a href="{% url 'admin_reports' %}" class="btn btn-outline-dark">Reports</a><a href="{% url 'admin_audit_log' %}" class="btn btn-outline-dark">Audit Log</a></div>
+{% endblock %}

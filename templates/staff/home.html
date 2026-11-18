@@ -5,6 +5,13 @@
   <h3 class="mb-0">Operations Dashboard</h3>
   <span class="text-muted">Tuesday, November 18, 2026</span>
 </div>
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a class="btn btn-dark" href="{% url 'staff_clients' %}">Find Client</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_add_client' %}">Add Client</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_payments' %}">Record Payment</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_savings' %}">Savings Transaction</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_payment_history' %}">Payment History</a>
+</div>
 <div class="row g-3 mb-4">
   <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Clients Served Today</div><div class="fs-3 fw-bold">28</div></div></div></div>
   <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Payments Collected Today</div><div class="fs-3 fw-bold">&#8369; 84,750.00</div></div></div></div>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Client Registration - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Create a Client Account</h3>
+<a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Login</a>
+<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="row g-3"><div class="col-md-6"><label class="form-label">First Name</label><input class="form-control" placeholder="Maria"></div><div class="col-md-6"><label class="form-label">Last Name</label><input class="form-control" placeholder="Santos"></div><div class="col-md-6"><label class="form-label">Username</label><input class="form-control" placeholder="maria.santos"></div><div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" placeholder="maria@example.ph"></div><div class="col-md-6"><label class="form-label">Mobile Number</label><input class="form-control" placeholder="0917 555 0142"></div><div class="col-md-6"><label class="form-label">Password</label><input type="password" class="form-control"></div></div>
+<button class="btn btn-dark mt-3">Register</button>
+</form></div></div>
+{% endblock %}

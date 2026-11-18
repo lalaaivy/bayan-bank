@@ -2,6 +2,7 @@
 {% block title %}Record Payment - Bayan Bank{% endblock %}
 {% block content %}
 <h3 class="mb-4">Record Payment</h3>
+<p><a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a> <a href="{% url 'staff_payment_history' %}" class="btn btn-sm btn-outline-dark">Payment History</a></p>
 <div class="card shadow-sm mb-4"><div class="card-body"><form method="post">{% csrf_token %}<div class="row g-3">
 <div class="col-md-6"><label class="form-label">Client</label><select class="form-select"><option>Maria Santos</option><option>Juan Dela Cruz</option><option>Anna Reyes</option></select></div>
 <div class="col-md-6"><label class="form-label">Loan</label><select class="form-select"><option>BB-PER-1042 - Personal Loan</option><option>BB-BIZ-0788 - Business Loan</option></select></div>

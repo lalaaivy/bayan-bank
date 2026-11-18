@@ -5,6 +5,7 @@
   <h3 class="mb-0">Clients</h3>
   <div class="input-group" style="max-width: 280px;"><input type="search" class="form-control" placeholder="Search name or contact"><button class="btn btn-outline-dark">Search</button></div>
 </div>
+<div class="mb-3"><a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a> <a href="{% url 'staff_add_client' %}" class="btn btn-sm btn-dark">Add Client</a></div>
 <div class="card shadow-sm"><div class="table-responsive">
 <table class="table mb-0 align-middle">
   <thead><tr><th>Name</th><th>Contact</th><th>Active Loans</th><th>Savings Balance</th><th>Status</th><th></th></tr></thead>

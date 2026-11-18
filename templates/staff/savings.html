@@ -2,6 +2,7 @@
 {% block title %}Savings - Bayan Bank{% endblock %}
 {% block content %}
 <h3 class="mb-4">Savings Transactions</h3>
+<a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
 <div class="card shadow-sm mb-4"><div class="card-body"><form method="post">{% csrf_token %}<div class="row g-3">
 <div class="col-md-4"><label class="form-label">Client</label><select class="form-select"><option>Maria Santos</option><option>Juan Dela Cruz</option><option>Anna Reyes</option></select></div>
 <div class="col-md-3"><label class="form-label">Transaction</label><select class="form-select"><option>Deposit</option><option>Withdrawal</option></select></div>
