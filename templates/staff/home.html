@@ -36,4 +36,95 @@
     </table>
   </div>
 </div>
+
+<div class="card shadow-sm mb-4">
+
+  <div class="card-header">
+    <h5 class="mb-0">
+      Transaction Reports
+    </h5>
+  </div>
+
+  <div class="card-body">
+
+    <p class="text-muted">
+      View savings accounts and download
+      transaction statements in PDF or Excel.
+    </p>
+
+    {% if savings_accounts %}
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+
+        <thead>
+          <tr>
+            <th>Account Number</th>
+            <th>Account Holder</th>
+            <th>Balance</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for account in savings_accounts %}
+
+          <tr>
+            <td>
+              {{ account.account_number }}
+            </td>
+
+            <td>
+              {{ account.client }}
+            </td>
+
+            <td>
+              ₱ {{ account.balance|floatformat:"2g" }}
+            </td>
+
+            <td>
+              <div class="d-flex flex-wrap gap-2">
+
+                <a
+                  href="{% url 'staff_account' account.pk %}"
+                  class="btn btn-outline-dark btn-sm"
+                >
+                  View
+                </a>
+
+                <a
+                  href="{% url 'export_transactions_pdf' account.pk %}"
+                  class="btn btn-outline-danger btn-sm"
+                >
+                  PDF
+                </a>
+
+                <a
+                  href="{% url 'export_transactions_excel' account.pk %}"
+                  class="btn btn-outline-success btn-sm"
+                >
+                  Excel
+                </a>
+
+              </div>
+            </td>
+          </tr>
+
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-info mb-0">
+      No savings accounts available.
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
 {% endblock %}
