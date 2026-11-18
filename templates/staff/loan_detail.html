@@ -5,6 +5,10 @@
 
 {% block content %}
 
+<!-- ===================================== -->
+<!-- LOAN INFORMATION -->
+<!-- ===================================== -->
+
 <h3 class="mb-1">Loan #{{ loan.pk }}</h3>
 
 <p class="text-muted">
@@ -16,158 +20,505 @@
   <strong>{{ loan.get_status_display }}</strong>
 </p>
 
+
+<!-- ===================================== -->
+<!-- EXPORT LOAN STATEMENT -->
+<!-- ===================================== -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-body">
-    <h5 class="card-title">Export Loan Statement</h5>
+
+    <h5 class="card-title">
+      Export Loan Statement
+    </h5>
+
     <p class="text-muted">
       Download loan details, amortization schedule,
       and payment history.
     </p>
 
     <div class="d-flex flex-wrap gap-2">
+
       <a
         href="{% url 'export_loan_pdf' loan.pk %}"
         class="btn btn-outline-danger"
       >
         Download PDF
       </a>
+
       <a
         href="{% url 'export_loan_excel' loan.pk %}"
         class="btn btn-outline-success"
       >
         Download Excel
       </a>
+
     </div>
+
   </div>
 </div>
+
+
+<!-- ===================================== -->
+<!-- PENDING LOAN: APPROVE OR REJECT -->
+<!-- ===================================== -->
 
 {% if loan.status == "pending" %}
 
 <div class="card shadow-sm mb-4">
-  <div class="card-body d-flex flex-wrap gap-2">
-    <form
-      method="post"
-      action="{% url 'staff_loan_approve' loan.pk %}"
-    >
-      {% csrf_token %}
-      <button class="btn btn-dark">Approve</button>
-    </form>
-
-    <form
-      method="post"
-      action="{% url 'staff_loan_reject' loan.pk %}"
-      class="d-flex gap-2"
-    >
-      {% csrf_token %}
-      <input
-        name="reason"
-        class="form-control"
-        placeholder="Reason"
-        required
-      >
-      <button class="btn btn-outline-danger">
-        Reject
-      </button>
-    </form>
-  </div>
-</div>
-
-{% elif loan.status == "approved" %}
-
-<div class="card shadow-sm mb-4">
   <div class="card-body">
-    <form
-      method="post"
-      action="{% url 'staff_loan_disburse' loan.pk %}"
-      class="d-flex gap-2"
-    >
-      {% csrf_token %}
 
-      <select name="account" class="form-select" required>
-        {% for a in accounts %}
-        <option value="{{ a.pk }}">
-          {{ a.account_number }}
-        </option>
-        {% endfor %}
-      </select>
+    <h5 class="card-title mb-3">
+      Loan Decision
+    </h5>
 
-      <button class="btn btn-dark">
-        Disburse
-      </button>
-    </form>
-  </div>
-</div>
+    <div class="d-flex flex-wrap gap-2">
 
-{% elif loan.status == "active" %}
-
-<div class="card shadow-sm mb-4">
-  <div class="card-body">
-    <form
-      method="post"
-      action="{% url 'staff_loan_pay' loan.pk %}"
-      class="d-flex gap-2"
-    >
-      {% csrf_token %}
-      <input
-        name="amount"
-        class="form-control"
-        placeholder="Payment (₱)"
-        inputmode="decimal"
-        required
+      <form
+        method="post"
+        action="{% url 'staff_loan_approve' loan.pk %}"
       >
-      <button class="btn btn-dark">
-        Record payment
-      </button>
-    </form>
+        {% csrf_token %}
+
+        <button
+          type="submit"
+          class="btn btn-dark"
+        >
+          Approve
+        </button>
+      </form>
+
+      <form
+        method="post"
+        action="{% url 'staff_loan_reject' loan.pk %}"
+        class="d-flex flex-wrap gap-2"
+      >
+        {% csrf_token %}
+
+        <input
+          type="text"
+          name="reason"
+          class="form-control"
+          placeholder="Reason for rejection"
+          maxlength="255"
+          required
+        >
+
+        <button
+          type="submit"
+          class="btn btn-outline-danger"
+        >
+          Reject
+        </button>
+
+      </form>
+
+    </div>
+
+    <p class="small text-muted mt-3 mb-0">
+      Approval requires an Eligible result from the
+      loan eligibility check.
+    </p>
+
   </div>
 </div>
 
 {% endif %}
 
+
+<!-- ===================================== -->
+<!-- LOAN AGREEMENT -->
+<!-- ===================================== -->
+
+{% if loan.status == "approved" or loan.status == "active" or loan.status == "paid" %}
+
+<div class="card shadow-sm mb-4">
+
+  <div class="card-header">
+    Loan Agreement
+  </div>
+
+  <div class="card-body">
+
+    {% if agreement %}
+
+      <div class="mb-3">
+
+        <p class="mb-1">
+          <strong>Agreement Number:</strong>
+          {{ agreement.agreement_number }}
+        </p>
+
+        <p class="mb-1">
+          <strong>Agreement Date:</strong>
+          {{ agreement.agreement_date|date:"M d, Y" }}
+        </p>
+
+        <p class="mb-1">
+          <strong>Interest Rate:</strong>
+          {{ loan.annual_rate }}% annually
+        </p>
+
+        <p class="mb-1">
+          <strong>Agreement Status:</strong>
+
+          {% if agreement.signed_at %}
+
+            <span class="badge bg-success">
+              Accepted
+            </span>
+
+          {% else %}
+
+            <span class="badge bg-warning text-dark">
+              Waiting for Client Acceptance
+            </span>
+
+          {% endif %}
+
+        </p>
+
+        {% if agreement.signed_at %}
+
+          <p class="mb-1">
+            <strong>Accepted On:</strong>
+            {{ agreement.signed_at|date:"M d, Y h:i A" }}
+          </p>
+
+        {% endif %}
+
+      </div>
+
+      <a
+        href="{% url 'loan_agreement_pdf' loan.pk %}"
+        class="btn btn-outline-primary"
+      >
+        Download Agreement PDF
+      </a>
+
+      {% if not agreement.signed_at %}
+
+        <div class="alert alert-warning mt-3 mb-0">
+          The client must review and accept the loan
+          agreement before the loan can be disbursed.
+        </div>
+
+      {% endif %}
+
+    {% elif loan.status == "approved" %}
+
+      <p class="text-muted">
+        No loan agreement has been created yet.
+      </p>
+
+      <form
+        method="post"
+        action="{% url 'staff_create_agreement' loan.pk %}"
+      >
+        {% csrf_token %}
+
+        <button
+          type="submit"
+          class="btn btn-dark"
+        >
+          Create Loan Agreement
+        </button>
+
+      </form>
+
+    {% else %}
+
+      <p class="text-muted mb-0">
+        No loan agreement record is available.
+      </p>
+
+    {% endif %}
+
+  </div>
+</div>
+
+{% endif %}
+
+
+<!-- ===================================== -->
+<!-- APPROVED LOAN: DISBURSE -->
+<!-- ===================================== -->
+
+{% if loan.status == "approved" %}
+
+<div class="card shadow-sm mb-4">
+
+  <div class="card-header">
+    Loan Disbursement
+  </div>
+
+  <div class="card-body">
+
+    {% if agreement and agreement.signed_at %}
+
+      <div class="alert alert-success">
+        The client has accepted the loan agreement.
+        This loan is ready for disbursement.
+      </div>
+
+      <form
+        method="post"
+        action="{% url 'staff_loan_disburse' loan.pk %}"
+        class="row g-2"
+      >
+        {% csrf_token %}
+
+        <div class="col-md-8">
+
+          <label class="form-label">
+            Client Savings Account
+          </label>
+
+          <select
+            name="account"
+            class="form-select"
+            required
+          >
+
+            <option value="">
+              Select savings account
+            </option>
+
+            {% for a in accounts %}
+
+              {% if a.status == "active" %}
+
+                <option value="{{ a.pk }}">
+                  {{ a.account_number }}
+                  - ₱ {{ a.balance|floatformat:"2g" }}
+                </option>
+
+              {% endif %}
+
+            {% endfor %}
+
+          </select>
+
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+
+          <button
+            type="submit"
+            class="btn btn-dark w-100"
+          >
+            Disburse Loan
+          </button>
+
+        </div>
+
+      </form>
+
+    {% elif agreement %}
+
+      <div class="alert alert-warning mb-3">
+        Disbursement is blocked because the client
+        has not accepted the loan agreement.
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        disabled
+      >
+        Disburse Loan
+      </button>
+
+    {% else %}
+
+      <div class="alert alert-warning mb-3">
+        Create a loan agreement first.
+        The client must accept it before disbursement.
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        disabled
+      >
+        Disburse Loan
+      </button>
+
+    {% endif %}
+
+  </div>
+</div>
+
+{% endif %}
+
+
+<!-- ===================================== -->
+<!-- ACTIVE LOAN: RECORD PAYMENT -->
+<!-- ===================================== -->
+
+{% if loan.status == "active" %}
+
+<div class="card shadow-sm mb-4">
+
+  <div class="card-header">
+    Record Loan Payment
+  </div>
+
+  <div class="card-body">
+
+    <form
+      method="post"
+      action="{% url 'staff_loan_pay' loan.pk %}"
+      class="row g-2"
+    >
+      {% csrf_token %}
+
+      <div class="col-md-8">
+
+        <label class="form-label">
+          Payment Amount (₱)
+        </label>
+
+        <input
+          type="number"
+          name="amount"
+          class="form-control"
+          placeholder="Enter payment amount"
+          inputmode="decimal"
+          min="0.01"
+          step="0.01"
+          required
+        >
+
+      </div>
+
+      <div class="col-md-4 d-flex align-items-end">
+
+        <button
+          type="submit"
+          class="btn btn-dark w-100"
+        >
+          Record Payment
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+{% endif %}
+
+
+<!-- ===================================== -->
+<!-- INSTALLMENT SCHEDULE -->
+<!-- ===================================== -->
+
 <div class="card shadow-sm">
-  <div class="card-header">Installments</div>
+
+  <div class="card-header">
+    Installments
+  </div>
 
   <div class="table-responsive">
-    <table class="table mb-0">
+
+    <table class="table mb-0 align-middle">
+
       <thead>
         <tr>
           <th>#</th>
           <th>Due</th>
           <th class="text-end">Principal</th>
           <th class="text-end">Interest</th>
+          <th class="text-end">Penalty</th>
+          <th class="text-end">Total Due</th>
           <th class="text-end">Paid</th>
           <th>Status</th>
         </tr>
       </thead>
 
       <tbody>
+
         {% for i in installments %}
+
         <tr>
-          <td>{{ i.number }}</td>
-          <td>{{ i.due_date|date:"M d, Y" }}</td>
+
+          <td>
+            {{ i.number }}
+          </td>
+
+          <td>
+            {{ i.due_date|date:"M d, Y" }}
+          </td>
+
           <td class="text-end">
             ₱ {{ i.principal_due|floatformat:"2g" }}
           </td>
+
           <td class="text-end">
             ₱ {{ i.interest_due|floatformat:"2g" }}
           </td>
+
+          <td class="text-end">
+            ₱ {{ i.penalty_amount|floatformat:"2g" }}
+          </td>
+
+          <td class="text-end">
+            ₱ {{ i.total_due|floatformat:"2g" }}
+          </td>
+
           <td class="text-end">
             ₱ {{ i.amount_paid|floatformat:"2g" }}
           </td>
-          <td>{{ i.get_status_display }}</td>
+
+          <td>
+
+            {% if i.status == "paid" %}
+
+              <span class="badge bg-success">
+                Paid
+              </span>
+
+            {% elif i.status == "overdue" %}
+
+              <span class="badge bg-danger">
+                Overdue
+              </span>
+
+            {% else %}
+
+              <span class="badge bg-warning text-dark">
+                Due
+              </span>
+
+            {% endif %}
+
+          </td>
+
         </tr>
 
         {% empty %}
+
         <tr>
-          <td colspan="6" class="text-muted">
+          <td colspan="8" class="text-center text-muted py-4">
             Schedule is created when the loan is disbursed.
           </td>
         </tr>
+
         {% endfor %}
+
       </tbody>
+
     </table>
+
   </div>
 </div>
+
+
+<!-- ===================================== -->
+<!-- BACK TO ALL LOANS -->
+<!-- ===================================== -->
 
 <a
   href="{% url 'staff_loans' %}"
