@@ -14,6 +14,7 @@ from savings.models import SavingsAccount
 def home(request):
     if request.user.role.name == "client":
         return redirect("portal_home")
+
     return redirect("staff_home")
 
 
@@ -42,6 +43,12 @@ def portal_home(request):
 
 @role_required("admin", "loan_officer", "staff")
 def staff_home(request):
+    accounts = (
+        SavingsAccount.objects
+        .select_related("client__user")
+        .order_by("account_number")
+    )
+
     context = {
         "pending_count": Loan.objects.filter(
             status=Loan.Status.PENDING
@@ -49,6 +56,7 @@ def staff_home(request):
         "active_count": Loan.objects.filter(
             status=Loan.Status.ACTIVE
         ).count(),
+        "savings_accounts": accounts,
     }
 
     return render(request, "staff/home.html", context)

@@ -1,20 +1,30 @@
 
 {% extends "base.html" %}
-{% block title %}Staff Dashboard - Bayan Bank{% endblock %}
+
+{% block title %}
+Staff Dashboard - Bayan Bank
+{% endblock %}
 
 {% block content %}
+
 <h3 class="mb-4">
-  Welcome, {{ request.user.get_full_name|default:request.user.username }}
+  Welcome,
+  {{ request.user.get_full_name|default:request.user.username }}
 </h3>
 
-<h5 class="mb-3">Loan Overview</h5>
+<h4 class="mb-3">Loan Overview</h4>
 
 <div class="row g-3 mb-4">
+
   <div class="col-md-6">
     <div class="card shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Pending Loan Applications</div>
-        <div class="fs-3 fw-bold">{{ pending_count }}</div>
+        <div class="text-muted mb-2">
+          Pending Loan Applications
+        </div>
+        <div class="fs-3 fw-bold">
+          {{ pending_count }}
+        </div>
       </div>
     </div>
   </div>
@@ -22,20 +32,120 @@
   <div class="col-md-6">
     <div class="card shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Active Loans</div>
-        <div class="fs-3 fw-bold">{{ active_count }}</div>
+        <div class="text-muted mb-2">
+          Active Loans
+        </div>
+        <div class="fs-3 fw-bold">
+          {{ active_count }}
+        </div>
       </div>
     </div>
   </div>
+
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm mb-4">
   <div class="card-body">
-    <h5 class="card-title">Dashboard Overview</h5>
+    <h4 class="card-title">
+      Dashboard Overview
+    </h4>
     <p class="text-muted mb-0">
-      This dashboard displays loan statistics from the Bayan Bank database.
-      Available functions depend on your assigned user role.
+      This dashboard displays loan statistics
+      from the Bayan Bank database.
+      Available functions depend on your
+      assigned user role.
     </p>
   </div>
 </div>
+
+<div class="card shadow-sm mb-4">
+
+  <div class="card-header">
+    <h5 class="mb-0">
+      Transaction Reports
+    </h5>
+  </div>
+
+  <div class="card-body">
+
+    <p class="text-muted">
+      View savings accounts and download
+      transaction statements in PDF or Excel.
+    </p>
+
+    {% if savings_accounts %}
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+
+        <thead>
+          <tr>
+            <th>Account Number</th>
+            <th>Account Holder</th>
+            <th>Balance</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for account in savings_accounts %}
+
+          <tr>
+            <td>
+              {{ account.account_number }}
+            </td>
+
+            <td>
+              {{ account.client }}
+            </td>
+
+            <td>
+              ₱ {{ account.balance|floatformat:"2g" }}
+            </td>
+
+            <td>
+              <div class="d-flex flex-wrap gap-2">
+
+                <a
+                  href="{% url 'staff_account' account.pk %}"
+                  class="btn btn-outline-dark btn-sm"
+                >
+                  View
+                </a>
+
+                <a
+                  href="{% url 'export_transactions_pdf' account.pk %}"
+                  class="btn btn-outline-danger btn-sm"
+                >
+                  PDF
+                </a>
+
+                <a
+                  href="{% url 'export_transactions_excel' account.pk %}"
+                  class="btn btn-outline-success btn-sm"
+                >
+                  Excel
+                </a>
+
+              </div>
+            </td>
+          </tr>
+
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-info mb-0">
+      No savings accounts available.
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
 {% endblock %}
