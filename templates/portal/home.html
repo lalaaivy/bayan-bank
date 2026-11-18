@@ -1,48 +1,122 @@
+
 {% extends "base.html" %}
+{% load humanize %}
+
 {% block title %}My Dashboard - Bayan Bank{% endblock %}
 
 {% block content %}
-<h3 class="mb-4">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h3>
 
+<h3 class="mb-4">
+  Welcome, {{ request.user.get_full_name|default:request.user.username }}
+</h3>
+
+<!-- Dashboard Summary -->
 <div class="row g-3 mb-4">
+
+  <!-- Savings Balance -->
   <div class="col-md-4">
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Savings Balance</div>
-        <div class="fs-3 fw-bold">₱ 12,500.00</div>
+        <div class="fs-3 fw-bold">
+          ₱ {{ balance|floatformat:2|intcomma }}
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Total Loans -->
   <div class="col-md-4">
     <div class="card shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Active Loan Balance</div>
-        <div class="fs-3 fw-bold">₱ 45,000.00</div>
+        <div class="text-muted small">My Loans</div>
+        <div class="fs-3 fw-bold">
+          {{ loans|length }}
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Savings Accounts -->
   <div class="col-md-4">
     <div class="card shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Next Payment Due</div>
-        <div class="fs-3 fw-bold">₱ 4,250.00</div>
-        <div class="text-muted small">Due Dec 5, 2026</div>
+        <div class="text-muted small">Savings Accounts</div>
+        <div class="fs-3 fw-bold">
+          {{ accounts|length }}
+        </div>
       </div>
     </div>
   </div>
+
 </div>
 
-<div class="d-flex gap-2 mb-4">
-  <a href="#" class="btn btn-dark">Apply for a Loan</a>
-  <a href="#" class="btn btn-outline-dark">My Loans</a>
-  <a href="#" class="btn btn-outline-dark">Savings History</a>
+<!-- Savings Accounts -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    My Savings Accounts
+  </div>
+
+  <div class="card-body">
+    {% for account in accounts %}
+      <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+        <div>
+          <strong>{{ account.account_number }}</strong>
+          <div class="text-muted small">
+            {{ account.status }}
+          </div>
+        </div>
+
+        <div class="fw-bold">
+          ₱ {{ account.balance|floatformat:2|intcomma }}
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted mb-0">
+        No savings accounts available.
+      </p>
+    {% endfor %}
+  </div>
 </div>
 
-<div class="card shadow-sm">
-  <div class="card-header">Recent Notifications</div>
-  <ul class="list-group list-group-flush">
-    <li class="list-group-item">Installment 3 is due on Dec 5, 2026.</li>
-    <li class="list-group-item">Your loan application was approved.</li>
-  </ul>
+<!-- Loan Records -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    My Loan Applications
+  </div>
+
+  <div class="card-body">
+    {% for loan in loans %}
+      <div class="border-bottom py-3">
+
+        <div class="d-flex justify-content-between">
+          <strong>{{ loan.product.name }}</strong>
+          <span class="badge bg-secondary">
+            {{ loan.get_status_display }}
+          </span>
+        </div>
+
+        <div class="text-muted small mt-2">
+          Loan Amount:
+          ₱ {{ loan.principal|floatformat:2|intcomma }}
+        </div>
+
+        <div class="text-muted small">
+          Term: {{ loan.term_months }} months
+        </div>
+
+        <div class="text-muted small">
+          Applied:
+          {{ loan.applied_at|date:"M d, Y" }}
+        </div>
+
+      </div>
+    {% empty %}
+      <p class="text-muted mb-0">
+        You have no loan applications yet.
+      </p>
+    {% endfor %}
+  </div>
 </div>
+
 {% endblock %}
