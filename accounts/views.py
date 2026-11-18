@@ -1,11 +1,14 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import redirect, render
 
-from .decorators import client_required, role_required
 from loans.models import Loan
 from savings.models import SavingsAccount
+
+from .decorators import client_required, role_required
 
 
 @login_required
@@ -19,19 +22,18 @@ def home(request):
     }
     return redirect(destinations.get(role, "login"))
 
+
 @client_required
 def portal_home(request):
-    accounts = SavingsAccount.objects.filter(
-        client=request.client
+    accounts = SavingsAccount.objects.filter(client=request.client)
+
+    balance = accounts.aggregate(total=Sum("balance"))["total"] or Decimal("0.00")
+
+    loans = (
+        Loan.objects.filter(client=request.client)
+        .select_related("product")
+        .order_by("-applied_at")
     )
-
-    balance = accounts.aggregate(
-        total=Sum("balance")
-    )["total"] or Decimal("0.00")
-
-    loans = Loan.objects.filter(
-        client=request.client
-    ).select_related("product").order_by("-applied_at")
 
     context = {
         "balance": balance,
@@ -42,13 +44,19 @@ def portal_home(request):
     return render(request, "portal/home.html", context)
 
 
-@role_required("staff", "admin")
+@role_required("staff", "admin", "loan_officer")
 def staff_home(request):
-    return render(request, "staff/home.html")
+    context = {
+        "pending_count": Loan.objects.filter(status=Loan.Status.PENDING).count(),
+        "active_count": Loan.objects.filter(status=Loan.Status.ACTIVE).count(),
+    }
+    return render(request, "staff/home.html", context)
+
 
 @role_required("loan_officer", "admin")
 def officer_home(request):
     return render(request, "officer/home.html")
+
 
 @role_required("admin")
 def admin_home(request):
@@ -66,44 +74,55 @@ def _demo_form(request, template, destination):
 def my_loans(request):
     return render(request, "portal/loans.html")
 
+
 @role_required("client")
 def loan_detail(request):
     return render(request, "portal/loan_detail.html")
+
 
 @role_required("client")
 def upload_id(request):
     return _demo_form(request, "portal/upload_id.html", "client_profile")
 
+
 @role_required("client")
 def accept_agreement(request):
     return _demo_form(request, "portal/accept_agreement.html", "loan_detail")
+
 
 @role_required("client")
 def savings_history(request):
     return render(request, "portal/savings.html")
 
+
 @role_required("client")
 def notifications(request):
     return render(request, "portal/notifications.html")
+
 
 @role_required("client")
 def apply_loan(request):
     return _demo_form(request, "portal/apply_loan.html", "apply_loan")
 
+
 @role_required("client")
 def client_profile(request):
     return render(request, "portal/profile.html")
+
 
 @role_required("client")
 def edit_client_profile(request):
     return _demo_form(request, "portal/profile_edit.html", "client_profile")
 
+
 @role_required("client")
 def change_password(request):
     return _demo_form(request, "portal/change_password.html", "client_profile")
 
+
 def register(request):
     return _demo_form(request, "registration/register.html", "register")
+
 
 def complete_profile(request):
     return _demo_form(request, "registration/complete_profile.html", "complete_profile")
@@ -113,25 +132,31 @@ def complete_profile(request):
 def staff_clients(request):
     return render(request, "staff/clients.html")
 
+
 @role_required("staff", "admin")
 def staff_add_client(request):
     return _demo_form(request, "staff/add_client.html", "staff_clients")
+
 
 @role_required("staff", "admin")
 def staff_client_detail(request):
     return render(request, "staff/client_detail.html")
 
+
 @role_required("staff", "admin")
 def staff_payments(request):
     return _demo_form(request, "staff/payments.html", "staff_receipt")
+
 
 @role_required("staff", "admin")
 def staff_payment_history(request):
     return render(request, "staff/payment_history.html")
 
+
 @role_required("staff", "admin")
 def staff_savings(request):
     return _demo_form(request, "staff/savings.html", "staff_savings")
+
 
 @role_required("staff", "admin")
 def verify_clients(request):
@@ -142,17 +167,21 @@ def verify_clients(request):
     ]
     return render(request, "staff/verify_clients.html", {"clients": clients})
 
+
 @role_required("staff", "admin")
 def verify_client_detail(request):
     return _demo_form(request, "staff/verify_client_detail.html", "verify_clients")
+
 
 @role_required("staff", "admin")
 def release_loans(request):
     return render(request, "staff/release_loan.html")
 
+
 @role_required("staff", "admin")
 def confirm_loan_release(request):
     return _demo_form(request, "staff/release_confirmation.html", "release_loans")
+
 
 @role_required("staff", "admin")
 def staff_receipt(request):
@@ -169,16 +198,23 @@ def loan_applications(request):
     ]
     status_filter = request.GET.get("status", "").title()
     if status_filter in {"Pending", "Approved", "Rejected"}:
-        applications = [application for application in applications if application["status"] == status_filter]
-    return render(request, "officer/applications.html", {"applications": applications, "status_filter": status_filter})
+        applications = [a for a in applications if a["status"] == status_filter]
+    return render(
+        request,
+        "officer/applications.html",
+        {"applications": applications, "status_filter": status_filter},
+    )
+
 
 @role_required("loan_officer", "admin")
 def officer_loans(request):
     return render(request, "officer/loans.html")
 
+
 @role_required("loan_officer", "admin")
 def loan_application_detail(request):
     return _demo_form(request, "officer/application_detail.html", "loan_applications")
+
 
 @role_required("loan_officer", "admin")
 def officer_loan_detail(request):
@@ -192,13 +228,16 @@ def admin_users(request):
         return redirect("admin_users")
     return render(request, "adminpanel/users.html")
 
+
 @role_required("admin")
 def admin_clients(request):
     return render(request, "adminpanel/clients.html")
 
+
 @role_required("admin")
 def admin_create_user(request):
     return _demo_form(request, "adminpanel/user_form.html", "admin_users")
+
 
 @role_required("admin")
 def admin_edit_user(request):
@@ -207,13 +246,16 @@ def admin_edit_user(request):
         return redirect("admin_users")
     return render(request, "adminpanel/user_form.html", {"editing": True})
 
+
 @role_required("admin")
 def admin_loan_products(request):
     return render(request, "adminpanel/loan_products.html")
 
+
 @role_required("admin")
 def admin_product_form(request):
     return _demo_form(request, "adminpanel/product_form.html", "admin_loan_products")
+
 
 @role_required("admin")
 def admin_reports(request):
@@ -222,12 +264,14 @@ def admin_reports(request):
         return redirect("admin_reports")
     return render(request, "adminpanel/reports.html")
 
+
 @role_required("admin")
 def admin_audit_log(request):
     if request.GET.get("export"):
         messages.info(request, "Export coming soon")
         return redirect("admin_audit_log")
     return render(request, "adminpanel/audit_log.html")
+
 
 def permission_denied(request, exception=None):
     return render(request, "403.html", status=403)
