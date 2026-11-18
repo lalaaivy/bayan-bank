@@ -26,7 +26,8 @@ urlpatterns = [
     path("staff/clients/detail/", views.staff_client_detail, name="staff_client_detail"),
     path("staff/clients/add/", views.staff_add_client, name="staff_add_client"),
     path("staff/clients/verify/", views.verify_clients, name="verify_clients"),
-    path("staff/clients/verify/detail/", views.verify_client_detail, name="verify_client_detail"),
+    path("staff/clients/verify/<int:client_id>/", views.verify_client_detail, name="verify_client_detail"),
+    path("staff/clients/document/<int:doc_id>/<str:side>/", views.client_document_file, name="client_document_file"),
     path("staff/payments/", views.staff_payments, name="staff_payments"),
     path("staff/payments/history/", views.staff_payment_history, name="staff_payment_history"),
     path("staff/payments/receipt/", views.staff_receipt, name="staff_receipt"),
@@ -46,5 +47,3 @@ urlpatterns = [
     path("admin-panel/reports/", views.admin_reports, name="admin_reports"),
     path("admin-panel/audit-log/", views.admin_audit_log, name="admin_audit_log"),
 ]
-
-

@@ -1,15 +1,20 @@
+from datetime import date
+
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from accounting.money import BankError
 from accounts.decorators import client_required, role_required
+from clients.models import Client
 from savings.models import SavingsAccount
 
 from . import services
-from .models import Loan, LoanProduct
+from .models import Installment, Loan, LoanProduct
 
 STAFF = ("admin", "staff", "loan_officer")
 
@@ -43,12 +48,31 @@ def portal_loans(request):
 @client_required
 @require_POST
 def portal_apply(request):
-    product = get_object_or_404(LoanProduct, pk=_int(request.POST.get("product")), is_active=True)
+    if request.client.verification_status != Client.VerificationStatus.ACTIVE:
+        messages.error(
+            request,
+            "Your account must be verified (Active) before you can apply for a loan.",
+        )
+        return redirect("portal_loans")
+
+    if Installment.objects.filter(
+        loan__client=request.client, status=Installment.Status.OVERDUE
+    ).exists():
+        messages.error(
+            request,
+            "You have an overdue loan. Please settle it before applying again.",
+        )
+        return redirect("portal_loans")
+
+    product = get_object_or_404(
+        LoanProduct, pk=_int(request.POST.get("product")), is_active=True
+    )
     try:
         term = int(request.POST.get("term_months", ""))
     except ValueError:
         messages.error(request, "Enter the term in whole months.")
         return redirect("portal_loans")
+
     _run(request, "Application submitted.", services.apply_for_loan,
          request.client, product, request.POST.get("principal"), term, request.user)
     return redirect("portal_loans")
@@ -105,3 +129,54 @@ def staff_loan_pay(request, loan_id):
     _run(request, "Payment recorded.", services.record_payment,
          loan_id, request.POST.get("amount"), request.user)
     return redirect("staff_loan", loan_id=loan_id)
+
+
+# ---------- calendar ----------
+
+@login_required
+def calendar_page(request):
+    if request.user.role.name not in STAFF + ("client",):
+        raise PermissionDenied
+    return render(request, "loans/calendar.html")
+
+
+@login_required
+def calendar_events(request):
+    role = request.user.role.name
+    qs = Installment.objects.select_related("loan__client__user", "loan__product")
+    if role == "client":
+        try:
+            qs = qs.filter(loan__client=request.user.client_profile)
+        except ObjectDoesNotExist:
+            raise PermissionDenied
+    elif role not in STAFF:
+        raise PermissionDenied
+
+    start = parse_date((request.GET.get("start") or "")[:10])
+    end = parse_date((request.GET.get("end") or "")[:10])
+    if start and end:
+        qs = qs.filter(due_date__gte=start, due_date__lt=end)
+
+    today = date.today()
+    events = []
+    for i in qs[:1000]:
+        amount = i.principal_due + i.interest_due
+        if i.status == "paid":
+            color = "#198754"
+        elif i.status == "overdue" or i.due_date < today:
+            color = "#dc3545"
+        else:
+            color = "#0d6efd"
+        title = f"₱ {amount:,.2f}"
+        if role != "client":
+            title = f"{i.loan.client} · {title}"
+        event = {
+            "title": title,
+            "start": i.due_date.isoformat(),
+            "color": color,
+            "allDay": True,
+        }
+        if role != "client":
+            event["url"] = f"/staff/loans/{i.loan_id}/"
+        events.append(event)
+    return JsonResponse(events, safe=False)
