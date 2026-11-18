@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}User Form - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">{% if editing %}Edit User{% else %}Create User{% endif %}</h3>
+<a href="{% url 'admin_users' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Users</a>
+<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="row g-3"><div class="col-md-6"><label class="form-label">Username</label><input class="form-control" value="msantos"></div><div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" value="Maria Santos"></div><div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" value="maria.santos@example.ph"></div><div class="col-md-6"><label class="form-label">Role</label><select class="form-select"><option selected>client</option><option>staff</option><option>loan_officer</option><option>admin</option></select></div><div class="col-md-6"><label class="form-label">Password</label><input type="password" class="form-control" placeholder="Set password"></div></div>
+<button class="btn btn-dark mt-3">Save User</button>
+</form></div></div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base_client.html" %}
+{% block title %}Loan Agreement - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Review Loan Agreement</h3>
+<a href="{% url 'loan_detail' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Loan Details</a>
+<div class="card shadow-sm mb-3"><div class="card-header">Business Loan Terms</div><div class="card-body">
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Principal</dt><dd class="col-sm-8">&#8369; 150,000.00</dd>
+    <dt class="col-sm-4">Annual Rate</dt><dd class="col-sm-8">16%</dd>
+    <dt class="col-sm-4">Term</dt><dd class="col-sm-8">18 months</dd>
+    <dt class="col-sm-4">Monthly Installment</dt><dd class="col-sm-8">&#8369; 9,445.22</dd>
+    <dt class="col-sm-4">Total Repayment</dt><dd class="col-sm-8">&#8369; 170,013.96</dd>
+  </dl>
+</div></div>
+<button type="button" class="btn btn-outline-secondary mb-3" disabled>Download Agreement PDF</button>
+<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
+  <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="agree" id="agree" required><label class="form-check-label" for="agree">I have reviewed and agree to the loan terms above.</label></div>
+  <button class="btn btn-dark">Accept Agreement</button>
+</form></div></div>
+{% endblock %}

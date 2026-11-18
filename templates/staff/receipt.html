@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Payment Receipt - Bayan Bank{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Payment Receipt</h3>
+  <div class="no-print"><a href="{% url 'staff_payment_history' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Payment History</a> <button type="button" class="btn btn-sm btn-dark" onclick="window.print()">Print</button></div>
+</div>
+<div class="card shadow-sm"><div class="card-body p-4">
+  <div class="text-center mb-4"><h4>Bayan Bank</h4><div class="text-muted">Payment Receipt</div></div>
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Receipt No.</dt><dd class="col-sm-8">RCT-2026-008421</dd>
+    <dt class="col-sm-4">Client</dt><dd class="col-sm-8">Maria Santos</dd>
+    <dt class="col-sm-4">Loan</dt><dd class="col-sm-8">BB-PER-1042 - Personal Loan</dd>
+    <dt class="col-sm-4">Installment No.</dt><dd class="col-sm-8">3 of 12</dd>
+    <dt class="col-sm-4">Amount</dt><dd class="col-sm-8">&#8369; 4,250.00</dd>
+    <dt class="col-sm-4">Date</dt><dd class="col-sm-8">November 18, 2026</dd>
+    <dt class="col-sm-4">Received By</dt><dd class="col-sm-8">Ramon Cruz</dd>
+  </dl>
+  <hr><p class="mb-0 text-muted">Thank you for your payment.</p>
+</div></div>
+{% endblock %}
