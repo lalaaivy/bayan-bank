@@ -1,9 +1,11 @@
+
 from django.conf import settings
 from django.db import models
+from django.db.models import Q, F
 
 
 class LedgerEntry(models.Model):
-    """Append-only. Corrections are new reversing entries, never edits."""
+    """Append-only. Corrections use new reversing entries."""
 
     class EntryType(models.TextChoices):
         DEPOSIT = "deposit"
@@ -13,31 +15,147 @@ class LedgerEntry(models.Model):
         LOAN_DISBURSEMENT = "loan_disbursement"
         LOAN_PAYMENT = "loan_payment"
 
-    entry_type = models.CharField(max_length=20, choices=EntryType.choices)
-    amount = models.DecimalField(max_digits=14, decimal_places=2)  # always positive
-    balance_after = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    entry_type = models.CharField(
+        max_length=20, choices=EntryType.choices
+    )
+    amount = models.DecimalField(
+        max_digits=14, decimal_places=2
+    )
+    balance_after = models.DecimalField(
+        max_digits=14, decimal_places=2,
+        null=True, blank=True
+    )
     savings_account = models.ForeignKey(
-        "savings.SavingsAccount", null=True, blank=True,
-        on_delete=models.PROTECT, related_name="ledger_entries",
+        "savings.SavingsAccount",
+        null=True, blank=True,
+        on_delete=models.PROTECT,
+        related_name="ledger_entries",
     )
     loan = models.ForeignKey(
-        "loans.Loan", null=True, blank=True,
-        on_delete=models.PROTECT, related_name="ledger_entries",
+        "loans.Loan",
+        null=True, blank=True,
+        on_delete=models.PROTECT,
+        related_name="ledger_entries",
     )
     reference = models.CharField(max_length=100, blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at", "-id"]
         constraints = [
-            models.CheckConstraint(condition=models.Q(amount__gt=0), name="ledger_amount_positive"),
+            models.CheckConstraint(
+                condition=Q(amount__gt=0),
+                name="ledger_amount_positive",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(balance_after__isnull=True)
+                    | Q(balance_after__gte=0)
+                ),
+                name="ledger_balance_after_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=Q(
+                    entry_type__in=[
+                        "deposit",
+                        "withdrawal",
+                        "transfer_in",
+                        "transfer_out",
+                        "loan_disbursement",
+                        "loan_payment",
+                    ]
+                ),
+                name="ledger_valid_entry_type",
+            ),
         ]
 
     def save(self, *args, **kwargs):
         if self.pk is not None:
-            raise PermissionError("Ledger entries cannot be edited.")
+            raise PermissionError(
+                "Ledger entries cannot be edited."
+            )
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise PermissionError("Ledger entries cannot be deleted.")
+        raise PermissionError(
+            "Ledger entries cannot be deleted."
+        )
+
+
+class ReportExport(models.Model):
+
+    class ReportType(models.TextChoices):
+        TRANSACTION = "transaction", "Transaction Statement"
+        LOAN = "loan", "Loan Statement"
+
+    class Format(models.TextChoices):
+        PDF = "pdf", "PDF"
+        XLSX = "xlsx", "Excel"
+
+    report_type = models.CharField(
+        max_length=20,
+        choices=ReportType.choices,
+        default=ReportType.TRANSACTION,
+    )
+    file_format = models.CharField(
+        max_length=10,
+        choices=Format.choices,
+        default=Format.PDF,
+    )
+    savings_account = models.ForeignKey(
+        "savings.SavingsAccount",
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name="report_exports",
+    )
+    loan = models.ForeignKey(
+        "loans.Loan",
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name="report_exports",
+    )
+    date_from = models.DateField()
+    date_to = models.DateField()
+    generated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="generated_reports",
+    )
+    generated_at = models.DateTimeField(auto_now_add=True)
+    filename = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["-generated_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(date_to__gte=F("date_from")),
+                name="report_valid_date_range",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        report_type="transaction",
+                        savings_account__isnull=False,
+                        loan__isnull=True,
+                    )
+                    | Q(
+                        report_type="loan",
+                        loan__isnull=False,
+                        savings_account__isnull=True,
+                    )
+                ),
+                name="report_valid_subject",
+            ),
+            models.CheckConstraint(
+                condition=Q(file_format__in=["pdf", "xlsx"]),
+                name="report_valid_file_format",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.filename} ({self.file_format})"

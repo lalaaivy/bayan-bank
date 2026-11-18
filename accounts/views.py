@@ -1,7 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from .decorators import role_required
+from django.db.models import Sum
+from django.shortcuts import redirect, render
+
+from .decorators import client_required, role_required
+from loans.models import Loan
+from savings.models import SavingsAccount
+
 
 @login_required
 def home(request):
@@ -14,9 +19,28 @@ def home(request):
     }
     return redirect(destinations.get(role, "login"))
 
-@role_required("client")
+@client_required
 def portal_home(request):
-    return render(request, "portal/home.html")
+    accounts = SavingsAccount.objects.filter(
+        client=request.client
+    )
+
+    balance = accounts.aggregate(
+        total=Sum("balance")
+    )["total"] or Decimal("0.00")
+
+    loans = Loan.objects.filter(
+        client=request.client
+    ).select_related("product").order_by("-applied_at")
+
+    context = {
+        "balance": balance,
+        "accounts": accounts,
+        "loans": loans,
+    }
+
+    return render(request, "portal/home.html", context)
+
 
 @role_required("staff", "admin")
 def staff_home(request):
