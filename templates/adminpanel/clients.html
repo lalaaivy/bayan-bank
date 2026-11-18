@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Client Management - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Client Management</h3>
+<a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Admin Dashboard</a>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
+  <thead><tr><th>Client</th><th>Contact</th><th>Active Loans</th><th>Savings</th><th>Verification</th><th>Account Status</th><th></th></tr></thead>
+  <tbody>
+    <tr><td>Maria Santos</td><td>0917 555 0142</td><td>1</td><td>&#8369; 18,250.00</td><td><span class="badge text-bg-success">Verified</span></td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+    <tr><td>Liza Navarro</td><td>0932 778 4510</td><td>0</td><td>&#8369; 2,500.00</td><td><span class="badge text-bg-warning">Pending Verification</span></td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'verify_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+    <tr><td>Juan Dela Cruz</td><td>0918 234 6610</td><td>2</td><td>&#8369; 42,800.00</td><td><span class="badge text-bg-success">Verified</span></td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+  </tbody>
+</table></div></div>
+{% endblock %}

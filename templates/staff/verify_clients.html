@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Client Verification - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Client Verification Queue</h3>
+<a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
+  <thead><tr><th>Client</th><th>ID Type</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for client in clients %}
+    <tr><td>{{ client.name }}</td><td>{{ client.id_type }}</td><td>{{ client.submitted }}</td><td><span class="badge text-bg-warning">Pending Verification</span></td><td><a href="{% url 'verify_client_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
+  {% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

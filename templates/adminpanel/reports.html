@@ -1,16 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Reports - Bayan Bank{% endblock %}
 {% block content %}
-<h3 class="mb-4">Management Reports</h3>
-<a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
-<div class="row g-3 mb-4">
-<div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Loans Released</div><div class="fs-4 fw-bold">&#8369; 2,850,000.00</div></div></div></div>
-<div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Collections</div><div class="fs-4 fw-bold">&#8369; 1,420,500.00</div></div></div></div>
-<div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Overdue Amount</div><div class="fs-4 fw-bold text-danger">&#8369; 185,750.00</div></div></div></div>
+<h3 class="mb-3">Management Reports</h3>
+<a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Admin Dashboard</a>
+<div class="row g-2 align-items-end mb-4">
+  <div class="col-sm-4 col-md-3"><label class="form-label" for="date_from">From</label><input id="date_from" type="date" class="form-control" value="2026-11-01"></div>
+  <div class="col-sm-4 col-md-3"><label class="form-label" for="date_to">To</label><input id="date_to" type="date" class="form-control" value="2026-11-18"></div>
+  <div class="col-sm-4 col-md-3"><button type="button" class="btn btn-outline-dark">Apply Date Range</button></div>
 </div>
-<div class="card shadow-sm"><div class="card-header">November 2026 Summary</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Category</th><th>Current Month</th><th>Previous Month</th><th>Change</th></tr></thead><tbody>
-<tr><td>Loans released</td><td>&#8369; 2,850,000.00</td><td>&#8369; 2,610,000.00</td><td class="text-success">+9.2%</td></tr>
-<tr><td>Loan collections</td><td>&#8369; 1,420,500.00</td><td>&#8369; 1,355,200.00</td><td class="text-success">+4.8%</td></tr>
-<tr><td>Overdue loans</td><td>&#8369; 185,750.00</td><td>&#8369; 204,300.00</td><td class="text-success">-9.1%</td></tr>
-</tbody></table></div></div>
+<div class="row g-3">
+  <div class="col-12"><div class="card shadow-sm"><div class="card-header">Financial Summary</div><div class="card-body">
+    <p>Income: <strong>&#8369; 1,420,500.00</strong> &nbsp; Expense: <strong>&#8369; 385,250.00</strong> &nbsp; Profit: <strong>&#8369; 1,035,250.00</strong></p>
+    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
+  </div></div></div>
+  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Active Loans</div><div class="card-body">
+    <p>386 active loans<br>Outstanding principal: <strong>&#8369; 8,450,000.00</strong></p>
+    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
+  </div></div></div>
+  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Delinquent Loans</div><div class="card-body">
+    <p>27 delinquent loans<br>Past due: <strong class="text-danger">&#8369; 185,750.00</strong></p>
+    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
+  </div></div></div>
+  <div class="col-12"><div class="card shadow-sm"><div class="card-header">Repayments</div><div class="card-body">
+    <p>Repayments in selected range: <strong>&#8369; 1,420,500.00</strong></p>
+    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
+  </div></div></div>
+</div>
 {% endblock %}

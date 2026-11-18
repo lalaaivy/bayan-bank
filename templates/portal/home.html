@@ -3,6 +3,7 @@
 
 {% block content %}
 <h3 class="mb-4">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h3>
+<div class="mb-3">Verification status: <span class="badge text-bg-warning">Pending Verification</span></div>
 <p><a class="btn btn-sm btn-outline-secondary" href="{% url 'client_profile' %}">My Profile</a> <a class="btn btn-sm btn-outline-secondary" href="{% url 'change_password' %}">Change Password</a></p>
 
 <div class="row g-3 mb-4">
@@ -37,6 +38,8 @@
   <a href="{% url 'apply_loan' %}" class="btn btn-dark">Apply for a Loan</a>
   <a href="{% url 'my_loans' %}" class="btn btn-outline-dark">My Loans</a>
   <a href="{% url 'savings_history' %}" class="btn btn-outline-dark">Savings History</a>
+  <a href="{% url 'upload_id' %}" class="btn btn-outline-dark">Upload ID</a>
+  <a href="{% url 'accept_agreement' %}" class="btn btn-outline-dark">Review Agreement</a>
 </div>
 
 <div class="card shadow-sm">

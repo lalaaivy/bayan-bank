@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Access Denied - Bayan Bank{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+  <div class="display-1 fw-bold text-secondary">403</div>
+  <h2 class="mb-3">You don't have permission to open this page</h2>
+  <p class="text-muted">Please return to your dashboard.</p>
+  {% if request.user.is_authenticated %}
+    {% if request.user.role.name == "client" %}
+      <a href="{% url 'portal_home' %}" class="btn btn-dark">Back to Client Dashboard</a>
+    {% elif request.user.role.name == "staff" %}
+      <a href="{% url 'staff_home' %}" class="btn btn-dark">Back to Staff Dashboard</a>
+    {% elif request.user.role.name == "loan_officer" %}
+      <a href="{% url 'officer_home' %}" class="btn btn-dark">Back to Loan Officer Dashboard</a>
+    {% else %}
+      <a href="{% url 'admin_home' %}" class="btn btn-dark">Back to Admin Dashboard</a>
+    {% endif %}
+  {% else %}
+    <a href="{% url 'login' %}" class="btn btn-dark">Back to Login</a>
+  {% endif %}
+</div>
+{% endblock %}
