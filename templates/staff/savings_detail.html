@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Account {{ account.account_number }} - Bayan Bank{% endblock %}
+
+{% block content %}
+<h3 class="mb-1">Account {{ account.account_number }}</h3>
+<p class="text-muted">{{ account.client }} &middot; {{ account.get_status_display }}</p>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <div class="text-muted small">Balance</div>
+    <div class="fs-3 fw-bold">₱ {{ account.balance|floatformat:"2g" }}</div>
+  </div>
+</div>
+
+{% if can_cash %}
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm"><div class="card-header">Deposit</div><div class="card-body">
+      <form method="post" action="{% url 'staff_deposit' account.pk %}" class="d-flex gap-2">
+        {% csrf_token %}
+        <input name="amount" class="form-control" placeholder="Amount (₱)" inputmode="decimal" required>
+        <button class="btn btn-dark">Deposit</button>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm"><div class="card-header">Withdraw</div><div class="card-body">
+      <form method="post" action="{% url 'staff_withdraw' account.pk %}" class="d-flex gap-2">
+        {% csrf_token %}
+        <input name="amount" class="form-control" placeholder="Amount (₱)" inputmode="decimal" required>
+        <button class="btn btn-outline-dark">Withdraw</button>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="card-header">Recent activity</div>
+  <table class="table mb-0">
+    <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th class="text-end">Amount</th><th class="text-end">Balance</th></tr></thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td>{{ e.created_at|date:"M d, Y H:i" }}</td>
+        <td>{{ e.get_entry_type_display }}</td>
+        <td>{{ e.reference }}</td>
+        <td class="text-end">₱ {{ e.amount|floatformat:"2g" }}</td>
+        <td class="text-end">{% if e.balance_after is not None %}₱ {{ e.balance_after|floatformat:"2g" }}{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-muted">No activity yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
