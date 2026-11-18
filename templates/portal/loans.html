@@ -6,50 +6,27 @@
 
 <div class="card shadow-sm mb-4">
   <div class="card-header">Apply for a loan</div>
-
   <div class="card-body">
-    <form
-      method="post"
-      action="{% url 'portal_apply' %}"
-      class="row g-2"
-    >
+    <form method="post" action="{% url 'portal_apply' %}" class="row g-2">
       {% csrf_token %}
-
       <div class="col-md-4">
         <label class="form-label">Product</label>
         <select name="product" class="form-select" required>
           {% for p in products %}
-          <option value="{{ p.pk }}">
-            {{ p.name }} ({{ p.annual_rate }}%)
-          </option>
+          <option value="{{ p.pk }}">{{ p.name }} ({{ p.annual_rate }}%)</option>
           {% endfor %}
         </select>
       </div>
-
       <div class="col-md-3">
         <label class="form-label">Amount (₱)</label>
-        <input
-          name="principal"
-          class="form-control"
-          inputmode="decimal"
-          required
-        >
+        <input name="principal" class="form-control" inputmode="decimal" required>
       </div>
-
       <div class="col-md-3">
         <label class="form-label">Months</label>
-        <input
-          name="term_months"
-          class="form-control"
-          inputmode="numeric"
-          required
-        >
+        <input name="term_months" class="form-control" inputmode="numeric" required>
       </div>
-
       <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-dark w-100">
-          Apply
-        </button>
+        <button class="btn btn-dark w-100">Apply</button>
       </div>
     </form>
   </div>
@@ -57,7 +34,6 @@
 
 <div class="card shadow-sm">
   <div class="card-header">My applications</div>
-
   <div class="table-responsive">
     <table class="table mb-0 align-middle">
       <thead>
@@ -70,87 +46,24 @@
           <th>Export</th>
         </tr>
       </thead>
-
       <tbody>
         {% for l in loans %}
         <tr>
           <td>{{ l.applied_at|date:"M d, Y" }}</td>
           <td>{{ l.product.name }}</td>
-          <td class="text-end">
-            ₱ {{ l.principal|floatformat:"2g" }}
-          </td>
+          <td class="text-end">₱ {{ l.principal|floatformat:"2g" }}</td>
           <td>{{ l.term_months }}</td>
-          <td>
-            {{ l.get_status_display }}
-            {% if l.reject_reason %}
-              - {{ l.reject_reason }}
-            {% endif %}
-          </td>
+          <td>{{ l.get_status_display }}{% if l.reject_reason %} - {{ l.reject_reason }}{% endif %}</td>
           <td>
             <div class="d-flex flex-wrap gap-2">
-              <a
-                href="{% url 'export_loan_pdf' l.pk %}"
-                class="btn btn-outline-danger btn-sm"
-              >
-                PDF
-              </a>
-              <a
-                href="{% url 'export_loan_excel' l.pk %}"
-                class="btn btn-outline-success btn-sm"
-              >
-                Excel
-              </a>
+              <a href="{% url 'export_loan_pdf' l.pk %}" class="btn btn-outline-danger btn-sm">PDF</a>
+              <a href="{% url 'export_loan_excel' l.pk %}" class="btn btn-outline-success btn-sm">Excel</a>
             </div>
           </td>
         </tr>
-
         {% empty %}
-        <tr>
-          <td colspan="6" class="text-muted">
-            No loans yet.
-          </td>
-        </tr>
+        <tr><td colspan="6" class="text-muted">No loans yet.</td></tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endblock %}
-<h3>All Accounts</h3>
-<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">Back to Dashboard</a>
-
-<div class="d-grid gap-3 mb-4">
-  <a href="{% url 'savings_history' %}" class="card account-card fintech-card--blue text-decoration-none">
-    <div class="card-body d-flex flex-column">
-      <div class="d-flex justify-content-between align-items-center mb-4"><span class="fw-bold">Savings Account</span><i class="bi bi-wallet2 account-icon" aria-hidden="true"></i></div>
-      <div class="amount-large mt-auto">&#8369; 12,500.00</div>
-      <div class="account-subtitle mt-2">Bayan Savings &nbsp; •••• 1234</div>
-    </div>
-  </a>
-  <a href="{% url 'loan_detail' %}" class="card account-card fintech-card--red text-decoration-none">
-    <div class="card-body d-flex flex-column">
-      <div class="d-flex justify-content-between align-items-center mb-4"><span class="fw-bold">Active Loan</span><i class="bi bi-credit-card account-icon" aria-hidden="true"></i></div>
-      <div class="amount-large mt-auto">&#8369; 45,000.00</div>
-      <div class="account-subtitle mt-2">Personal Loan &nbsp; •••• 1042</div>
-    </div>
-  </a>
-  <a href="{% url 'loan_detail' %}" class="card account-card fintech-card--yellow text-decoration-none">
-    <div class="card-body d-flex flex-column">
-      <div class="d-flex justify-content-between align-items-center mb-4"><span class="fw-bold">Next Payment Due</span><i class="bi bi-calendar-check account-icon" aria-hidden="true"></i></div>
-      <div class="amount-large mt-auto">&#8369; 4,700.00</div>
-      <div class="account-subtitle mt-2">Due Dec 5, 2026</div>
-    </div>
-  </a>
-</div>
-<a href="{% url 'apply_loan' %}" class="btn btn-outline-primary rounded-pill px-4"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Apply for a New Loan</a>
-
-<div class="card mt-4">
-  <div class="card-header">Loan Overview</div>
-  <div class="table-responsive">
-    <table class="table align-middle">
-      <thead><tr><th>Loan</th><th>Amount</th><th>Balance</th><th>Next Due</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-        <tr><td>Personal Loan</td><td>&#8369; 50,000.00</td><td>&#8369; 45,000.00</td><td>Dec 5, 2026</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'loan_detail' %}" class="btn btn-sm btn-outline-primary">Details</a></td></tr>
       </tbody>
     </table>
   </div>
