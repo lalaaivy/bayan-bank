@@ -8,4 +8,5 @@ urlpatterns = [
     path("", include("savings.urls")),
     path("", include("loans.urls")),
     path("", include("accounting.urls")),
+    path("chatbot/", include("chatbot.urls")),
 ]

@@ -1,0 +1,623 @@
+
+<div id="kabayan-widget">
+  <button id="kabayan-toggle" type="button"
+          aria-expanded="false" aria-controls="kabayan-panel">
+    💬 Chat with KaBayan
+  </button>
+
+  <section id="kabayan-panel"
+           aria-label="KaBayan customer service chat" hidden>
+
+    <header id="kabayan-header">
+      <div class="kabayan-brand">
+        <span class="kabayan-avatar">💬</span>
+        <div>
+          <strong>KaBayan Assistant</strong>
+          <small>AI Customer Service</small>
+        </div>
+      </div>
+      <button id="kabayan-close" type="button"
+              aria-label="Close chat">&times;</button>
+    </header>
+
+    <div id="kabayan-content">
+      <div id="kabayan-messages" aria-live="polite">
+        <div class="kabayan-message bot">Hello! 👋 I'm KaBayan, your Bayan Bank AI Assistant. How can I help you today?</div>
+      </div>
+
+      <div id="kabayan-options"></div>
+    </div>
+
+    <form id="kabayan-form">
+      {% csrf_token %}
+      <input id="kabayan-input" type="text"
+             maxlength="1000"
+             placeholder="Ask KaBayan..."
+             aria-label="Message KaBayan"
+             autocomplete="off" required>
+      <button id="kabayan-send" type="submit">Send</button>
+    </form>
+
+    <p class="kabayan-disclaimer">
+      Do not share passwords, PINs, OTPs, or sensitive information.
+    </p>
+  </section>
+</div>
+
+<style>
+  #kabayan-widget,
+  #kabayan-widget * {
+    box-sizing: border-box;
+  }
+
+  #kabayan-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  #kabayan-widget button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  #kabayan-toggle {
+    background: #14532d;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 14px 20px;
+    font-weight: 600;
+    box-shadow: 0 5px 18px #0003;
+  }
+
+  #kabayan-toggle:hover {
+    background: #166534;
+  }
+
+  #kabayan-toggle[aria-expanded="true"] {
+    display: none;
+  }
+
+  #kabayan-panel {
+    width: min(380px, calc(100vw - 24px));
+    height: min(540px, calc(100dvh - 40px));
+    background: white;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 10px 35px #0003;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
+  #kabayan-panel:not([hidden]) {
+    display: flex;
+  }
+
+  #kabayan-header {
+    background: #14532d;
+    color: white;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .kabayan-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .kabayan-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+  }
+
+  .kabayan-brand strong {
+    display: block;
+    color: white;
+    font-size: 15px;
+  }
+
+  .kabayan-brand small {
+    display: block;
+    color: #d1fae5;
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  #kabayan-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 26px;
+    padding: 3px 6px;
+  }
+
+  #kabayan-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px;
+    background: #fff;
+    scrollbar-width: thin;
+  }
+
+  #kabayan-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .kabayan-message {
+    width: fit-content;
+    max-width: 90%;
+    padding: 11px 13px;
+    border-radius: 13px;
+    font-size: 13px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    text-align: left;
+    margin: 0;
+  }
+
+  .kabayan-message.bot {
+    background: #f0f2f4;
+    color: #1f2937;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  .kabayan-message.user {
+    background: #dcfce7;
+    color: #14532d;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    white-space: pre-wrap;
+  }
+
+  .kabayan-message p {
+    margin: 0 0 8px;
+  }
+
+  .kabayan-message p:last-child {
+    margin-bottom: 0;
+  }
+
+  .kabayan-message ul,
+  .kabayan-message ol {
+    padding-left: 20px;
+    margin: 6px 0 9px;
+  }
+
+  .kabayan-message li {
+    margin-bottom: 4px;
+  }
+
+  .kabayan-message strong {
+    font-weight: 700;
+  }
+
+  .kabayan-message code {
+    background: #e5e7eb;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  #kabayan-options {
+    padding-top: 15px;
+    padding-bottom: 4px;
+  }
+
+  .kabayan-option-title {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 10px;
+  }
+
+  .kabayan-option-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .kabayan-option {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 9px;
+    padding: 10px 7px;
+    color: #14532d;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+    min-height: 42px;
+  }
+
+  .kabayan-option:hover {
+    background: #dcfce7;
+  }
+
+  .kabayan-option:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  #kabayan-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 12px 8px;
+    margin: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+  }
+
+  #kabayan-input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    padding: 10px 12px;
+    background: white;
+    color: #1f2937;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    outline: none;
+    font-size: 13px;
+  }
+
+  #kabayan-input:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 2px #16a34a22;
+  }
+
+  #kabayan-send {
+    height: 42px;
+    padding: 0 15px;
+    background: #14532d;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  #kabayan-send:hover {
+    background: #166534;
+  }
+
+  #kabayan-send:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  .kabayan-disclaimer {
+    padding: 0 12px 11px;
+    margin: 0;
+    color: #6b7280;
+    font-size: 10px;
+    line-height: 1.4;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    #kabayan-widget {
+      bottom: 12px;
+      right: 12px;
+    }
+
+    #kabayan-panel {
+      width: calc(100vw - 24px);
+      height: min(540px, calc(100dvh - 24px));
+    }
+  }
+</style>
+
+<script>
+(function () {
+  const toggle = document.getElementById("kabayan-toggle");
+  const panel = document.getElementById("kabayan-panel");
+  const close = document.getElementById("kabayan-close");
+  const content = document.getElementById("kabayan-content");
+  const messages = document.getElementById("kabayan-messages");
+  const options = document.getElementById("kabayan-options");
+  const form = document.getElementById("kabayan-form");
+  const input = document.getElementById("kabayan-input");
+  const send = document.getElementById("kabayan-send");
+
+  let busy = false;
+
+  const topics = [
+    {
+      label: "💰 Loans",
+      children: [
+        ["Apply for a Loan", "How can I apply for a loan?"],
+        ["Loan Requirements", "What are the loan application requirements?"],
+        ["Loan Eligibility", "How is loan eligibility checked?"],
+        ["Loan Status", "How can I check my loan application status?"]
+      ]
+    },
+    {
+      label: "🏦 Savings",
+      children: [
+        ["Open Savings", "How can I open a savings account?"],
+        ["Check Balance", "How can I check my savings balance?"],
+        ["Transactions", "How can I view my savings transactions?"],
+        ["Savings Interest", "How does savings interest work?"]
+      ]
+    },
+    {
+      label: "📅 Payments",
+      children: [
+        ["Payment Schedule", "How can I check my loan payment schedule?"],
+        ["Pay a Loan", "How can I make a loan payment?"],
+        ["Overdue Payments", "What happens when a loan payment is overdue?"]
+      ]
+    },
+    {
+      label: "👤 My Account",
+      children: [
+        ["Verification", "How does client verification work?"],
+        ["Account Details", "How can I view my account information?"],
+        ["Account Security", "How can I keep my account secure?"]
+      ]
+    },
+    {
+      label: "📋 Requirements",
+      children: [
+        ["Valid IDs", "What identification documents are required?"],
+        ["Loan Documents", "What documents are needed for a loan?"],
+        ["Client Verification", "What is needed for client verification?"]
+      ]
+    },
+    {
+      label: "💬 Other Questions",
+      question: "What services can KaBayan help me with?"
+    }
+  ];
+
+  function scrollToBottom() {
+    content.scrollTop = content.scrollHeight;
+  }
+
+  function openChat() {
+    panel.hidden = false;
+    toggle.setAttribute("aria-expanded", "true");
+    input.focus();
+  }
+
+  function closeChat() {
+    panel.hidden = true;
+    toggle.setAttribute("aria-expanded", "false");
+  }
+
+  toggle.addEventListener("click", openChat);
+  close.addEventListener("click", closeChat);
+
+  function addMessage(text, sender) {
+    const element = document.createElement("div");
+    element.className = "kabayan-message " + sender;
+    element.textContent = text;
+    messages.appendChild(element);
+    scrollToBottom();
+    return element;
+  }
+
+  // Safely format basic Gemini Markdown.
+  // No raw HTML from the AI is inserted.
+  function formatInline(text) {
+    const fragment = document.createDocumentFragment();
+    const pattern = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+    const parts = text.split(pattern);
+
+    parts.forEach(function (part) {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        const strong = document.createElement("strong");
+        strong.textContent = part.slice(2, -2);
+        fragment.appendChild(strong);
+      } else if (part.startsWith("`") && part.endsWith("`")) {
+        const code = document.createElement("code");
+        code.textContent = part.slice(1, -1);
+        fragment.appendChild(code);
+      } else {
+        fragment.appendChild(document.createTextNode(part));
+      }
+    });
+
+    return fragment;
+  }
+
+  function formatBotMessage(element, text) {
+    element.replaceChildren();
+
+    const lines = text.replace(/\r\n/g, "\n").split("\n");
+    let currentList = null;
+    let currentListType = null;
+
+    lines.forEach(function (originalLine) {
+      const line = originalLine.trim();
+
+      if (!line) {
+        currentList = null;
+        currentListType = null;
+        return;
+      }
+
+      // Remove Markdown heading markers.
+      const cleanLine = line.replace(/^#{1,6}\s+/, "");
+
+      const bullet = cleanLine.match(/^[-*+]\s+(.+)$/);
+      const numbered = cleanLine.match(/^\d+[.)]\s+(.+)$/);
+
+      if (bullet || numbered) {
+        const listType = bullet ? "ul" : "ol";
+        const itemText = bullet ? bullet[1] : numbered[1];
+
+        if (!currentList || currentListType !== listType) {
+          currentList = document.createElement(listType);
+          currentListType = listType;
+          element.appendChild(currentList);
+        }
+
+        const li = document.createElement("li");
+        li.appendChild(formatInline(itemText));
+        currentList.appendChild(li);
+      } else {
+        currentList = null;
+        currentListType = null;
+
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(formatInline(cleanLine));
+        element.appendChild(paragraph);
+      }
+    });
+
+    scrollToBottom();
+  }
+
+  function makeButton(label, action) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "kabayan-option";
+    button.textContent = label;
+    button.disabled = busy;
+    button.addEventListener("click", action);
+    return button;
+  }
+
+  function renderOptions(title, items, showBack) {
+    options.replaceChildren();
+
+    const heading = document.createElement("div");
+    heading.className = "kabayan-option-title";
+    heading.textContent = title;
+    options.appendChild(heading);
+
+    const grid = document.createElement("div");
+    grid.className = "kabayan-option-grid";
+
+    items.forEach(function (item) {
+      grid.appendChild(makeButton(item.label, item.action));
+    });
+
+    if (showBack) {
+      grid.appendChild(makeButton("← Back", showMainOptions));
+    }
+
+    options.appendChild(grid);
+  }
+
+  function showMainOptions() {
+    renderOptions(
+      "Choose a topic:",
+      topics.map(function (topic) {
+        return {
+          label: topic.label,
+          action: function () {
+            if (topic.children) {
+              showSubOptions(topic);
+            } else {
+              askKabayan(topic.question);
+            }
+          }
+        };
+      }),
+      false
+    );
+  }
+
+  function showSubOptions(topic) {
+    renderOptions(
+      topic.label,
+      topic.children.map(function (child) {
+        return {
+          label: child[0],
+          action: function () {
+            askKabayan(child[1]);
+          }
+        };
+      }),
+      true
+    );
+  }
+
+  async function askKabayan(question) {
+    if (busy || !question.trim()) return;
+
+    busy = true;
+    send.disabled = true;
+    input.disabled = true;
+
+    options.querySelectorAll("button").forEach(function (button) {
+      button.disabled = true;
+    });
+
+    addMessage(question, "user");
+    input.value = "";
+
+    const waiting = addMessage("KaBayan is typing...", "bot");
+
+    try {
+      const response = await fetch("{% url 'chatbot:ask' %}", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": form.querySelector(
+            "[name=csrfmiddlewaretoken]"
+          ).value
+        },
+        body: JSON.stringify({
+          message: question
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        formatBotMessage(
+          waiting,
+          data.reply || "No response received."
+        );
+      } else {
+        waiting.textContent =
+          data.error || "Something went wrong.";
+      }
+
+    } catch (error) {
+      waiting.textContent =
+        "Unable to connect to KaBayan. Please try again.";
+
+    } finally {
+      busy = false;
+      send.disabled = false;
+      input.disabled = false;
+      showMainOptions();
+      scrollToBottom();
+    }
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    askKabayan(input.value.trim());
+  });
+
+  showMainOptions();
+})();
+</script>
