@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Confirm Loan Release - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Confirm Loan Release</h3>
+<a href="{% url 'release_loans' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Release Queue</a>
+<div class="card shadow-sm"><div class="card-body">
+  <p>Confirm disbursement of <strong>&#8369; 150,000.00</strong> to <strong>Liza Navarro</strong> for agreement AGR-2026-0318.</p>
+  <p class="text-muted">This is a demo action; no funds will be transferred.</p>
+  <form method="post">{% csrf_token %}<button class="btn btn-success">Confirm Release Loan</button></form>
+</div></div>
+{% endblock %}

@@ -1,48 +1,37 @@
 {% extends "base.html" %}
-{% block title %}My Dashboard - Bayan Bank{% endblock %}
-
+{% block title %}Staff Dashboard - Bayan Bank{% endblock %}
 {% block content %}
-<h3 class="mb-4">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h3>
-
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="mb-0">Operations Dashboard</h3>
+  <span class="text-muted">Tuesday, November 18, 2026</span>
+</div>
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a class="btn btn-dark" href="{% url 'staff_clients' %}">Find Client</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_add_client' %}">Add Client</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_payments' %}">Record Payment</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_savings' %}">Savings Transaction</a>
+  <a class="btn btn-outline-dark" href="{% url 'staff_payment_history' %}">Payment History</a>
+  <a class="btn btn-outline-dark" href="{% url 'verify_clients' %}">Verify Clients</a>
+  <a class="btn btn-outline-dark" href="{% url 'release_loans' %}">Release Loans</a>
+</div>
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Savings Balance</div>
-        <div class="fs-3 fw-bold">₱ 12,500.00</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Active Loan Balance</div>
-        <div class="fs-3 fw-bold">₱ 45,000.00</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Next Payment Due</div>
-        <div class="fs-3 fw-bold">₱ 4,250.00</div>
-        <div class="text-muted small">Due Dec 5, 2026</div>
-      </div>
-    </div>
-  </div>
+  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Clients Served Today</div><div class="fs-3 fw-bold">28</div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Payments Collected Today</div><div class="fs-3 fw-bold">&#8369; 84,750.00</div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Overdue Loans</div><div class="fs-3 fw-bold text-danger">7</div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Pending Deposits</div><div class="fs-3 fw-bold">12</div></div></div></div>
 </div>
-
-<div class="d-flex gap-2 mb-4">
-  <a href="#" class="btn btn-dark">Apply for a Loan</a>
-  <a href="#" class="btn btn-outline-dark">My Loans</a>
-  <a href="#" class="btn btn-outline-dark">Savings History</a>
-</div>
-
 <div class="card shadow-sm">
-  <div class="card-header">Recent Notifications</div>
-  <ul class="list-group list-group-flush">
-    <li class="list-group-item">Installment 3 is due on Dec 5, 2026.</li>
-    <li class="list-group-item">Your loan application was approved.</li>
-  </ul>
+  <div class="card-header d-flex justify-content-between"><span>Recent Payments</span><a href="{% url 'staff_payments' %}" class="small">Record payment</a></div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Time</th><th>Client</th><th>Loan</th><th>Amount</th><th>Method</th></tr></thead>
+      <tbody>
+        <tr><td>10:42 AM</td><td>Maria Santos</td><td>BB-PER-1042</td><td>&#8369; 4,250.00</td><td>GCash</td></tr>
+        <tr><td>10:15 AM</td><td>Juan Dela Cruz</td><td>BB-BIZ-0788</td><td>&#8369; 8,500.00</td><td>Cash</td></tr>
+        <tr><td>9:38 AM</td><td>Anna Reyes</td><td>BB-EMR-1221</td><td>&#8369; 2,100.00</td><td>Bank transfer</td></tr>
+        <tr><td>9:10 AM</td><td>Carlos Mendoza</td><td>BB-PER-0997</td><td>&#8369; 3,600.00</td><td>Cash</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

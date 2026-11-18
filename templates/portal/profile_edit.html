@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Edit Profile</h3>
+<a href="{% url 'client_profile' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Profile</a>
+<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="row g-3"><div class="col-md-6"><label class="form-label">First Name</label><input class="form-control" value="Maria"></div><div class="col-md-6"><label class="form-label">Last Name</label><input class="form-control" value="Santos"></div><div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" value="maria.santos@example.ph"></div><div class="col-md-6"><label class="form-label">Mobile Number</label><input class="form-control" value="0917 555 0142"></div><div class="col-12"><label class="form-label">Address</label><textarea class="form-control" rows="2">Makati City, Metro Manila</textarea></div></div>
+<button class="btn btn-dark mt-3">Save Profile</button>
+</form></div></div>
+{% endblock %}

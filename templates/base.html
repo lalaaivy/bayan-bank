@@ -12,7 +12,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <a class="navbar-brand" href="/">Bayan Bank</a>
+    <a class="navbar-brand" href="{% url 'home' %}">Bayan Bank</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -21,24 +21,32 @@
         {% if request.user.is_authenticated %}
           {% with role=request.user.role.name %}
             {% if role == "client" %}
-              <li class="nav-item"><a class="nav-link" href="/portal/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">My Loans</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Savings</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Notifications</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'portal_home' %} active{% endif %}" href="{% url 'portal_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'my_loans' %}">My Loans</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'savings_history' %}">Savings</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'notifications' %}">Notifications</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'client_profile' %}">Profile</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'upload_id' %}">Upload ID</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'accept_agreement' %}">Agreement</a></li>
             {% elif role == "staff" %}
-              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Clients</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Payments</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Savings</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'staff_home' %} active{% endif %}" href="{% url 'staff_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_clients' %}">Clients</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'verify_clients' %}">Verification</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_payments' %}">Payments</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_payment_history' %}">Payment History</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'staff_savings' %}">Savings</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'release_loans' %}">Release Loans</a></li>
             {% elif role == "loan_officer" %}
-              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Applications</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'officer_home' %} active{% endif %}" href="{% url 'officer_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'loan_applications' %}">Applications</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'officer_loans' %}">Loans</a></li>
             {% elif role == "admin" %}
-              <li class="nav-item"><a class="nav-link" href="/staff/">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Loan Products</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Reports</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Audit Log</a></li>
+              <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'admin_home' %} active{% endif %}" href="{% url 'admin_home' %}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_users' %}">Users</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_clients' %}">Clients</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_loan_products' %}">Loan Products</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_reports' %}">Reports</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin_audit_log' %}">Audit Log</a></li>
             {% endif %}
           {% endwith %}
         {% endif %}
@@ -58,6 +66,12 @@
 </nav>
 
 <main class="container py-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ request.resolver_match.url_name|default:"Page" }}</li>
+    </ol>
+  </nav>
   {% for message in messages %}
     <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show">
       {{ message }}

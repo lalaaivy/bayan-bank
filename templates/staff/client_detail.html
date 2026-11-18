@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Client Profile - Bayan Bank{% endblock %}
+{% block content %}
+<a href="{% url 'staff_clients' %}" class="text-decoration-none">&larr; Back to clients</a>
+<div class="d-flex justify-content-between align-items-center my-3"><h3 class="mb-0">Maria Santos</h3><span class="badge text-bg-success">Active</span></div>
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Contact</div><div>0917 555 0142</div><div class="small">maria.santos@example.ph</div></div></div></div>
+  <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Savings Balance</div><div class="fs-4 fw-bold">&#8369; 18,250.00</div></div></div></div>
+  <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Loan Balance</div><div class="fs-4 fw-bold">&#8369; 45,000.00</div></div></div></div>
+</div>
+<div class="card shadow-sm mb-3"><div class="card-header">Loans</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Reference</th><th>Product</th><th>Balance</th><th>Next Due</th><th>Status</th></tr></thead><tbody><tr><td>BB-PER-1042</td><td>Personal Loan</td><td>&#8369; 45,000.00</td><td>Dec 5, 2026</td><td><span class="badge text-bg-success">Active</span></td></tr></tbody></table></div></div>
+<div class="card shadow-sm"><div class="card-header">Savings</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead><tbody><tr><td>Nov 15, 2026</td><td>Deposit</td><td class="text-success">+ &#8369; 1,000.00</td><td>&#8369; 18,250.00</td></tr><tr><td>Nov 1, 2026</td><td>Deposit</td><td class="text-success">+ &#8369; 2,000.00</td><td>&#8369; 17,250.00</td></tr></tbody></table></div></div>
+{% endblock %}

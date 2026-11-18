@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Clients - Bayan Bank{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Clients</h3>
+  <div class="input-group" style="max-width: 280px;"><input type="search" class="form-control" placeholder="Search name or contact"><button class="btn btn-outline-dark">Search</button></div>
+</div>
+<div class="mb-3"><a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a> <a href="{% url 'staff_add_client' %}" class="btn btn-sm btn-dark">Add Client</a></div>
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table mb-0 align-middle">
+  <thead><tr><th>Name</th><th>Contact</th><th>Active Loans</th><th>Savings Balance</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    <tr><td>Maria Santos</td><td>0917 555 0142</td><td>1</td><td>&#8369; 18,250.00</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+    <tr><td>Juan Dela Cruz</td><td>0918 234 6610</td><td>2</td><td>&#8369; 42,800.00</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+    <tr><td>Anna Reyes</td><td>0995 812 2204</td><td>1</td><td>&#8369; 9,600.00</td><td><span class="badge text-bg-warning">Review</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+    <tr><td>Carlos Mendoza</td><td>0927 441 1093</td><td>0</td><td>&#8369; 31,120.00</td><td><span class="badge text-bg-secondary">Dormant</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+  </tbody>
+</table>
+</div></div>
+{% endblock %}
