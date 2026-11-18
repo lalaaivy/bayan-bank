@@ -1,0 +1,13 @@
+{% extends "base_client.html" %}
+{% block title %}Upload Identification - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Upload Identification</h3>
+<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="card shadow-sm"><div class="card-body"><form method="post" enctype="multipart/form-data">{% csrf_token %}
+  <div class="mb-3"><label class="form-label">ID Type</label><select class="form-select" name="id_type"><option>PhilSys National ID</option><option>Passport</option><option>Driver's License</option><option>UMID</option></select></div>
+  <div class="mb-3"><label class="form-label">ID Number</label><input class="form-control" name="id_number" placeholder="Enter your ID number"></div>
+  <div class="mb-3"><label class="form-label">Front Image</label><input type="file" class="form-control" name="id_front" accept="image/*"></div>
+  <div class="mb-3"><label class="form-label">Back Image</label><input type="file" class="form-control" name="id_back" accept="image/*"></div>
+  <button class="btn btn-dark">Submit for Verification</button>
+</form></div></div>
+{% endblock %}

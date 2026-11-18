@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Loan Portfolio - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Loan Portfolio</h3>
+<a href="{% url 'officer_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Reference</th><th>Client</th><th>Product</th><th>Principal</th><th>Balance</th><th>Next Due</th><th>Status</th><th></th></tr></thead><tbody>
+<tr><td>BB-PER-1042</td><td>Maria Santos</td><td>Personal</td><td>&#8369; 50,000.00</td><td>&#8369; 45,000.00</td><td>Dec 5, 2026</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'officer_loan_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+<tr><td>BB-BIZ-0788</td><td>Juan Dela Cruz</td><td>Business</td><td>&#8369; 180,000.00</td><td>&#8369; 126,000.00</td><td>Nov 28, 2026</td><td><span class="badge text-bg-warning">Due soon</span></td><td><a href="{% url 'officer_loan_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+<tr><td>BB-EMR-1221</td><td>Anna Reyes</td><td>Emergency</td><td>&#8369; 25,000.00</td><td>&#8369; 12,500.00</td><td>Dec 10, 2026</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'officer_loan_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+</tbody></table></div></div>
+{% endblock %}

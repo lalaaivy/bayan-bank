@@ -1,0 +1,19 @@
+{% extends "base_client.html" %}
+{% block title %}Notifications - Bayan Bank{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">Notifications</h3>
+<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="card shadow-sm">
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item d-flex justify-content-between">
+      <span>Installment 3 is due on Dec 5, 2026.</span>
+      <small class="text-muted">2 days ago</small>
+    </li>
+    <li class="list-group-item d-flex justify-content-between">
+      <span>Your loan application was approved.</span>
+      <small class="text-muted">1 week ago</small>
+    </li>
+  </ul>
+</div>
+{% endblock %}
