@@ -328,65 +328,6 @@ def staff_loan_disburse(request, loan_id):
 @role_required(*STAFF)
 @require_POST
 def staff_loan_pay(request, loan_id):
-    _run(
-        request,
-        "Payment recorded.",
-        services.record_payment,
-        loan_id,
-        request.POST.get("amount"),
-        request.user,
-    )
-
-    return redirect(
-        "staff_loan",
-        loan_id=loan_id,
-    )
-
-
-# ==========================================
-# AGREEMENT PDF DOWNLOAD
-# ==========================================
-
-def loan_agreement_pdf(request, loan_id):
-    if not request.user.is_authenticated:
-        raise PermissionDenied
-
-    loan = get_object_or_404(
-        Loan.objects.select_related(
-            "client__user",
-            "product",
-        ),
-        pk=loan_id,
-    )
-
-    is_owner = loan.client.user_id == request.user.pk
-
-    role = getattr(request.user, "role", None)
-    role_name = getattr(role, "name", None)
-
-    is_staff = role_name in STAFF
-
-    if not is_owner and not is_staff:
-        raise PermissionDenied
-
-    agreement = get_object_or_404(
-        LoanAgreement,
-        loan=loan,
-    )
-
-    pdf_bytes = generate_agreement_pdf(
-        loan,
-        agreement,
-    )
-
-    response = HttpResponse(
-        pdf_bytes,
-        content_type="application/pdf",
-    )
-
-    response["Content-Disposition"] = (
-        f'attachment; filename="'
-        f'{agreement.agreement_number}.pdf"'
-    )
-
-    return response
+    _run(request, "Payment recorded.", services.record_payment,
+         loan_id, request.POST.get("amount"), request.user)
+    return redirect("staff_loan", loan_id=loan_id)

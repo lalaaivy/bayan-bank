@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Loans Ready for Release - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Loans Ready for Release</h3>
+<a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
+  <thead><tr><th>Agreement</th><th>Client</th><th>Product</th><th>Approved Amount</th><th>Accepted</th><th></th></tr></thead>
+  <tbody>
+    <tr><td>AGR-2026-0318</td><td>Liza Navarro</td><td>Business Loan</td><td>&#8369; 150,000.00</td><td>Nov 18, 2026</td><td><a href="{% url 'confirm_loan_release' %}" class="btn btn-sm btn-dark">Release Loan</a></td></tr>
+    <tr><td>AGR-2026-0315</td><td>Mark Villanueva</td><td>Personal Loan</td><td>&#8369; 40,000.00</td><td>Nov 17, 2026</td><td><a href="{% url 'confirm_loan_release' %}" class="btn btn-sm btn-dark">Release Loan</a></td></tr>
+  </tbody>
+</table></div></div>
+{% endblock %}

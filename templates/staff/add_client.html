@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Add Client - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Add Client</h3>
+<a href="{% url 'staff_clients' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Clients</a>
+<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="row g-3"><div class="col-md-6"><label class="form-label">First Name</label><input class="form-control" placeholder="Jose"></div><div class="col-md-6"><label class="form-label">Last Name</label><input class="form-control" placeholder="Rizal"></div><div class="col-md-6"><label class="form-label">Mobile</label><input class="form-control" placeholder="0917 555 0100"></div><div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" placeholder="jose@example.ph"></div><div class="col-12"><label class="form-label">Address</label><textarea class="form-control" rows="2" placeholder="Barangay, city, province"></textarea></div></div>
+<button class="btn btn-dark mt-3">Save Client</button>
+</form></div></div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Loan Review - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Loan BB-PER-1042</h3>
+<a href="{% url 'officer_loans' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Loan Portfolio</a>
+<div class="card shadow-sm mb-3"><div class="card-header">Borrower and Loan Details</div><div class="card-body"><dl class="row mb-0"><dt class="col-sm-3">Borrower</dt><dd class="col-sm-9">Maria Santos</dd><dt class="col-sm-3">Product</dt><dd class="col-sm-9">Personal Loan</dd><dt class="col-sm-3">Principal</dt><dd class="col-sm-9">&#8369; 50,000.00</dd><dt class="col-sm-3">Outstanding</dt><dd class="col-sm-9">&#8369; 45,000.00</dd><dt class="col-sm-3">Term</dt><dd class="col-sm-9">12 months</dd><dt class="col-sm-3">Next payment</dt><dd class="col-sm-9">Dec 5, 2026</dd></dl></div></div>
+<div class="card shadow-sm"><div class="card-header">Recent Repayments</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Amount</th><th>Method</th></tr></thead><tbody><tr><td>Nov 5, 2026</td><td>&#8369; 4,700.00</td><td>GCash</td></tr><tr><td>Oct 5, 2026</td><td>&#8369; 4,700.00</td><td>Cash</td></tr></tbody></table></div></div>
+{% endblock %}

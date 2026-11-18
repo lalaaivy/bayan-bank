@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Verify Client - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Verify Client: Liza Navarro</h3>
+<a href="{% url 'verify_clients' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Verification Queue</a>
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <dl class="row mb-0"><dt class="col-sm-3">Full Name</dt><dd class="col-sm-9">Liza Navarro</dd><dt class="col-sm-3">Birthdate</dt><dd class="col-sm-9">June 14, 1992</dd><dt class="col-sm-3">Mobile</dt><dd class="col-sm-9">0932 778 4510</dd><dt class="col-sm-3">Email</dt><dd class="col-sm-9">liza.navarro@example.ph</dd><dt class="col-sm-3">ID Type</dt><dd class="col-sm-9">PhilSys National ID</dd><dt class="col-sm-3">ID Number</dt><dd class="col-sm-9">**** **** 4821</dd><dt class="col-sm-3">Status</dt><dd class="col-sm-9"><span class="badge text-bg-warning">Pending Verification</span></dd></dl>
+</div></div>
+<div class="row g-3 mb-3">
+  <div class="col-md-6"><div class="card shadow-sm"><div class="card-header">ID Front</div><div class="card-body"><div class="border rounded bg-light text-center p-5 text-muted">Front image placeholder</div></div></div></div>
+  <div class="col-md-6"><div class="card shadow-sm"><div class="card-header">ID Back</div><div class="card-body"><div class="border rounded bg-light text-center p-5 text-muted">Back image placeholder</div></div></div></div>
+</div>
+<form method="post" class="d-flex gap-2">{% csrf_token %}<button name="decision" value="verified" class="btn btn-success">Verify</button><button name="decision" value="rejected" class="btn btn-danger">Reject</button></form>
+{% endblock %}
