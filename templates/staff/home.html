@@ -2,34 +2,35 @@
 {% block title %}Staff Dashboard - Bayan Bank{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h3 class="mb-0">Operations Dashboard</h3>
-  <span class="text-muted">Tuesday, November 18, 2026</span>
+  <div><h3 class="mb-1">Operations Dashboard</h3><span class="text-muted">Tuesday, November 18, 2026</span></div>
+  <span class="icon-circle blue"><i class="bi bi-speedometer2" aria-hidden="true"></i></span>
 </div>
-<div class="d-flex flex-wrap gap-2 mb-4">
-  <a class="btn btn-dark" href="{% url 'staff_clients' %}">Find Client</a>
-  <a class="btn btn-outline-dark" href="{% url 'staff_add_client' %}">Add Client</a>
-  <a class="btn btn-outline-dark" href="{% url 'staff_payments' %}">Record Payment</a>
-  <a class="btn btn-outline-dark" href="{% url 'staff_savings' %}">Savings Transaction</a>
-  <a class="btn btn-outline-dark" href="{% url 'staff_payment_history' %}">Payment History</a>
-  <a class="btn btn-outline-dark" href="{% url 'verify_clients' %}">Verify Clients</a>
-  <a class="btn btn-outline-dark" href="{% url 'release_loans' %}">Release Loans</a>
+<div class="row g-3 mb-4 dashboard-stats">
+  <div class="col-sm-6 col-xl-3"><div class="card stat-card stat-blue"><div class="card-body"><i class="bi bi-people fs-4" aria-hidden="true"></i><div><div class="stat-value">28</div><div class="stat-label">Clients Served Today</div></div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="card stat-card stat-red"><div class="card-body"><i class="bi bi-cash-coin fs-4" aria-hidden="true"></i><div><div class="stat-value">&#8369; 84,750</div><div class="stat-label">Payments Collected Today</div></div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="card stat-card stat-yellow"><div class="card-body"><i class="bi bi-exclamation-circle fs-4" aria-hidden="true"></i><div><div class="stat-value">7</div><div class="stat-label">Overdue Loans</div></div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="card stat-card stat-white"><div class="card-body"><i class="bi bi-hourglass-split text-primary fs-4" aria-hidden="true"></i><div><div class="stat-value">12</div><div class="stat-label">Pending Deposits</div></div></div></div></div>
 </div>
-<div class="row g-3 mb-4">
-  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Clients Served Today</div><div class="fs-3 fw-bold">28</div></div></div></div>
-  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Payments Collected Today</div><div class="fs-3 fw-bold">&#8369; 84,750.00</div></div></div></div>
-  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Overdue Loans</div><div class="fs-3 fw-bold text-danger">7</div></div></div></div>
-  <div class="col-sm-6 col-xl-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted small">Pending Deposits</div><div class="fs-3 fw-bold">12</div></div></div></div>
+<h5 class="mb-3">Quick Actions</h5>
+<div class="quick-actions-grid mb-4">
+  <a href="{% url 'staff_clients' %}"><span class="icon-circle blue"><i class="bi bi-search" aria-hidden="true"></i></span>Find Client</a>
+  <a href="{% url 'staff_add_client' %}"><span class="icon-circle yellow"><i class="bi bi-person-plus" aria-hidden="true"></i></span>Add Client</a>
+  <a href="{% url 'staff_payments' %}"><span class="icon-circle red"><i class="bi bi-cash-coin" aria-hidden="true"></i></span>Record Payment</a>
+  <a href="{% url 'staff_savings' %}"><span class="icon-circle green"><i class="bi bi-wallet2" aria-hidden="true"></i></span>Savings Transaction</a>
+  <a href="{% url 'staff_payment_history' %}"><span class="icon-circle blue"><i class="bi bi-clock-history" aria-hidden="true"></i></span>Payment History</a>
+  <a href="{% url 'verify_clients' %}"><span class="icon-circle yellow"><i class="bi bi-shield-check" aria-hidden="true"></i></span>Verify Clients</a>
+  <a href="{% url 'release_loans' %}"><span class="icon-circle red"><i class="bi bi-send" aria-hidden="true"></i></span>Release Loans</a>
 </div>
-<div class="card shadow-sm">
+<div class="card">
   <div class="card-header d-flex justify-content-between"><span>Recent Payments</span><a href="{% url 'staff_payments' %}" class="small">Record payment</a></div>
   <div class="table-responsive">
     <table class="table mb-0">
       <thead><tr><th>Time</th><th>Client</th><th>Loan</th><th>Amount</th><th>Method</th></tr></thead>
       <tbody>
-        <tr><td>10:42 AM</td><td>Maria Santos</td><td>BB-PER-1042</td><td>&#8369; 4,250.00</td><td>GCash</td></tr>
-        <tr><td>10:15 AM</td><td>Juan Dela Cruz</td><td>BB-BIZ-0788</td><td>&#8369; 8,500.00</td><td>Cash</td></tr>
-        <tr><td>9:38 AM</td><td>Anna Reyes</td><td>BB-EMR-1221</td><td>&#8369; 2,100.00</td><td>Bank transfer</td></tr>
-        <tr><td>9:10 AM</td><td>Carlos Mendoza</td><td>BB-PER-0997</td><td>&#8369; 3,600.00</td><td>Cash</td></tr>
+        <tr><td><span class="icon-circle green me-2"><i class="bi bi-arrow-down-left" aria-hidden="true"></i></span>10:42 AM</td><td>Maria Santos</td><td>BB-PER-1042</td><td>&#8369; 4,250.00</td><td>GCash</td></tr>
+        <tr><td><span class="icon-circle green me-2"><i class="bi bi-arrow-down-left" aria-hidden="true"></i></span>10:15 AM</td><td>Juan Dela Cruz</td><td>BB-BIZ-0788</td><td>&#8369; 8,500.00</td><td>Cash</td></tr>
+        <tr><td><span class="icon-circle green me-2"><i class="bi bi-arrow-down-left" aria-hidden="true"></i></span>9:38 AM</td><td>Anna Reyes</td><td>BB-EMR-1221</td><td>&#8369; 2,100.00</td><td>Bank transfer</td></tr>
+        <tr><td><span class="icon-circle green me-2"><i class="bi bi-arrow-down-left" aria-hidden="true"></i></span>9:10 AM</td><td>Carlos Mendoza</td><td>BB-PER-0997</td><td>&#8369; 3,600.00</td><td>Cash</td></tr>
       </tbody>
     </table>
   </div>

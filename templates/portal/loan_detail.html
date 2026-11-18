@@ -1,17 +1,35 @@
-{% extends "base.html" %}
+{% extends "base_client.html" %}
 {% block title %}Loan Detail - Bayan Bank{% endblock %}
 {% block content %}
-<h3 class="mb-3">Personal Loan</h3>
-<a href="{% url 'my_loans' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to My Loans</a>
-<div class="row g-3 mb-4">
-  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Reference</div><strong>BB-PER-1042</strong></div></div></div>
-  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Original Amount</div><strong>&#8369; 50,000.00</strong></div></div></div>
-  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Balance</div><strong>&#8369; 45,000.00</strong></div></div></div>
-  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Status</div><span class="badge text-bg-success">Active</span></div></div></div>
+<h3>Personal Loan</h3>
+<a href="{% url 'my_loans' %}" class="btn btn-sm btn-outline-secondary mb-3">Back to My Loans</a>
+
+<div class="card fintech-card--blue mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div><div class="small opacity-75">Personal Loan</div><div class="fw-bold">BB-PER-1042</div></div>
+      <span class="badge bg-white text-primary">Active</span>
+    </div>
+    <div class="amount-large mb-3">&#8369; 45,000.00</div>
+    <div class="d-flex justify-content-between small opacity-75"><span>Outstanding balance</span><span>Original amount &#8369; 50,000.00</span></div>
+  </div>
 </div>
-<div class="card shadow-sm"><div class="card-header">Payment Schedule</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>No.</th><th>Due Date</th><th>Principal</th><th>Interest</th><th>Total</th><th>Status</th></tr></thead><tbody>
-<tr><td>1</td><td>Oct 5, 2026</td><td>&#8369; 3,950.00</td><td>&#8369; 750.00</td><td>&#8369; 4,700.00</td><td><span class="badge text-bg-success">Paid</span></td></tr>
-<tr><td>2</td><td>Nov 5, 2026</td><td>&#8369; 4,009.25</td><td>&#8369; 690.75</td><td>&#8369; 4,700.00</td><td><span class="badge text-bg-success">Paid</span></td></tr>
-<tr><td>3</td><td>Dec 5, 2026</td><td>&#8369; 4,069.39</td><td>&#8369; 630.61</td><td>&#8369; 4,700.00</td><td><span class="badge text-bg-warning">Unpaid</span></td></tr>
-</tbody></table></div></div>
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="{% url 'accept_agreement' %}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>View Agreement</a>
+  <a href="{% url 'my_loans' %}" class="btn btn-outline-dark">All Loans</a>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center"><span>Amortization Schedule</span><span class="badge text-bg-primary">12 installments</span></div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>No.</th><th>Due Date</th><th>Principal</th><th>Interest</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Oct 5, 2026</td><td>&#8369; 3,950.00</td><td>&#8369; 750.00</td><td>&#8369; 4,700.00</td><td><span class="badge text-bg-success">Paid</span></td></tr>
+        <tr><td>2</td><td>Nov 5, 2026</td><td>&#8369; 4,009.25</td><td>&#8369; 690.75</td><td>&#8369; 4,700.00</td><td><span class="badge text-bg-success">Paid</span></td></tr>
+        <tr><td>3</td><td>Dec 5, 2026</td><td>&#8369; 4,069.39</td><td>&#8369; 630.61</td><td>&#8369; 4,700.00</td><td><span class="badge text-bg-warning">Unpaid</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

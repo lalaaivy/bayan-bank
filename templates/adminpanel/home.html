@@ -1,8 +1,36 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard - Bayan Bank{% endblock %}
 {% block content %}
-<h3 class="mb-3">Administration Dashboard</h3>
-<p class="text-muted">Tuesday, November 18, 2026</p>
-<div class="row g-3 mb-4"><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Active Clients</div><div class="fs-3 fw-bold">1,248</div></div></div></div><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Active Loans</div><div class="fs-3 fw-bold">386</div></div></div></div><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Collections This Month</div><div class="fs-5 fw-bold">&#8369; 1,420,500</div></div></div></div><div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Pending Applications</div><div class="fs-3 fw-bold">14</div></div></div></div></div>
-<div class="d-flex flex-wrap gap-2"><a href="{% url 'admin_users' %}" class="btn btn-dark">Manage Users</a><a href="{% url 'admin_clients' %}" class="btn btn-outline-dark">Manage Clients</a><a href="{% url 'admin_loan_products' %}" class="btn btn-outline-dark">Loan Products</a><a href="{% url 'admin_reports' %}" class="btn btn-outline-dark">Reports</a><a href="{% url 'admin_audit_log' %}" class="btn btn-outline-dark">Audit Log</a><a href="{% url 'loan_applications' %}" class="btn btn-outline-dark">Loan Applications</a><a href="{% url 'officer_loans' %}" class="btn btn-outline-dark">Loan Portfolio</a><a href="{% url 'verify_clients' %}" class="btn btn-outline-dark">Verify Clients</a><a href="{% url 'staff_payments' %}" class="btn btn-outline-dark">Record Payment</a><a href="{% url 'staff_payment_history' %}" class="btn btn-outline-dark">Payment History</a><a href="{% url 'staff_savings' %}" class="btn btn-outline-dark">Savings</a><a href="{% url 'release_loans' %}" class="btn btn-outline-dark">Release Queue</a></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h3 class="mb-1">Administration Dashboard</h3><p class="text-muted mb-0">Tuesday, November 18, 2026</p></div>
+  <span class="icon-circle red"><i class="bi bi-gear" aria-hidden="true"></i></span>
+</div>
+<div class="row g-3 mb-4 dashboard-stats">
+  <div class="col-md-3"><div class="card stat-card stat-blue"><div class="card-body"><i class="bi bi-people fs-4" aria-hidden="true"></i><div><div class="stat-value">1,248</div><div class="stat-label">Active Clients</div></div></div></div></div>
+  <div class="col-md-3"><div class="card stat-card stat-red"><div class="card-body"><i class="bi bi-credit-card fs-4" aria-hidden="true"></i><div><div class="stat-value">386</div><div class="stat-label">Active Loans</div></div></div></div></div>
+  <div class="col-md-3"><div class="card stat-card stat-yellow"><div class="card-body"><i class="bi bi-cash-stack fs-4" aria-hidden="true"></i><div><div class="stat-value">&#8369; 1.42M</div><div class="stat-label">Collections This Month</div></div></div></div></div>
+  <div class="col-md-3"><div class="card stat-card stat-white"><div class="card-body"><i class="bi bi-hourglass-split text-primary fs-4" aria-hidden="true"></i><div><div class="stat-value">14</div><div class="stat-label">Pending Applications</div></div></div></div></div>
+</div>
+<h5 class="mb-3">Quick Actions</h5>
+<div class="quick-actions-grid">
+  <a href="{% url 'admin_users' %}"><span class="icon-circle blue"><i class="bi bi-person-gear" aria-hidden="true"></i></span>Manage Users</a>
+  <a href="{% url 'admin_clients' %}"><span class="icon-circle yellow"><i class="bi bi-people" aria-hidden="true"></i></span>Manage Clients</a>
+  <a href="{% url 'admin_loan_products' %}"><span class="icon-circle red"><i class="bi bi-box-seam" aria-hidden="true"></i></span>Loan Products</a>
+  <a href="{% url 'admin_reports' %}"><span class="icon-circle green"><i class="bi bi-bar-chart" aria-hidden="true"></i></span>Reports</a>
+  <a href="{% url 'admin_audit_log' %}"><span class="icon-circle blue"><i class="bi bi-journal-text" aria-hidden="true"></i></span>Audit Log</a>
+  <a href="{% url 'loan_applications' %}"><span class="icon-circle yellow"><i class="bi bi-clipboard2-check" aria-hidden="true"></i></span>Loan Applications</a>
+  <a href="{% url 'officer_loans' %}"><span class="icon-circle red"><i class="bi bi-credit-card" aria-hidden="true"></i></span>Loan Portfolio</a>
+  <a href="{% url 'verify_clients' %}"><span class="icon-circle green"><i class="bi bi-shield-check" aria-hidden="true"></i></span>Verify Clients</a>
+  <a href="{% url 'staff_payments' %}"><span class="icon-circle blue"><i class="bi bi-cash-coin" aria-hidden="true"></i></span>Record Payment</a>
+  <a href="{% url 'staff_payment_history' %}"><span class="icon-circle yellow"><i class="bi bi-clock-history" aria-hidden="true"></i></span>Payment History</a>
+  <a href="{% url 'staff_savings' %}"><span class="icon-circle red"><i class="bi bi-wallet2" aria-hidden="true"></i></span>Savings</a>
+  <a href="{% url 'release_loans' %}"><span class="icon-circle green"><i class="bi bi-send" aria-hidden="true"></i></span>Release Queue</a>
+</div>
+<section class="card mt-4">
+  <div class="card-body">
+    <h5 class="mb-2">Recent Activity</h5>
+    <div class="transaction-row"><span class="icon-circle blue"><i class="bi bi-person-plus" aria-hidden="true"></i></span><span><span class="transaction-title d-block">New client account created</span><span class="transaction-date">Today · 10:20 AM · Maria Santos</span></span></div>
+    <div class="transaction-row"><span class="icon-circle red"><i class="bi bi-cash-coin" aria-hidden="true"></i></span><span><span class="transaction-title d-block">Payment recorded</span><span class="transaction-date">Today · 10:42 AM · &#8369; 4,250.00</span></span></div>
+  </div>
+</section>
 {% endblock %}
