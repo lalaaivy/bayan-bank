@@ -4,6 +4,7 @@ from django.urls import path
 from . import views, exports
 
 urlpatterns = [
+    # Client portal
     path(
         "portal/loans/",
         views.portal_loans,
@@ -14,6 +15,18 @@ urlpatterns = [
         views.portal_apply,
         name="portal_apply",
     ),
+    path(
+        "portal/loans/<int:loan_id>/agreement/",
+        views.portal_loan_agreement,
+        name="portal_loan_agreement",
+    ),
+    path(
+        "portal/loans/<int:loan_id>/agreement/accept/",
+        views.portal_accept_agreement,
+        name="portal_accept_agreement",
+    ),
+
+    # Staff loan management
     path(
         "staff/loans/",
         views.staff_loans,
@@ -35,6 +48,11 @@ urlpatterns = [
         name="staff_loan_reject",
     ),
     path(
+        "staff/loans/<int:loan_id>/agreement/create/",
+        views.staff_create_agreement,
+        name="staff_create_agreement",
+    ),
+    path(
         "staff/loans/<int:loan_id>/disburse/",
         views.staff_loan_disburse,
         name="staff_loan_disburse",
@@ -43,6 +61,13 @@ urlpatterns = [
         "staff/loans/<int:loan_id>/pay/",
         views.staff_loan_pay,
         name="staff_loan_pay",
+    ),
+
+    # Exports
+    path(
+        "loans/<int:loan_id>/agreement/pdf/",
+        views.loan_agreement_pdf,
+        name="loan_agreement_pdf",
     ),
     path(
         "loans/<int:loan_id>/export/pdf/",

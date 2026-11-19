@@ -98,6 +98,34 @@ def _evaluate(loan, checked_by):
     return record
 
 
+# --------------------------------------------------
+# BLOCK CLIENTS WITH OVERDUE LOANS
+# --------------------------------------------------
+
+def check_overdue_loans(client):
+    today = timezone.localdate()
+
+    has_overdue = (
+        Installment.objects.filter(
+            loan__client=client,
+            loan__status=Loan.Status.ACTIVE,
+            due_date__lt=today,
+        )
+        .exclude(status=Installment.Status.PAID)
+        .exists()
+    )
+
+    if has_overdue:
+        raise BankError(
+            "Client cannot apply for a new loan because "
+            "they have an overdue installment."
+        )
+
+
+# --------------------------------------------------
+# LOAN ELIGIBILITY CHECK
+# --------------------------------------------------
+
 @transaction.atomic
 def check_eligibility(loan_id, by):
     """Lets a loan officer or admin run the check again."""
@@ -105,6 +133,10 @@ def check_eligibility(loan_id, by):
     loan = _get_loan_locked(loan_id)
     return _evaluate(loan, by)
 
+
+# --------------------------------------------------
+# APPLY FOR A LOAN
+# --------------------------------------------------
 
 @transaction.atomic
 def apply_for_loan(client, product, principal, term_months, by):
@@ -128,6 +160,9 @@ def apply_for_loan(client, product, principal, term_months, by):
             f"Term must be between {product.min_months} and {product.max_months} months."
         )
 
+    # Prevent applications from clients with overdue loans
+    check_overdue_loans(client)
+
     loan = Loan.objects.create(
         client=client,
         product=product,
@@ -143,6 +178,10 @@ def apply_for_loan(client, product, principal, term_months, by):
     return loan
 
 
+# --------------------------------------------------
+# APPROVE LOAN
+# --------------------------------------------------
+
 @transaction.atomic
 def approve_loan(loan_id, by):
     _require_role(by, DECIDERS, "You are not allowed to approve loans.")
@@ -157,6 +196,19 @@ def approve_loan(loan_id, by):
     if loan.client.user_id == by.pk:
         raise BankError("You cannot approve your own loan.")
 
+    latest_check = (
+        EligibilityCheck.objects.filter(loan=loan).order_by("-pk").first()
+    )
+    if latest_check is None:
+        # Older applications that were never checked get checked now.
+        latest_check = _evaluate(loan, by)
+
+    if latest_check.result == EligibilityCheck.Result.INELIGIBLE:
+        raise BankError(
+            "This loan cannot be approved because the client is not eligible."
+        )
+    # Eligible and Needs Review can both be approved by the loan officer.
+
     loan.status = Loan.Status.APPROVED
     loan.decided_by = by
     loan.decided_at = timezone.now()
@@ -165,6 +217,10 @@ def approve_loan(loan_id, by):
     log(by, "loan_approve", loan)
     return loan
 
+
+# --------------------------------------------------
+# REJECT LOAN
+# --------------------------------------------------
 
 @transaction.atomic
 def reject_loan(loan_id, by, reason):
@@ -191,6 +247,10 @@ def reject_loan(loan_id, by, reason):
     return loan
 
 
+# --------------------------------------------------
+# LOAN AGREEMENT
+# --------------------------------------------------
+
 @transaction.atomic
 def create_loan_agreement(
     loan_id, agreement_number, agreement_date, terms_and_conditions="",
@@ -216,6 +276,35 @@ def create_loan_agreement(
         terms_and_conditions=terms_and_conditions,
     )
 
+
+@transaction.atomic
+def accept_loan_agreement(loan_id, by):
+    """The borrower accepts the agreement."""
+    loan = _get_loan_locked(loan_id)
+
+    if loan.client.user_id != by.pk:
+        raise BankError("Only the borrower can accept this agreement.")
+
+    if loan.status != Loan.Status.APPROVED:
+        raise BankError("Only approved loans have an agreement to accept.")
+
+    agreement = LoanAgreement.objects.select_for_update().filter(loan=loan).first()
+    if agreement is None:
+        raise BankError("This loan has no agreement yet.")
+
+    if agreement.signed_at:
+        raise BankError("This agreement was already accepted.")
+
+    agreement.signed_at = timezone.now()
+    agreement.save(update_fields=["signed_at"])
+
+    log(by, "loan_agreement_accept", loan)
+    return agreement
+
+
+# --------------------------------------------------
+# DISBURSE LOAN
+# --------------------------------------------------
 
 @transaction.atomic
 def disburse_loan(loan_id, by, savings_account_id):
@@ -282,6 +371,10 @@ def disburse_loan(loan_id, by, savings_account_id):
     log(by, "loan_disburse", loan, account=account.account_number, amount=loan.principal)
     return loan
 
+
+# --------------------------------------------------
+# RECORD LOAN PAYMENT
+# --------------------------------------------------
 
 @transaction.atomic
 def record_payment(loan_id, amount, by):

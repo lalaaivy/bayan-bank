@@ -170,7 +170,6 @@ class Installment(models.Model):
     )
 
     number = models.PositiveSmallIntegerField()
-
     due_date = models.DateField()
 
     principal_due = models.DecimalField(
@@ -184,6 +183,12 @@ class Installment(models.Model):
     )
 
     amount_paid = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+    )
+
+    penalty_amount = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         default=0,
@@ -224,11 +229,19 @@ class Installment(models.Model):
                 condition=Q(amount_paid__gte=0),
                 name="installment_amount_paid_nonnegative",
             ),
+            models.CheckConstraint(
+                condition=Q(penalty_amount__gte=0),
+                name="installment_penalty_nonnegative",
+            ),
         ]
 
     @property
     def total_due(self):
-        return self.principal_due + self.interest_due
+        return (
+            self.principal_due
+            + self.interest_due
+            + self.penalty_amount
+        )
 
 
 # ==========================================
@@ -341,6 +354,8 @@ class LoanAgreement(models.Model):
 
     agreement_date = models.DateField()
 
+    # Records when the client accepts the agreement.
+    # NULL means the agreement has not been accepted.
     signed_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -350,9 +365,7 @@ class LoanAgreement(models.Model):
         blank=True,
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.agreement_number
@@ -381,9 +394,7 @@ class LoanPayment(models.Model):
         decimal_places=2,
     )
 
-    payment_date = models.DateTimeField(
-        auto_now_add=True,
-    )
+    payment_date = models.DateTimeField(auto_now_add=True)
 
     recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -432,9 +443,7 @@ class Disbursement(models.Model):
         decimal_places=2,
     )
 
-    disbursed_at = models.DateTimeField(
-        auto_now_add=True,
-    )
+    disbursed_at = models.DateTimeField(auto_now_add=True)
 
     disbursed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
