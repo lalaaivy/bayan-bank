@@ -3,7 +3,7 @@ from datetime import date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -15,6 +15,7 @@ from clients.models import Client
 from savings.models import SavingsAccount
 
 from . import services
+from .agreement_pdf import generate_agreement_pdf
 from .models import Installment, Loan, LoanAgreement, LoanProduct
 
 STAFF = ("admin", "staff", "loan_officer")
@@ -83,7 +84,7 @@ def portal_apply(request):
 
 
 # ==========================================
-# CLIENT: VIEW AND ACCEPT LOAN AGREEMENT
+# LOAN AGREEMENT
 # ==========================================
 
 @client_required
@@ -117,6 +118,35 @@ def portal_accept_agreement(request, loan_id):
         request.user,
     )
     return redirect("portal_loan_agreement", loan_id=loan.pk)
+
+
+@login_required
+def loan_agreement_pdf(request, loan_id):
+    """Download the agreement as a PDF (the borrower or loan staff only)."""
+    loan = get_object_or_404(
+        Loan.objects.select_related("product", "client__user"), pk=loan_id
+    )
+    role = request.user.role.name
+    if role == "client":
+        if loan.client.user_id != request.user.pk:
+            raise PermissionDenied
+    elif role not in STAFF:
+        raise PermissionDenied
+
+    agreement = get_object_or_404(LoanAgreement, loan=loan)
+
+    try:
+        pdf = generate_agreement_pdf(loan, agreement)
+    except TypeError:
+        pdf = generate_agreement_pdf(agreement)
+    if hasattr(pdf, "getvalue"):
+        pdf = pdf.getvalue()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename="{agreement.agreement_number}.pdf"'
+    )
+    return response
 
 
 # ==========================================
