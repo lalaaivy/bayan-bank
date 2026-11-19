@@ -7,6 +7,13 @@
 
 <h3 class="mb-1">Loan #{{ loan.pk }}</h3>
 
+{% if eligibility %}
+<div class="alert {% if eligibility.result == 'eligible' %}alert-success{% elif eligibility.result == 'review' %}alert-warning{% else %}alert-danger{% endif %}">
+  <strong>Eligibility: {{ eligibility.get_result_display }}</strong>
+  <div class="small mt-1">{{ eligibility.remarks }}</div>
+</div>
+{% endif %}
+
 <p class="text-muted">
   {{ loan.client }} &middot;
   {{ loan.product.name }} &middot;

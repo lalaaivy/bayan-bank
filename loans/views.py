@@ -1,5 +1,5 @@
 from datetime import date
-
+from loans.models import LoanProduct
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
@@ -93,6 +93,7 @@ def staff_loan(request, loan_id):
         "loan": loan,
         "installments": loan.installments.order_by("number"),
         "accounts": loan.client.savings_accounts.all(),
+        "eligibility": loan.eligibility_checks.order_by("-checked_at").first(),
     })
 
 

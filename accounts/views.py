@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from audit.services import log
 from clients.models import Client, ClientDocument
-from loans.models import Loan
+from loans.models import Loan, LoanProduct
 from savings.models import SavingsAccount
 
 from .decorators import client_required, role_required
@@ -78,11 +78,6 @@ def _demo_form(request, template, destination):
 # ---------- client portal ----------
 
 @role_required("client")
-def my_loans(request):
-    return render(request, "portal/loans.html")
-
-
-@role_required("client")
 def loan_detail(request):
     return render(request, "portal/loan_detail.html")
 
@@ -120,11 +115,6 @@ def upload_id(request):
 @role_required("client")
 def accept_agreement(request):
     return _demo_form(request, "portal/accept_agreement.html", "loan_detail")
-
-
-@role_required("client")
-def savings_history(request):
-    return render(request, "portal/savings.html")
 
 
 @role_required("client")
@@ -301,15 +291,24 @@ def staff_receipt(request):
 
 @role_required("loan_officer", "admin")
 def loan_applications(request):
-    applications = [
-        {"reference": "APP-2026-1184", "name": "Liza Navarro", "product": "Business Loan", "amount": "150,000.00", "date": "Nov 17, 2026", "status": "Pending"},
-        {"reference": "APP-2026-1182", "name": "Mark Villanueva", "product": "Personal Loan", "amount": "40,000.00", "date": "Nov 16, 2026", "status": "Approved"},
-        {"reference": "APP-2026-1179", "name": "Joy Mercado", "product": "Emergency Loan", "amount": "25,000.00", "date": "Nov 14, 2026", "status": "Rejected"},
-        {"reference": "APP-2026-1175", "name": "Roberto Garcia", "product": "Business Loan", "amount": "200,000.00", "date": "Nov 12, 2026", "status": "Pending"},
-    ]
+    loans = Loan.objects.select_related("client__user", "product").order_by("-applied_at")
+
     status_filter = request.GET.get("status", "").title()
     if status_filter in {"Pending", "Approved", "Rejected"}:
-        applications = [a for a in applications if a["status"] == status_filter]
+        loans = loans.filter(status=status_filter.lower())
+
+    applications = [
+        {
+            "pk": loan.pk,
+            "reference": f"APP-{loan.applied_at.year}-{loan.pk:04d}",
+            "name": loan.client.user.get_full_name() or loan.client.user.username,
+            "product": loan.product.name,
+            "amount": f"{loan.principal:,.2f}",
+            "date": loan.applied_at.strftime("%b %d, %Y"),
+            "status": loan.get_status_display(),
+        }
+        for loan in loans[:200]
+    ]
     return render(
         request,
         "officer/applications.html",
@@ -378,7 +377,9 @@ def admin_edit_user(request):
 
 @role_required("admin")
 def admin_loan_products(request):
-    return render(request, "adminpanel/loan_products.html")
+    return render(request, "adminpanel/loan_products.html", {
+        "products": LoanProduct.objects.order_by("name"),
+    })
 
 
 @role_required("admin")
