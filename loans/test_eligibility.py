@@ -1,3 +1,4 @@
+
 from datetime import timedelta
 from decimal import Decimal
 
@@ -34,9 +35,12 @@ class EligibilityTests(TestCase):
         self.staff = make_user("staff1", Role.STAFF)
         self.officer = make_user("officer1", Role.LOAN_OFFICER)
         self.product = LoanProduct.objects.create(
-            name="Personal", annual_rate=Decimal("12.00"),
-            min_amount=Decimal("1000"), max_amount=Decimal("50000"),
-            min_months=3, max_months=24,
+            name="Personal",
+            annual_rate=Decimal("12.00"),
+            min_amount=Decimal("1000"),
+            max_amount=Decimal("50000"),
+            min_months=3,
+            max_months=24,
         )
         # Defaults: installment <= 40% of income, savings >= 10% of the loan.
         LoanRule.objects.create(product=self.product, minimum_credit_score=600)
@@ -49,7 +53,14 @@ class EligibilityTests(TestCase):
         return client, account
 
     def apply(self, client, principal="12000", months=12):
-        return loan_services.apply_for_loan(client, self.product, principal, months, self.staff)
+        return loan_services.apply_for_loan(
+            client,
+            self.product,
+            principal,
+            months,
+            self.staff,
+            purpose="Personal and household expenses",
+        )
 
     def latest_check(self, loan):
         return loan.eligibility_checks.order_by("-pk").first()
@@ -105,9 +116,12 @@ class LoanApplicationRuleTests(TestCase):
         self.staff = make_user("staff1", Role.STAFF)
         self.officer = make_user("officer1", Role.LOAN_OFFICER)
         self.product = LoanProduct.objects.create(
-            name="Personal", annual_rate=Decimal("12.00"),
-            min_amount=Decimal("1000"), max_amount=Decimal("50000"),
-            min_months=3, max_months=24,
+            name="Personal",
+            annual_rate=Decimal("12.00"),
+            min_amount=Decimal("1000"),
+            max_amount=Decimal("50000"),
+            min_months=3,
+            max_months=24,
         )
 
     def post_application(self, client):
@@ -116,6 +130,7 @@ class LoanApplicationRuleTests(TestCase):
             "product": self.product.pk,
             "principal": "12000",
             "term_months": "12",
+            "purpose": "Personal and household expenses",
         })
 
     def test_pending_client_cannot_apply(self):
@@ -138,7 +153,14 @@ class LoanApplicationRuleTests(TestCase):
         account = savings.open_account(client, self.staff)
         savings.deposit(account.pk, "5000", self.staff)
 
-        loan = loan_services.apply_for_loan(client, self.product, "12000", 12, self.staff)
+        loan = loan_services.apply_for_loan(
+            client,
+            self.product,
+            "12000",
+            12,
+            self.staff,
+            purpose="Personal and household expenses",
+        )
         loan_services.approve_loan(loan.pk, self.officer)
         loan_services.disburse_loan(loan.pk, self.officer, account.pk)
 
@@ -147,5 +169,13 @@ class LoanApplicationRuleTests(TestCase):
         )
 
         with self.assertRaises(BankError):
-            loan_services.apply_for_loan(client, self.product, "5000", 6, self.staff)
+            loan_services.apply_for_loan(
+                client,
+                self.product,
+                "5000",
+                6,
+                self.staff,
+                purpose="Emergency expenses",
+            )
+
         self.assertEqual(Loan.objects.filter(client=client).count(), 1)

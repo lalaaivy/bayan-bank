@@ -1,41 +1,38 @@
+
 {% extends "base_client.html" %}
 {% block title %}My Loans - Bayan Bank{% endblock %}
 
 {% block content %}
 <h3 class="mb-4">My Loans</h3>
 
-<!-- ===================================== -->
 <!-- APPLY FOR A LOAN -->
-<!-- ===================================== -->
-
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     Apply for a loan
   </div>
 
   <div class="card-body">
-    <form method="post" action="{% url 'portal_apply' %}" class="row g-2">
+    <form
+      method="post"
+      action="{% url 'portal_apply' %}"
+      enctype="multipart/form-data"
+      class="row g-3"
+    >
       {% csrf_token %}
-      <div class="col-md-4">
-        <label class="form-label">
-          Product
-        </label>
 
-        <select
-          name="product"
-          class="form-select"
-          required
-        >
+      <div class="col-md-4">
+        <label class="form-label">Product</label>
+        <select name="product" class="form-select" required>
           {% for p in products %}
-          <option value="{{ p.pk }}">{{ p.name }} ({{ p.annual_rate }}%)</option>
+            <option value="{{ p.pk }}">
+              {{ p.name }} ({{ p.annual_rate }}%)
+            </option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">
-          Amount (₱)
-        </label>
 
+      <div class="col-md-3">
+        <label class="form-label">Amount (₱)</label>
         <input
           type="number"
           name="principal"
@@ -47,11 +44,9 @@
           required
         >
       </div>
-      <div class="col-md-3">
-        <label class="form-label">
-          Months
-        </label>
 
+      <div class="col-md-3">
+        <label class="form-label">Months</label>
         <input
           type="number"
           name="term_months"
@@ -63,11 +58,50 @@
           required
         >
       </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button
-          type="submit"
-          class="btn btn-dark w-100"
+
+      <div class="col-12">
+        <label class="form-label">Purpose of Loan</label>
+        <textarea
+          name="purpose"
+          class="form-control"
+          rows="3"
+          maxlength="1000"
+          placeholder="Explain why you are applying for this loan."
+          required
+        ></textarea>
+        <div class="form-text">
+          Maximum of 1,000 characters.
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Supporting Document Type</label>
+        <select name="document_type" class="form-select">
+          <option value="proof_of_income">Proof of Income</option>
+          <option value="employment_certificate">Certificate of Employment</option>
+          <option value="bank_statement">Bank Statement</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="col-md-8">
+        <label class="form-label">Supporting Documents</label>
+        <input
+          type="file"
+          name="documents"
+          class="form-control"
+          accept=".pdf,.jpg,.jpeg,.png"
+          multiple
         >
+        <div class="form-text">
+          Accepted formats: PDF, JPG, JPEG, PNG. Maximum 5 files,
+          5 MB each. You may submit without documents if they are not
+          currently available.
+        </div>
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-dark">
           Apply
         </button>
       </div>
@@ -75,11 +109,7 @@
   </div>
 </div>
 
-
-<!-- ===================================== -->
 <!-- MY LOAN APPLICATIONS -->
-<!-- ===================================== -->
-
 <div class="card shadow-sm">
   <div class="card-header">
     My applications
@@ -87,7 +117,6 @@
 
   <div class="table-responsive">
     <table class="table mb-0 align-middle">
-
       <thead>
         <tr>
           <th>Applied</th>
@@ -96,207 +125,157 @@
           <th>Months</th>
           <th>Status</th>
           <th>Loan Agreement</th>
+          <th>Documents</th>
           <th>Export</th>
         </tr>
       </thead>
+
       <tbody>
         {% for l in loans %}
-        <tr>
+          <tr>
+            <td>{{ l.applied_at|date:"M d, Y" }}</td>
 
-          <!-- APPLICATION DATE -->
-          <td>
-            {{ l.applied_at|date:"M d, Y" }}
-          </td>
+            <td>{{ l.product.name }}</td>
 
-          <!-- LOAN PRODUCT -->
-          <td>
-            {{ l.product.name }}
-          </td>
+            <td class="text-end">
+              ₱ {{ l.principal|floatformat:"2g" }}
+            </td>
 
-          <!-- LOAN AMOUNT -->
-          <td class="text-end">
-            ₱ {{ l.principal|floatformat:"2g" }}
-          </td>
+            <td>{{ l.term_months }}</td>
 
-          <!-- LOAN TERM -->
-          <td>
-            {{ l.term_months }}
-          </td>
+            <!-- LOAN STATUS -->
+            <td>
+              {% if l.status == "pending" %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% elif l.status == "approved" %}
+                <span class="badge bg-success">Approved</span>
+              {% elif l.status == "rejected" %}
+                <span class="badge bg-danger">Rejected</span>
+              {% elif l.status == "active" %}
+                <span class="badge bg-primary">Active</span>
+              {% elif l.status == "paid" %}
+                <span class="badge bg-secondary">Fully Paid</span>
+              {% elif l.status == "defaulted" %}
+                <span class="badge bg-danger">Defaulted</span>
+              {% else %}
+                <span class="badge bg-secondary">
+                  {{ l.get_status_display }}
+                </span>
+              {% endif %}
 
-          <!-- LOAN STATUS -->
-          <td>
+              {% if l.reject_reason %}
+                <div class="small text-danger mt-1">
+                  {{ l.reject_reason }}
+                </div>
+              {% endif %}
+            </td>
 
-            {% if l.status == "pending" %}
-              <span class="badge bg-warning text-dark">
-                Pending
-              </span>
-
-            {% elif l.status == "approved" %}
-              <span class="badge bg-success">
-                Approved
-              </span>
-
-            {% elif l.status == "rejected" %}
-              <span class="badge bg-danger">
-                Rejected
-              </span>
-
-            {% elif l.status == "active" %}
-              <span class="badge bg-primary">
-                Active
-              </span>
-
-            {% elif l.status == "paid" %}
-              <span class="badge bg-secondary">
-                Fully Paid
-              </span>
-
-            {% elif l.status == "defaulted" %}
-              <span class="badge bg-danger">
-                Defaulted
-              </span>
-
-            {% else %}
-              <span class="badge bg-secondary">
-                {{ l.get_status_display }}
-              </span>
-            {% endif %}
-
-            {% if l.reject_reason %}
-              <div class="small text-danger mt-1">
-                {{ l.reject_reason }}
-              </div>
-            {% endif %}
-
-          </td>
-
-
-          <!-- ================================= -->
-          <!-- LOAN AGREEMENT -->
-          <!-- ================================= -->
-
-          <td>
-
-            {% if l.status == "approved" or l.status == "active" or l.status == "paid" %}
-
-              {% if l.agreement %}
-
-                <div class="d-flex flex-column gap-2">
-
-                  <a
-                    href="{% url 'portal_loan_agreement' l.pk %}"
-                    class="btn btn-outline-primary btn-sm"
-                  >
-                    View Agreement
-                  </a>
-
-                  {% if l.agreement.signed_at %}
-
-                    <span class="badge bg-success">
-                      Accepted
-                    </span>
-
-                  {% elif l.status == "approved" %}
-
+            <!-- LOAN AGREEMENT -->
+            <td>
+              {% if l.status == "approved" or l.status == "active" or l.status == "paid" %}
+                {% if l.agreement %}
+                  <div class="d-flex flex-column gap-2">
                     <a
                       href="{% url 'portal_loan_agreement' l.pk %}"
-                      class="btn btn-warning btn-sm"
+                      class="btn btn-outline-primary btn-sm"
                     >
-                      Accept Agreement
+                      View Agreement
                     </a>
 
-                    <small class="text-muted">
-                      Required before disbursement
-                    </small>
-
-                  {% else %}
-
-                    <span class="badge bg-warning text-dark">
-                      Not Accepted
-                    </span>
-
-                  {% endif %}
-
-                </div>
-
-              {% else %}
-
+                    {% if l.agreement.signed_at %}
+                      <span class="badge bg-success">Accepted</span>
+                    {% elif l.status == "approved" %}
+                      <a
+                        href="{% url 'portal_loan_agreement' l.pk %}"
+                        class="btn btn-warning btn-sm"
+                      >
+                        Accept Agreement
+                      </a>
+                      <small class="text-muted">
+                        Required before disbursement
+                      </small>
+                    {% else %}
+                      <span class="badge bg-warning text-dark">
+                        Not Accepted
+                      </span>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <span class="text-muted small">
+                    Waiting for Agreement
+                  </span>
+                {% endif %}
+              {% elif l.status == "pending" %}
                 <span class="text-muted small">
-                  Waiting for Agreement
+                  Awaiting Approval
                 </span>
-
+              {% else %}
+                <span class="text-muted small">
+                  Not Available
+                </span>
               {% endif %}
+            </td>
 
-            {% elif l.status == "pending" %}
+            <!-- SUPPORTING DOCUMENTS -->
+            <td>
+              {% with documents=l.documents.all %}
+                {% if documents %}
+                  <div class="d-flex flex-column gap-2">
+                    {% for document in documents %}
+                      <a
+                        href="{% url 'loan_document_download' document.id %}"
+                        class="btn btn-outline-secondary btn-sm"
+                      >
+                        {{ document.get_document_type_display }}
+                        {{ forloop.counter }}
+                        <i class="bi bi-download"></i>
+                      </a>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <span class="text-muted small">
+                    No documents uploaded
+                  </span>
+                {% endif %}
+              {% endwith %}
+            </td>
 
-              <span class="text-muted small">
-                Awaiting Approval
-              </span>
-
-            {% elif l.status == "rejected" %}
-
-              <span class="text-muted small">
-                Not Available
-              </span>
-
-            {% else %}
-
-              <span class="text-muted small">
-                Not Available
-              </span>
-
-            {% endif %}
-
-          </td>
-
-
-          <!-- ================================= -->
-          <!-- EXPORT BUTTONS -->
-          <!-- ================================= -->
-
-          <td>
-            <div class="d-flex flex-wrap gap-2">
-
-              <a
-                href="{% url 'export_loan_pdf' l.pk %}"
-                class="btn btn-outline-danger btn-sm"
-              >
-                PDF
-              </a>
-
-              <a
-                href="{% url 'export_loan_excel' l.pk %}"
-                class="btn btn-outline-success btn-sm"
-              >
-                Excel
-              </a>
-
-              {% if l.agreement %}
-
+            <!-- EXPORT BUTTONS -->
+            <td>
+              <div class="d-flex flex-wrap gap-2">
                 <a
-                  href="{% url 'loan_agreement_pdf' l.pk %}"
-                  class="btn btn-outline-primary btn-sm"
+                  href="{% url 'export_loan_pdf' l.pk %}"
+                  class="btn btn-outline-danger btn-sm"
                 >
-                  Agreement PDF
+                  PDF
                 </a>
 
-              {% endif %}
+                <a
+                  href="{% url 'export_loan_excel' l.pk %}"
+                  class="btn btn-outline-success btn-sm"
+                >
+                  Excel
+                </a>
 
-            </div>
-          </td>
-
-        </tr>
+                {% if l.agreement %}
+                  <a
+                    href="{% url 'loan_agreement_pdf' l.pk %}"
+                    class="btn btn-outline-primary btn-sm"
+                  >
+                    Agreement PDF
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
         {% empty %}
-
-        <tr>
-          <td colspan="7" class="text-center text-muted py-4">
-            No loans yet.
-          </td>
-        </tr>
-
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              No loans yet.
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
-
     </table>
   </div>
 </div>

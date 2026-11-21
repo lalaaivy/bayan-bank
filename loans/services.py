@@ -78,17 +78,21 @@ def _evaluate(loan, checked_by):
     score = client.credit_score or 0
 
     failed = []
+
     if installment > income * max_ratio:
         failed.append(
             f"Income: monthly installment P{installment:,.2f} is more than "
             f"{max_ratio:.0%} of monthly income P{income:,.2f}."
         )
+
     required_savings = loan.principal * min_savings_ratio
+
     if savings < required_savings:
         failed.append(
             f"Savings: balance P{savings:,.2f} is below the required "
             f"P{required_savings:,.2f} ({min_savings_ratio:.0%} of the loan)."
         )
+
     if score < min_score:
         failed.append(f"Credit score: {score} is below the minimum {min_score}.")
 
@@ -103,9 +107,14 @@ def _evaluate(loan, checked_by):
         remarks = " ".join(failed)
 
     record = EligibilityCheck.objects.create(
-        loan=loan, result=result, remarks=remarks, checked_by=checked_by,
+        loan=loan,
+        result=result,
+        remarks=remarks,
+        checked_by=checked_by,
     )
+
     log(checked_by, "loan_eligibility_check", loan, result=result)
+
     return record
 
 
@@ -141,7 +150,9 @@ def check_overdue_loans(client):
 def check_eligibility(loan_id, by):
     """Lets a loan officer or admin run the check again."""
     _require_role(by, DECIDERS, "You are not allowed to check loan eligibility.")
+
     loan = _get_loan_locked(loan_id)
+
     return _evaluate(loan, by)
 
 
@@ -150,13 +161,21 @@ def check_eligibility(loan_id, by):
 # --------------------------------------------------
 
 @transaction.atomic
-def apply_for_loan(client, product, principal, term_months, by):
+def apply_for_loan(client, product, principal, term_months, by, purpose=""):
     principal = to_money(principal)
 
     try:
         term_months = int(term_months)
     except (TypeError, ValueError):
         raise BankError("Enter a valid number of months.")
+
+    purpose = (purpose or "").strip()
+
+    if not purpose:
+        raise BankError("Please provide the purpose of your loan application.")
+
+    if len(purpose) > 1000:
+        raise BankError("Loan purpose cannot exceed 1,000 characters.")
 
     if not product.is_active:
         raise BankError("This loan product is not available.")
@@ -179,11 +198,20 @@ def apply_for_loan(client, product, principal, term_months, by):
         principal=principal,
         annual_rate=product.annual_rate,
         term_months=term_months,
+        purpose=purpose,
     )
 
-    log(by, "loan_apply", loan, principal=principal, term_months=term_months)
+    log(
+        by,
+        "loan_apply",
+        loan,
+        principal=principal,
+        term_months=term_months,
+        purpose=purpose,
+    )
 
     _evaluate(loan, None)
+
     return loan
 
 
@@ -208,6 +236,7 @@ def approve_loan(loan_id, by):
     latest_check = (
         EligibilityCheck.objects.filter(loan=loan).order_by("-pk").first()
     )
+
     if latest_check is None:
         latest_check = _evaluate(loan, by)
 
@@ -219,6 +248,7 @@ def approve_loan(loan_id, by):
     loan.status = Loan.Status.APPROVED
     loan.decided_by = by
     loan.decided_at = timezone.now()
+
     loan.save(update_fields=["status", "decided_by", "decided_at"])
 
     _notify_client(
@@ -229,6 +259,7 @@ def approve_loan(loan_id, by):
     )
 
     log(by, "loan_approve", loan)
+
     return loan
 
 
@@ -241,6 +272,7 @@ def reject_loan(loan_id, by, reason):
     _require_role(by, DECIDERS, "You are not allowed to reject loans.")
 
     reason = (reason or "").strip()
+
     if not reason:
         raise BankError("A reason is required to reject a loan.")
 
@@ -255,7 +287,10 @@ def reject_loan(loan_id, by, reason):
     loan.decided_by = by
     loan.decided_at = timezone.now()
     loan.reject_reason = reason[:255]
-    loan.save(update_fields=["status", "decided_by", "decided_at", "reject_reason"])
+
+    loan.save(
+        update_fields=["status", "decided_by", "decided_at", "reject_reason"]
+    )
 
     _notify_client(
         loan,
@@ -265,6 +300,7 @@ def reject_loan(loan_id, by, reason):
     )
 
     log(by, "loan_reject", loan, reason=reason)
+
     return loan
 
 
@@ -319,6 +355,7 @@ def accept_loan_agreement(loan_id, by):
         raise BankError("Only approved loans have an agreement to accept.")
 
     agreement = LoanAgreement.objects.select_for_update().filter(loan=loan).first()
+
     if agreement is None:
         raise BankError("This loan has no agreement yet.")
 
@@ -329,6 +366,7 @@ def accept_loan_agreement(loan_id, by):
     agreement.save(update_fields=["signed_at"])
 
     log(by, "loan_agreement_accept", loan)
+
     return agreement
 
 
@@ -348,7 +386,9 @@ def disburse_loan(loan_id, by, savings_account_id):
         )
 
     try:
-        account = SavingsAccount.objects.select_for_update().get(pk=savings_account_id)
+        account = SavingsAccount.objects.select_for_update().get(
+            pk=savings_account_id
+        )
     except SavingsAccount.DoesNotExist:
         raise BankError("Savings account not found.")
 
@@ -360,7 +400,12 @@ def disburse_loan(loan_id, by, savings_account_id):
 
     today = timezone.localdate()
 
-    rows = build_schedule(loan.principal, loan.annual_rate, loan.term_months, today)
+    rows = build_schedule(
+        loan.principal,
+        loan.annual_rate,
+        loan.term_months,
+        today,
+    )
 
     Installment.objects.bulk_create([
         Installment(
@@ -396,6 +441,7 @@ def disburse_loan(loan_id, by, savings_account_id):
     loan.status = Loan.Status.ACTIVE
     loan.disbursed_at = timezone.now()
     loan.start_date = today
+
     loan.save(update_fields=["status", "disbursed_at", "start_date"])
 
     _notify_client(
@@ -405,7 +451,14 @@ def disburse_loan(loan_id, by, savings_account_id):
         f"to savings account {account.account_number}.",
     )
 
-    log(by, "loan_disburse", loan, account=account.account_number, amount=loan.principal)
+    log(
+        by,
+        "loan_disburse",
+        loan,
+        account=account.account_number,
+        amount=loan.principal,
+    )
+
     return loan
 
 
@@ -437,7 +490,9 @@ def record_payment(loan_id, amount, by):
     )
 
     if amount > remaining:
-        raise BankError(f"Payment is more than the remaining balance ({remaining}).")
+        raise BankError(
+            f"Payment is more than the remaining balance ({remaining})."
+        )
 
     now = timezone.now()
     left = amount
@@ -451,6 +506,7 @@ def record_payment(loan_id, amount, by):
             inst.paid_at = now
 
         inst.save(update_fields=["amount_paid", "status", "paid_at"])
+
         left -= pay
 
         if left == 0:
@@ -464,7 +520,10 @@ def record_payment(loan_id, amount, by):
     )
 
     LoanPayment.objects.create(
-        loan=loan, ledger_entry=entry, amount=amount, recorded_by=by,
+        loan=loan,
+        ledger_entry=entry,
+        amount=amount,
+        recorded_by=by,
     )
 
     if amount == remaining:
@@ -472,4 +531,5 @@ def record_payment(loan_id, amount, by):
         loan.save(update_fields=["status"])
 
     log(by, "loan_payment", loan, amount=amount)
+
     return entry

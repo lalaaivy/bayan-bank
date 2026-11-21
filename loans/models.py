@@ -1,8 +1,19 @@
 
+import os
+from decimal import Decimal
+
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import F, Q
-from decimal import Decimal
+
+
+def loan_document_storage():
+    """Store loan documents outside publicly accessible media folders."""
+    return FileSystemStorage(
+        location=os.path.join(settings.BASE_DIR, "private_uploads")
+    )
+
 
 # ==========================================
 # 1. LOAN PRODUCTS
@@ -11,20 +22,9 @@ from decimal import Decimal
 class LoanProduct(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
-    annual_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-    )
-
-    min_amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
-    max_amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
+    annual_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    min_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    max_amount = models.DecimalField(max_digits=14, decimal_places=2)
 
     min_months = models.PositiveSmallIntegerField()
     max_months = models.PositiveSmallIntegerField()
@@ -33,26 +33,11 @@ class LoanProduct(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=Q(annual_rate__gte=0),
-                name="loan_product_rate_nonnegative",
-            ),
-            models.CheckConstraint(
-                condition=Q(min_amount__gt=0),
-                name="loan_product_min_amount_positive",
-            ),
-            models.CheckConstraint(
-                condition=Q(max_amount__gte=F("min_amount")),
-                name="loan_product_valid_amount_range",
-            ),
-            models.CheckConstraint(
-                condition=Q(min_months__gte=1),
-                name="loan_product_min_term_positive",
-            ),
-            models.CheckConstraint(
-                condition=Q(max_months__gte=F("min_months")),
-                name="loan_product_valid_term_range",
-            ),
+            models.CheckConstraint(condition=Q(annual_rate__gte=0), name="loan_product_rate_nonnegative"),
+            models.CheckConstraint(condition=Q(min_amount__gt=0), name="loan_product_min_amount_positive"),
+            models.CheckConstraint(condition=Q(max_amount__gte=F("min_amount")), name="loan_product_valid_amount_range"),
+            models.CheckConstraint(condition=Q(min_months__gte=1), name="loan_product_min_term_positive"),
+            models.CheckConstraint(condition=Q(max_months__gte=F("min_months")), name="loan_product_valid_term_range"),
         ]
 
     def __str__(self):
@@ -79,22 +64,13 @@ class Loan(models.Model):
         related_name="loans",
     )
 
-    product = models.ForeignKey(
-        LoanProduct,
-        on_delete=models.PROTECT,
-    )
+    product = models.ForeignKey(LoanProduct, on_delete=models.PROTECT)
 
-    principal = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
-    annual_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-    )
-
+    principal = models.DecimalField(max_digits=14, decimal_places=2)
+    annual_rate = models.DecimalField(max_digits=5, decimal_places=2)
     term_months = models.PositiveSmallIntegerField()
+
+    purpose = models.TextField(blank=True, default="")
 
     status = models.CharField(
         max_length=10,
@@ -112,40 +88,16 @@ class Loan(models.Model):
         related_name="+",
     )
 
-    decided_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    reject_reason = models.CharField(
-        max_length=255,
-        blank=True,
-    )
-
-    disbursed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    start_date = models.DateField(
-        null=True,
-        blank=True,
-    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    reject_reason = models.CharField(max_length=255, blank=True)
+    disbursed_at = models.DateTimeField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=Q(principal__gt=0),
-                name="loan_principal_positive",
-            ),
-            models.CheckConstraint(
-                condition=Q(annual_rate__gte=0),
-                name="loan_rate_nonnegative",
-            ),
-            models.CheckConstraint(
-                condition=Q(term_months__gte=1),
-                name="loan_term_positive",
-            ),
+            models.CheckConstraint(condition=Q(principal__gt=0), name="loan_principal_positive"),
+            models.CheckConstraint(condition=Q(annual_rate__gte=0), name="loan_rate_nonnegative"),
+            models.CheckConstraint(condition=Q(term_months__gte=1), name="loan_term_positive"),
         ]
 
     def __str__(self):
@@ -153,7 +105,47 @@ class Loan(models.Model):
 
 
 # ==========================================
-# 3. INSTALLMENTS / AMORTIZATION
+# 3. LOAN SUPPORTING DOCUMENTS
+# ==========================================
+
+class LoanDocument(models.Model):
+
+    class DocumentType(models.TextChoices):
+        PROOF_OF_INCOME = "proof_of_income", "Proof of Income"
+        EMPLOYMENT_CERTIFICATE = "employment_certificate", "Certificate of Employment"
+        BANK_STATEMENT = "bank_statement", "Bank Statement"
+        OTHER = "other", "Other Supporting Document"
+
+    loan = models.ForeignKey(
+        Loan,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+
+    document_type = models.CharField(
+        max_length=30,
+        choices=DocumentType.choices,
+    )
+
+    file = models.FileField(
+        storage=loan_document_storage(),
+        upload_to="loan_documents/%Y/%m/",
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_loan_documents",
+    )
+
+    def __str__(self):
+        return f"{self.get_document_type_display()} - Loan #{self.loan_id}"
+
+
+# ==========================================
+# 4. INSTALLMENTS / AMORTIZATION
 # ==========================================
 
 class Installment(models.Model):
@@ -172,32 +164,12 @@ class Installment(models.Model):
     number = models.PositiveSmallIntegerField()
     due_date = models.DateField()
 
-    principal_due = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
+    principal_due = models.DecimalField(max_digits=14, decimal_places=2)
+    interest_due = models.DecimalField(max_digits=14, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    penalty_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
 
-    interest_due = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
-    amount_paid = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-        default=0,
-    )
-
-    penalty_amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-        default=0,
-    )
-
-    paid_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
+    paid_at = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(
         max_length=10,
@@ -209,43 +181,21 @@ class Installment(models.Model):
         ordering = ["loan", "number"]
 
         constraints = [
-            models.UniqueConstraint(
-                fields=["loan", "number"],
-                name="unique_installment_number",
-            ),
-            models.CheckConstraint(
-                condition=Q(number__gte=1),
-                name="installment_number_positive",
-            ),
-            models.CheckConstraint(
-                condition=Q(principal_due__gte=0),
-                name="installment_principal_nonnegative",
-            ),
-            models.CheckConstraint(
-                condition=Q(interest_due__gte=0),
-                name="installment_interest_nonnegative",
-            ),
-            models.CheckConstraint(
-                condition=Q(amount_paid__gte=0),
-                name="installment_amount_paid_nonnegative",
-            ),
-            models.CheckConstraint(
-                condition=Q(penalty_amount__gte=0),
-                name="installment_penalty_nonnegative",
-            ),
+            models.UniqueConstraint(fields=["loan", "number"], name="unique_installment_number"),
+            models.CheckConstraint(condition=Q(number__gte=1), name="installment_number_positive"),
+            models.CheckConstraint(condition=Q(principal_due__gte=0), name="installment_principal_nonnegative"),
+            models.CheckConstraint(condition=Q(interest_due__gte=0), name="installment_interest_nonnegative"),
+            models.CheckConstraint(condition=Q(amount_paid__gte=0), name="installment_amount_paid_nonnegative"),
+            models.CheckConstraint(condition=Q(penalty_amount__gte=0), name="installment_penalty_nonnegative"),
         ]
 
     @property
     def total_due(self):
-        return (
-            self.principal_due
-            + self.interest_due
-            + self.penalty_amount
-        )
+        return self.principal_due + self.interest_due + self.penalty_amount
 
 
 # ==========================================
-# 4. LOAN ELIGIBILITY RULES
+# 5. LOAN ELIGIBILITY RULES
 # ==========================================
 
 class LoanRule(models.Model):
@@ -256,40 +206,28 @@ class LoanRule(models.Model):
         related_name="eligibility_rule",
     )
 
-    minimum_monthly_income = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-        default=0,
-    )
-
-    minimum_credit_score = models.PositiveIntegerField(
-        default=0,
-    )
-
-    minimum_age = models.PositiveSmallIntegerField(
-        default=18,
-    )
+    minimum_monthly_income = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    minimum_credit_score = models.PositiveIntegerField(default=0)
+    minimum_age = models.PositiveSmallIntegerField(default=18)
 
     max_installment_ratio = models.DecimalField(
-        max_digits=4, decimal_places=2, default=Decimal("0.40"),
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal("0.40"),
     )
 
     min_savings_ratio = models.DecimalField(
-        max_digits=4, decimal_places=2, default=Decimal("0.10"),
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal("0.10"),
     )
 
     is_active = models.BooleanField(default=True)
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=Q(minimum_monthly_income__gte=0),
-                name="loan_rule_income_nonnegative",
-            ),
-            models.CheckConstraint(
-                condition=Q(minimum_age__gte=18),
-                name="loan_rule_min_age_18",
-            ),
+            models.CheckConstraint(condition=Q(minimum_monthly_income__gte=0), name="loan_rule_income_nonnegative"),
+            models.CheckConstraint(condition=Q(minimum_age__gte=18), name="loan_rule_min_age_18"),
         ]
 
     def __str__(self):
@@ -297,7 +235,7 @@ class LoanRule(models.Model):
 
 
 # ==========================================
-# 5. ELIGIBILITY CHECK RESULTS
+# 6. ELIGIBILITY CHECK RESULTS
 # ==========================================
 
 class EligibilityCheck(models.Model):
@@ -336,7 +274,7 @@ class EligibilityCheck(models.Model):
 
 
 # ==========================================
-# 6. LOAN AGREEMENTS
+# 7. LOAN AGREEMENTS
 # ==========================================
 
 class LoanAgreement(models.Model):
@@ -347,24 +285,10 @@ class LoanAgreement(models.Model):
         related_name="agreement",
     )
 
-    agreement_number = models.CharField(
-        max_length=40,
-        unique=True,
-    )
-
+    agreement_number = models.CharField(max_length=40, unique=True)
     agreement_date = models.DateField()
-
-    # Records when the client accepts the agreement.
-    # NULL means the agreement has not been accepted.
-    signed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    terms_and_conditions = models.TextField(
-        blank=True,
-    )
-
+    signed_at = models.DateTimeField(null=True, blank=True)
+    terms_and_conditions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -372,7 +296,7 @@ class LoanAgreement(models.Model):
 
 
 # ==========================================
-# 7. LOAN PAYMENT RECORDS
+# 8. LOAN PAYMENT RECORDS
 # ==========================================
 
 class LoanPayment(models.Model):
@@ -389,11 +313,7 @@ class LoanPayment(models.Model):
         related_name="loan_payment_record",
     )
 
-    amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
     payment_date = models.DateTimeField(auto_now_add=True)
 
     recorded_by = models.ForeignKey(
@@ -404,10 +324,7 @@ class LoanPayment(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=Q(amount__gt=0),
-                name="loan_payment_amount_positive",
-            ),
+            models.CheckConstraint(condition=Q(amount__gt=0), name="loan_payment_amount_positive"),
         ]
 
     def __str__(self):
@@ -415,7 +332,7 @@ class LoanPayment(models.Model):
 
 
 # ==========================================
-# 8. LOAN DISBURSEMENT RECORDS
+# 9. LOAN DISBURSEMENT RECORDS
 # ==========================================
 
 class Disbursement(models.Model):
@@ -438,11 +355,7 @@ class Disbursement(models.Model):
         related_name="loan_disbursement_record",
     )
 
-    amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
     disbursed_at = models.DateTimeField(auto_now_add=True)
 
     disbursed_by = models.ForeignKey(
@@ -453,10 +366,7 @@ class Disbursement(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=Q(amount__gt=0),
-                name="disbursement_amount_positive",
-            ),
+            models.CheckConstraint(condition=Q(amount__gt=0), name="disbursement_amount_positive"),
         ]
 
     def __str__(self):
