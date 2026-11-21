@@ -4,15 +4,19 @@ from django.urls import path
 
 from loans import views as loan_views
 from savings import views as savings_views
-
 from . import views
+
 
 urlpatterns = [
     path("", views.home, name="home"),
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+
+    # Main dashboards
     path("portal/", views.portal_home, name="portal_home"),
     path("staff/", views.staff_home, name="staff_home"),
+    path("officer/", views.officer_home, name="officer_home"),
+    path("admin-panel/", views.admin_home, name="admin_home"),
 
     # Client portal
     path("portal/loans/", loan_views.portal_loans, name="my_loans"),
@@ -30,27 +34,51 @@ urlpatterns = [
     path("register/", views.register, name="register"),
     path("register/complete-profile/", views.complete_profile, name="complete_profile"),
 
-    # Role homes
-    path("officer/", views.officer_home, name="officer_home"),
-    path("admin-panel/", views.admin_home, name="admin_home"),
-
-    # Staff
+    # Staff - Clients
     path("staff/clients/", views.staff_clients, name="staff_clients"),
-    path("staff/clients/detail/", views.staff_client_detail, name="staff_client_detail"),
+    path(
+        "staff/clients/<int:client_id>/",
+        views.staff_client_detail,
+        name="staff_client_detail",
+    ),
     path("staff/clients/add/", views.staff_add_client, name="staff_add_client"),
+
+    # Client verification
     path("staff/clients/verify/", views.verify_clients, name="verify_clients"),
-    path("staff/clients/verify/<int:client_id>/", views.verify_client_detail, name="verify_client_detail"),
-    path("staff/clients/document/<int:doc_id>/<str:side>/", views.client_document_file, name="client_document_file"),
+    path(
+        "staff/clients/verify/<int:client_id>/",
+        views.verify_client_detail,
+        name="verify_client_detail",
+    ),
+    # Backward-compatible name for existing templates
+    path(
+        "staff/clients/verify/<int:client_id>/",
+        views.verify_client_detail,
+        name="staff_verify_client",
+    ),
+    path(
+        "staff/clients/document/<int:doc_id>/<str:side>/",
+        views.client_document_file,
+        name="client_document_file",
+    ),
+
+    # Staff - Payments and Savings
     path("staff/payments/", views.staff_payments, name="staff_payments"),
     path("staff/payments/history/", views.staff_payment_history, name="staff_payment_history"),
     path("staff/payments/receipt/", views.staff_receipt, name="staff_receipt"),
     path("staff/savings/", views.staff_savings, name="staff_savings"),
+
+    # Staff - Loan Release
     path("staff/loans/release/", views.release_loans, name="release_loans"),
     path("staff/loans/release/confirm/", views.confirm_loan_release, name="confirm_loan_release"),
 
     # Loan officer
     path("officer/applications/", views.loan_applications, name="loan_applications"),
-    path("officer/applications/detail/", views.loan_application_detail, name="loan_application_detail"),
+    path(
+        "officer/applications/<int:loan_id>/",
+        views.loan_application_detail,
+        name="loan_application_detail",
+    ),
     path("officer/loans/", views.officer_loans, name="officer_loans"),
     path("officer/loans/detail/", views.officer_loan_detail, name="officer_loan_detail"),
 

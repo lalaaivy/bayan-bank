@@ -38,22 +38,26 @@ class RegisterForm(forms.Form):
     sex = forms.ChoiceField(
         choices=[("Male", "Male"), ("Female", "Female")]
     )
-    civil_status = forms.ChoiceField(choices=[
-        ("Single", "Single"),
-        ("Married", "Married"),
-        ("Widowed", "Widowed"),
-        ("Separated", "Separated"),
-    ])
+    civil_status = forms.ChoiceField(
+        choices=[
+            ("Single", "Single"),
+            ("Married", "Married"),
+            ("Widowed", "Widowed"),
+            ("Separated", "Separated"),
+        ]
+    )
     nationality = forms.CharField(max_length=50, initial="Filipino")
     phone = forms.CharField(max_length=30, label="Mobile number")
     address = forms.CharField(max_length=255)
 
-    employment_status = forms.ChoiceField(choices=[
-        ("Employed", "Employed"),
-        ("Self-employed", "Self-employed"),
-        ("Unemployed", "Unemployed"),
-        ("Student", "Student"),
-    ])
+    employment_status = forms.ChoiceField(
+        choices=[
+            ("Employed", "Employed"),
+            ("Self-employed", "Self-employed"),
+            ("Unemployed", "Unemployed"),
+            ("Student", "Student"),
+        ]
+    )
     source_of_income = forms.CharField(max_length=100)
     monthly_income = forms.DecimalField(
         min_value=0,
@@ -67,6 +71,7 @@ class RegisterForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         for field in self.fields.values():
             css = (
                 "form-select"
@@ -77,20 +82,25 @@ class RegisterForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
+
         if User.objects.filter(username__iexact=username).exists():
             raise forms.ValidationError("This username is already taken.")
+
         return username
 
     def clean_date_of_birth(self):
         dob = self.cleaned_data["date_of_birth"]
         today = date.today()
+
         age = today.year - dob.year - (
             (today.month, today.day) < (dob.month, dob.day)
         )
+
         if age < 18:
             raise forms.ValidationError(
                 "You must be 18 or older to register."
             )
+
         return dob
 
     def clean_phone(self):
@@ -99,18 +109,22 @@ class RegisterForm(forms.Form):
             .replace(" ", "")
             .replace("-", "")
         )
+
         if not PHONE_RE.match(phone):
             raise forms.ValidationError(
                 "Use a PH mobile number like 09171234567."
             )
+
         return phone
 
     def clean_id_number(self):
         value = self.cleaned_data["id_number"].strip()
+
         if Client.find_by_id_number(value):
             raise forms.ValidationError(
                 "This ID number is already registered."
             )
+
         return value
 
     def clean(self):
@@ -156,11 +170,107 @@ class RegisterForm(forms.Form):
             source_of_income=data["source_of_income"],
             monthly_income=data["monthly_income"],
         )
+
         client.set_id_number(data["id_number"])
         client.save()
 
         log(user, "register", client)
+
         return client
+
+
+class ClientProfileForm(forms.Form):
+    first_name = forms.CharField(max_length=60)
+    last_name = forms.CharField(max_length=60)
+    email = forms.EmailField()
+    phone = forms.CharField(max_length=30, label="Mobile number")
+    address = forms.CharField(
+        max_length=255,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
+
+    def __init__(self, *args, user=None, client=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.user = user
+        self.client = client
+
+        if not self.is_bound and user and client:
+            self.initial.update({
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone": client.phone,
+                "address": client.address,
+            })
+
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", "form-control")
+
+    def clean_phone(self):
+        phone = (
+            self.cleaned_data["phone"]
+            .replace(" ", "")
+            .replace("-", "")
+        )
+
+        if not PHONE_RE.match(phone):
+            raise forms.ValidationError(
+                "Use a PH mobile number like 09171234567."
+            )
+
+        return phone
+
+    @transaction.atomic
+    def save(self):
+        if not self.user or not self.client:
+            raise ValueError(
+                "A user and client profile are required to save this form."
+            )
+
+        data = self.cleaned_data
+
+        self.user.first_name = data["first_name"]
+        self.user.last_name = data["last_name"]
+        self.user.email = data["email"]
+        self.user.save(
+            update_fields=["first_name", "last_name", "email"]
+        )
+
+        self.client.phone = data["phone"]
+        self.client.address = data["address"]
+        self.client.save(update_fields=["phone", "address"])
+
+        log(self.user, "update_client_profile", self.client)
+
+        return self.client
+
+
+class ClientCreditScoreForm(forms.Form):
+    credit_score = forms.IntegerField(
+        min_value=0,
+        max_value=850,
+        label="New Credit Score",
+        widget=forms.NumberInput(
+            attrs={
+                "class": "form-control",
+                "min": 0,
+                "max": 850,
+            }
+        ),
+    )
+
+    reason = forms.CharField(
+        max_length=255,
+        label="Reason for Update",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Explain why the credit score is being updated.",
+            }
+        ),
+    )
 
 
 class EmployeeUserCreateForm(forms.ModelForm):
@@ -185,6 +295,7 @@ class EmployeeUserCreateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.fields["role"].queryset = Role.objects.filter(
             name__in=EMPLOYEE_ROLES
         ).order_by("name")
@@ -199,8 +310,10 @@ class EmployeeUserCreateForm(forms.ModelForm):
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
+
         if User.objects.filter(username__iexact=username).exists():
             raise forms.ValidationError("This username is already taken.")
+
         return username
 
     def clean(self):
@@ -257,6 +370,7 @@ class EmployeeUserEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.fields["role"].queryset = Role.objects.filter(
             name__in=EMPLOYEE_ROLES
         ).order_by("name")
@@ -271,6 +385,7 @@ class EmployeeUserEditForm(forms.ModelForm):
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
+
         existing = User.objects.filter(
             username__iexact=username
         ).exclude(pk=self.instance.pk)
@@ -330,6 +445,7 @@ class ClientDocumentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         for field in self.fields.values():
             css = (
                 "form-select"
@@ -359,6 +475,8 @@ class ClientDocumentForm(forms.ModelForm):
 
     def clean_back_image(self):
         uploaded = self.cleaned_data.get("back_image")
+
         if uploaded:
             return self._check_image(uploaded)
+
         return uploaded

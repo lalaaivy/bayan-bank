@@ -1,4 +1,6 @@
 
+import csv
+import secrets
 from decimal import Decimal
 
 from django.contrib import messages
@@ -6,19 +8,31 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, Sum
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from accounting.models import BankAccount, LedgerEntry
+from audit.models import AuditLog
 from audit.services import log
 from clients.models import Client, ClientDocument
-from loans.models import Loan, LoanProduct
+from accounting.money import BankError
+from loans import services as loan_services
+from loans.calculations import build_schedule
+from loans.models import (
+    EligibilityCheck,
+    Loan,
+    LoanProduct,
+    LoanRule,
+)
 from notifications.models import Notification
-from savings.models import SavingsAccount
+from savings.models import SavingsAccount, SavingsDeposit
 
 from .decorators import client_required, role_required
 from .forms import (
+    ClientCreditScoreForm,
     ClientDocumentForm,
+    ClientProfileForm,
     EmployeeUserCreateForm,
     EmployeeUserEditForm,
     RegisterForm,
@@ -29,42 +43,124 @@ from .models import Role, User
 @login_required
 def home(request):
     role = request.user.role.name
+
     destinations = {
         "client": "portal_home",
         "staff": "staff_home",
         "loan_officer": "officer_home",
         "admin": "admin_home",
     }
+
     return redirect(destinations.get(role, "login"))
 
 
 @client_required
 def portal_home(request):
-    accounts = SavingsAccount.objects.filter(client=request.client)
-    balance = accounts.aggregate(total=Sum("balance"))["total"] or Decimal("0.00")
+    client = request.client
+
+    # Regular bank account balance.
+    # Cash deposits and loan disbursements are credited here.
+    bank_account = BankAccount.objects.filter(
+        client=client
+    ).first()
+
+    bank_balance = (
+        bank_account.balance
+        if bank_account
+        else Decimal("0.00")
+    )
+
+    # Each client is allowed only one savings account.
+    accounts = SavingsAccount.objects.filter(
+        client=client
+    )
+
+    balance = (
+        accounts.aggregate(total=Sum("balance"))["total"]
+        or Decimal("0.00")
+    )
+
+    # Interest is calculated separately for each savings deposit.
+    # Only released deposits have finalized and credited interest.
+    released_deposits = SavingsDeposit.objects.filter(
+        savings_account__client=client,
+        status=SavingsDeposit.Status.RELEASED,
+    )
+
+    interest_summary = released_deposits.aggregate(
+        total=Sum("interest_amount")
+    )
+
+    total_interest = (
+        interest_summary["total"]
+        or Decimal("0.00")
+    )
+
+    # Most recently released savings deposit.
+    latest_interest = (
+        released_deposits
+        .order_by("-released_at", "-id")
+        .first()
+    )
+
+    # Preserve compatibility with dashboard templates that use
+    # latest_interest.posted_at to display the interest date.
+    if latest_interest:
+        latest_interest.posted_at = latest_interest.released_at
+
+    # Client loan records.
     loans = (
-        Loan.objects.filter(client=request.client)
+        Loan.objects.filter(client=client)
         .select_related("product")
         .order_by("-applied_at")
     )
-    latest_document = request.client.documents.order_by("-uploaded_at").first()
+
+    # Actual recent activity from bank, savings, and loan records.
+    recent_transactions = (
+        LedgerEntry.objects.filter(
+            Q(bank_account__client=client)
+            | Q(savings_account__client=client)
+            | Q(loan__client=client)
+        )
+        .select_related(
+            "bank_account",
+            "savings_account",
+            "loan",
+        )
+        .order_by("-created_at", "-id")[:5]
+    )
+
+    latest_document = client.documents.order_by(
+        "-uploaded_at"
+    ).first()
 
     context = {
-        "balance": balance,
+        "client": client,
+        "bank_account": bank_account,
+        "bank_balance": bank_balance,
         "accounts": accounts,
+        "balance": balance,
         "loans": loans,
-        "client": request.client,
+        "recent_transactions": recent_transactions,
         "latest_document": latest_document,
+        "total_interest": total_interest,
+        "latest_interest": latest_interest,
     }
+
     return render(request, "portal/home.html", context)
 
 
 @role_required("staff", "admin", "loan_officer")
 def staff_home(request):
     context = {
-        "pending_count": Loan.objects.filter(status=Loan.Status.PENDING).count(),
-        "active_count": Loan.objects.filter(status=Loan.Status.ACTIVE).count(),
+        "pending_count": Loan.objects.filter(
+            status=Loan.Status.PENDING
+        ).count(),
+        "active_count": Loan.objects.filter(
+            status=Loan.Status.ACTIVE
+        ).count(),
     }
+
     return render(request, "staff/home.html", context)
 
 
@@ -82,6 +178,7 @@ def _demo_form(request, template, destination):
     if request.method == "POST":
         messages.success(request, "Saved (demo)")
         return redirect(destination)
+
     return render(request, template)
 
 
@@ -127,6 +224,7 @@ def upload_id(request):
             request,
             "ID uploaded. Staff will review it and update your status.",
         )
+
         return redirect("portal_home")
 
     return render(
@@ -185,17 +283,44 @@ def apply_loan(request):
     )
 
 
-@role_required("client")
+@client_required
 def client_profile(request):
-    return render(request, "portal/profile.html")
+    client = request.client
+
+    return render(
+        request,
+        "portal/profile.html",
+        {"client": client},
+    )
 
 
-@role_required("client")
+@client_required
 def edit_client_profile(request):
-    return _demo_form(
+    client = request.client
+
+    form = ClientProfileForm(
+        request.POST or None,
+        user=request.user,
+        client=client,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+
+        messages.success(
+            request,
+            "Your profile has been updated successfully.",
+        )
+
+        return redirect("client_profile")
+
+    return render(
         request,
         "portal/profile_edit.html",
-        "client_profile",
+        {
+            "form": form,
+            "client": client,
+        },
     )
 
 
@@ -230,6 +355,7 @@ def register(request):
             f"Registered! Your Client ID is {client.client_code}. "
             "Upload your ID so staff can verify your account.",
         )
+
         return redirect("upload_id")
 
     return render(
@@ -251,21 +377,185 @@ def complete_profile(request):
 
 @role_required("staff", "admin")
 def staff_clients(request):
-    return render(request, "staff/clients.html")
+    clients = (
+        Client.objects.select_related("user")
+        .order_by("-created_at")
+    )
+
+    q = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+
+    if q:
+        clients = clients.filter(
+            Q(user__username__icontains=q)
+            | Q(user__first_name__icontains=q)
+            | Q(user__last_name__icontains=q)
+            | Q(user__email__icontains=q)
+            | Q(phone__icontains=q)
+        )
+
+    if status_filter in Client.VerificationStatus.values:
+        clients = clients.filter(
+            verification_status=status_filter
+        )
+
+    client_list = list(clients[:200])
+
+    for client in client_list:
+        client.loans_count = Loan.objects.filter(
+            client=client
+        ).count()
+
+        client.savings_balance = (
+            SavingsAccount.objects.filter(client=client)
+            .aggregate(total=Sum("balance"))["total"]
+            or Decimal("0.00")
+        )
+
+    context = {
+        "clients": client_list,
+        "q": q,
+        "status": status_filter,
+        "statuses": Client.VerificationStatus.choices,
+    }
+
+    return render(request, "staff/clients.html", context)
 
 
 @role_required("staff", "admin")
 def staff_add_client(request):
-    return _demo_form(
+    form = RegisterForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        client = form.save()
+
+        log(
+            request.user,
+            "create_client",
+            client,
+            ip=request.META.get("REMOTE_ADDR"),
+        )
+
+        messages.success(
+            request,
+            f"Client {client.client_code} created successfully.",
+        )
+
+        return redirect("staff_client_detail", client_id=client.pk)
+
+    return render(
         request,
         "staff/add_client.html",
-        "staff_clients",
+        {"form": form},
     )
 
 
 @role_required("staff", "admin")
-def staff_client_detail(request):
-    return render(request, "staff/client_detail.html")
+def staff_client_detail(request, client_id):
+    client = get_object_or_404(
+        Client.objects.select_related("user"),
+        pk=client_id,
+    )
+
+    credit_score_form = ClientCreditScoreForm(
+        request.POST or None,
+        initial={"credit_score": client.credit_score},
+    )
+
+    if request.method == "POST":
+        if credit_score_form.is_valid():
+            new_score = credit_score_form.cleaned_data["credit_score"]
+            reason = credit_score_form.cleaned_data["reason"]
+
+            with transaction.atomic():
+                locked_client = get_object_or_404(
+                    Client.objects.select_for_update(),
+                    pk=client_id,
+                )
+
+                previous_score = locked_client.credit_score
+
+                locked_client.credit_score = new_score
+                locked_client.save(update_fields=["credit_score"])
+
+                log(
+                    request.user,
+                    "update_client_credit_score",
+                    locked_client,
+                    ip=request.META.get("REMOTE_ADDR"),
+                    previous_score=previous_score,
+                    new_score=new_score,
+                    reason=reason,
+                )
+
+            messages.success(
+                request,
+                f"Credit score updated successfully from "
+                f"{previous_score} to {new_score}.",
+            )
+
+            return redirect(
+                "staff_client_detail",
+                client_id=client_id,
+            )
+
+        messages.error(
+            request,
+            "Please correct the errors in the credit score form.",
+        )
+
+    client.refresh_from_db()
+
+    loans = (
+        Loan.objects.filter(client=client)
+        .select_related("product", "decided_by")
+        .order_by("-applied_at")
+    )
+
+    bank_account = BankAccount.objects.filter(
+        client=client
+    ).first()
+
+    savings_accounts = (
+        SavingsAccount.objects.filter(client=client)
+        .order_by("-opened_at")
+    )
+
+    total_savings = (
+        savings_accounts.aggregate(total=Sum("balance"))["total"]
+        or Decimal("0.00")
+    )
+
+    transactions = (
+        LedgerEntry.objects.filter(
+            Q(bank_account__client=client)
+            | Q(savings_account__client=client)
+            | Q(loan__client=client)
+        )
+        .select_related(
+            "bank_account",
+            "savings_account",
+            "loan",
+            "created_by",
+        )
+        .order_by("-created_at", "-id")[:100]
+    )
+
+    context = {
+        "client": client,
+        "bank_account": bank_account,
+        "loans": loans,
+        "savings_accounts": savings_accounts,
+        "total_savings": total_savings,
+        "transactions": transactions,
+        "credit_score_form": credit_score_form,
+    }
+
+    return render(
+        request,
+        "staff/client_detail.html",
+        context,
+    )
 
 
 @role_required("staff", "admin")
@@ -314,80 +604,133 @@ def verify_client_detail(request, client_id):
         Client.objects.select_related("user"),
         pk=client_id,
     )
+
     document = client.documents.order_by("-uploaded_at").first()
 
     if request.method == "POST":
         decision = request.POST.get("decision")
 
-        is_pending = (
-            client.verification_status
-            == Client.VerificationStatus.PENDING
-        )
-
         if decision not in ("approve", "reject"):
             messages.error(request, "Please choose Approve or Reject.")
 
-        elif not is_pending:
-            messages.error(
-                request,
-                "This client is no longer pending verification.",
-            )
-
-        elif decision == "approve" and document is None:
-            messages.error(
-                request,
-                "Cannot approve: this client has not uploaded an ID yet.",
-            )
-
         else:
-            approved = decision == "approve"
-
-            client.verification_status = (
-                Client.VerificationStatus.ACTIVE
-                if approved
-                else Client.VerificationStatus.REJECTED
-            )
-            client.verified_by = request.user
-            client.verified_at = timezone.now()
-
-            client.save(
-                update_fields=[
-                    "verification_status",
-                    "verified_by",
-                    "verified_at",
-                ]
-            )
-
-            if document is not None:
-                document.status = (
-                    ClientDocument.Status.VERIFIED
-                    if approved
-                    else ClientDocument.Status.REJECTED
-                )
-                document.reviewed_by = request.user
-                document.reviewed_at = timezone.now()
-                document.remark = request.POST.get(
-                    "remark",
-                    "",
-                ).strip()[:255]
-
-                document.save(
-                    update_fields=[
-                        "status",
-                        "reviewed_by",
-                        "reviewed_at",
-                        "remark",
-                    ]
+            with transaction.atomic():
+                locked_client = get_object_or_404(
+                    Client.objects.select_for_update(),
+                    pk=client_id,
                 )
 
-            log(request.user, f"{decision}_client", client)
+                is_pending = (
+                    locked_client.verification_status
+                    == Client.VerificationStatus.PENDING
+                )
 
-            result = "approved" if approved else "rejected"
-            messages.success(
-                request,
-                f"{client.client_code} {result}.",
-            )
-            return redirect("verify_clients")
+                if not is_pending:
+                    messages.error(
+                        request,
+                        "This client is no longer pending verification.",
+                    )
+
+                elif (
+                    decision == "approve"
+                    and not locked_client.documents.exists()
+                ):
+                    messages.error(
+                        request,
+                        "Cannot approve: this client has not uploaded an ID yet.",
+                    )
+
+                else:
+                    approved = decision == "approve"
+
+                    locked_client.verification_status = (
+                        Client.VerificationStatus.ACTIVE
+                        if approved
+                        else Client.VerificationStatus.REJECTED
+                    )
+
+                    locked_client.verified_by = request.user
+                    locked_client.verified_at = timezone.now()
+
+                    locked_client.save(
+                        update_fields=[
+                            "verification_status",
+                            "verified_by",
+                            "verified_at",
+                        ]
+                    )
+
+                    latest_document = (
+                        locked_client.documents
+                        .order_by("-uploaded_at")
+                        .first()
+                    )
+
+                    if latest_document is not None:
+                        latest_document.status = (
+                            ClientDocument.Status.VERIFIED
+                            if approved
+                            else ClientDocument.Status.REJECTED
+                        )
+
+                        latest_document.reviewed_by = request.user
+                        latest_document.reviewed_at = timezone.now()
+                        latest_document.remark = request.POST.get(
+                            "remark",
+                            "",
+                        ).strip()[:255]
+
+                        latest_document.save(
+                            update_fields=[
+                                "status",
+                                "reviewed_by",
+                                "reviewed_at",
+                                "remark",
+                            ]
+                        )
+
+                    if approved:
+                        bank_account = BankAccount.objects.filter(
+                            client=locked_client
+                        ).first()
+
+                        if bank_account is None:
+                            while True:
+                                account_number = str(
+                                    secrets.randbelow(9_000_000_000)
+                                    + 1_000_000_000
+                                )
+
+                                if not BankAccount.objects.filter(
+                                    account_number=account_number
+                                ).exists():
+                                    break
+
+                            bank_account = BankAccount.objects.create(
+                                client=locked_client,
+                                account_number=account_number,
+                            )
+
+                    log(
+                        request.user,
+                        f"{decision}_client",
+                        locked_client,
+                    )
+
+                    result = "approved" if approved else "rejected"
+
+                    messages.success(
+                        request,
+                        f"{locked_client.client_code} {result}."
+                        + (
+                            f" Regular bank account created: "
+                            f"{bank_account.account_number}."
+                            if approved
+                            else ""
+                        ),
+                    )
+
+                    return redirect("verify_clients")
 
     id_number = str(client.get_id_number())
     masked_id = "****" + id_number[-4:]
@@ -484,20 +827,319 @@ def loan_applications(request):
         },
     )
 
-
 @role_required("loan_officer", "admin")
 def officer_loans(request):
-    return render(request, "officer/loans.html")
+    loans = (
+        Loan.objects.select_related(
+            "client__user",
+            "product",
+        )
+        .order_by("-applied_at", "-id")
+    )
+
+    # Optional status filter.
+    status_filter = request.GET.get("status", "").strip().lower()
+
+    valid_statuses = {
+        Loan.Status.PENDING,
+        Loan.Status.APPROVED,
+        Loan.Status.REJECTED,
+        Loan.Status.ACTIVE,
+    }
+
+    if status_filter in valid_statuses:
+        loans = loans.filter(status=status_filter)
+
+    context = {
+        "loans": loans,
+        "status_filter": status_filter,
+    }
+
+    return render(
+        request,
+        "officer/loans.html",
+        context,
+    )
 
 
 @role_required("loan_officer", "admin")
-def loan_application_detail(request):
-    return _demo_form(
-        request,
-        "officer/application_detail.html",
-        "loan_applications",
+def loan_application_detail(request, loan_id):
+    loan = get_object_or_404(
+        Loan.objects.select_related(
+            "client__user",
+            "product",
+        ),
+        pk=loan_id,
     )
 
+    # Process the officer's decision using the existing loan services.
+    if request.method == "POST":
+        decision = request.POST.get("decision", "").strip()
+        remarks = request.POST.get("remarks", "").strip()
+
+        if loan.status != Loan.Status.PENDING:
+            messages.error(
+                request,
+                "This application is no longer pending review.",
+            )
+            return redirect(
+                "loan_application_detail",
+                loan_id=loan.pk,
+            )
+
+        try:
+            if decision == "approved":
+                loan_services.approve_loan(
+                    loan.pk,
+                    request.user,
+                )
+
+                messages.success(
+                    request,
+                    "Loan application approved successfully.",
+                )
+
+            elif decision == "rejected":
+                if not remarks:
+                    messages.error(
+                        request,
+                        "Please provide a reason for rejecting this application.",
+                    )
+                    return redirect(
+                        "loan_application_detail",
+                        loan_id=loan.pk,
+                    )
+
+                loan_services.reject_loan(
+                    loan.pk,
+                    request.user,
+                    remarks,
+                )
+
+                messages.success(
+                    request,
+                    "Loan application rejected successfully.",
+                )
+
+            else:
+                messages.error(
+                    request,
+                    "Invalid application decision.",
+                )
+
+        except BankError as error:
+            messages.error(
+                request,
+                str(error),
+            )
+
+        return redirect(
+            "loan_application_detail",
+            loan_id=loan.pk,
+        )
+
+    client = loan.client
+
+    # Retrieve the latest saved eligibility assessment.
+    eligibility = (
+        loan.eligibility_checks
+        .order_by("-checked_at")
+        .first()
+    )
+
+    # Retrieve the product's eligibility rules.
+    rule = LoanRule.objects.filter(
+        product=loan.product,
+    ).first()
+
+    max_installment_ratio = (
+        rule.max_installment_ratio
+        if rule
+        else Decimal("0.40")
+    )
+
+    min_savings_ratio = (
+        rule.min_savings_ratio
+        if rule
+        else Decimal("0.10")
+    )
+
+    minimum_income = (
+        rule.minimum_monthly_income
+        if rule
+        else Decimal("0.00")
+    )
+
+    minimum_age = (
+        rule.minimum_age
+        if rule
+        else 18
+    )
+
+    minimum_credit_score = (
+        rule.minimum_credit_score
+        if rule
+        else 0
+    )
+
+    # Calculate the proposed installment using the existing
+    # amortization calculation used by the loan service.
+    schedule = build_schedule(
+        loan.principal,
+        loan.annual_rate,
+        loan.term_months,
+        timezone.localdate(),
+    )
+
+    proposed_installment = (
+        max(
+            (
+                row["principal_due"] + row["interest_due"]
+                for row in schedule
+            ),
+            default=Decimal("0.00"),
+        )
+    )
+
+    # Actual applicant information.
+    monthly_income = client.monthly_income or Decimal("0.00")
+    credit_score = client.credit_score or 0
+
+    # Retrieve the actual active savings balance.
+    savings_balance = (
+        SavingsAccount.objects.filter(
+            client=client,
+            status=SavingsAccount.Status.ACTIVE,
+        )
+        .aggregate(total=Sum("balance"))["total"]
+        or Decimal("0.00")
+    )
+
+    required_savings = loan.principal * min_savings_ratio
+    income_limit = monthly_income * max_installment_ratio
+
+    # Calculate age when the date of birth is available.
+    age = None
+
+    if client.date_of_birth:
+        today = timezone.localdate()
+        age = today.year - client.date_of_birth.year
+
+        if (today.month, today.day) < (
+            client.date_of_birth.month,
+            client.date_of_birth.day,
+        ):
+            age -= 1
+
+    # Prepare the individual eligibility criteria for display.
+    criteria = []
+
+    criteria.append({
+        "label": "Minimum age",
+        "detail": (
+            f"Applicant age: {age} years; required: "
+            f"{minimum_age} years."
+            if age is not None
+            else "Date of birth is missing."
+        ),
+        "passed": age is not None and age >= minimum_age,
+        "review": age is None,
+    })
+
+    criteria.append({
+        "label": "Minimum monthly income",
+        "detail": (
+            f"Monthly income: ₱{monthly_income:,.2f}; "
+            f"required: ₱{minimum_income:,.2f}."
+        ),
+        "passed": monthly_income >= minimum_income,
+        "review": False,
+    })
+
+    criteria.append({
+        "label": "Installment affordability",
+        "detail": (
+            f"Proposed installment: ₱{proposed_installment:,.2f}; "
+            f"maximum allowed: ₱{income_limit:,.2f} "
+            f"({max_installment_ratio:.0%} of monthly income)."
+        ),
+        "passed": (
+            monthly_income > 0
+            and proposed_installment <= income_limit
+        ),
+        "review": monthly_income <= 0,
+    })
+
+    criteria.append({
+        "label": "Savings requirement",
+        "detail": (
+            f"Active savings balance: ₱{savings_balance:,.2f}; "
+            f"required: ₱{required_savings:,.2f}."
+        ),
+        "passed": savings_balance >= required_savings,
+        "review": False,
+    })
+
+    criteria.append({
+        "label": "Minimum credit score",
+        "detail": (
+            f"Credit score: {credit_score}; "
+            f"required: {minimum_credit_score}."
+        ),
+        "passed": (
+            credit_score >= minimum_credit_score
+            and (
+                minimum_credit_score == 0
+                or credit_score > 0
+            )
+        ),
+        "review": (
+            minimum_credit_score > 0
+            and credit_score <= 0
+        ),
+    })
+
+    # Documents actually uploaded for this application.
+    documents = loan.documents.order_by("-uploaded_at")
+
+    context = {
+        "loan": loan,
+        "client": client,
+        "eligibility": eligibility,
+        "criteria": criteria,
+        "documents": documents,
+
+        # Applicant information
+        "applicant_name": (
+            client.user.get_full_name()
+            or client.user.username
+        ),
+        "applicant_email": client.user.email,
+        "applicant_phone": client.phone,
+        "applicant_address": client.address,
+        "employment_status": client.employment_status,
+        "source_of_income": client.source_of_income,
+        "monthly_income": monthly_income,
+        "credit_score": credit_score,
+        "age": age,
+
+        # Actual loan and eligibility figures
+        "proposed_installment": proposed_installment,
+        "savings_balance": savings_balance,
+        "required_savings": required_savings,
+        "income_limit": income_limit,
+        "minimum_income": minimum_income,
+        "minimum_age": minimum_age,
+        "minimum_credit_score": minimum_credit_score,
+        "max_installment_ratio": max_installment_ratio,
+        "min_savings_ratio": min_savings_ratio,
+    }
+
+    return render(
+        request,
+        "officer/application_detail.html",
+        context,
+    )
 
 @role_required("loan_officer", "admin")
 def officer_loan_detail(request):
@@ -510,11 +1152,13 @@ def officer_loan_detail(request):
 def admin_users(request):
     users = (
         User.objects.select_related("role")
-        .filter(role__name__in=[
-            Role.ADMIN,
-            Role.STAFF,
-            Role.LOAN_OFFICER,
-        ])
+        .filter(
+            role__name__in=[
+                Role.ADMIN,
+                Role.STAFF,
+                Role.LOAN_OFFICER,
+            ]
+        )
         .order_by("username")
     )
 
@@ -573,6 +1217,7 @@ def admin_create_user(request):
             request,
             f"Employee account '{user.username}' created successfully.",
         )
+
         return redirect("admin_users")
 
     return render(
@@ -623,6 +1268,7 @@ def admin_edit_user(request, user_id):
                 request,
                 f"Account '{user.username}' updated successfully.",
             )
+
             return redirect("admin_users")
 
     return render(
@@ -759,11 +1405,96 @@ def admin_reports(request):
 
 @role_required("admin")
 def admin_audit_log(request):
-    if request.GET.get("export"):
-        messages.info(request, "Export coming soon")
-        return redirect("admin_audit_log")
+    audit_logs = (
+        AuditLog.objects.select_related("user", "user__role")
+        .all()
+        .order_by("-created_at", "-id")
+    )
 
-    return render(request, "adminpanel/audit_log.html")
+    username = request.GET.get("user", "").strip()
+    action = request.GET.get("action", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+
+    if username:
+        audit_logs = audit_logs.filter(
+            Q(user__username__icontains=username)
+            | Q(user__first_name__icontains=username)
+            | Q(user__last_name__icontains=username)
+        )
+
+    if action:
+        audit_logs = audit_logs.filter(action__icontains=action)
+
+    if date_from:
+        audit_logs = audit_logs.filter(
+            created_at__date__gte=date_from
+        )
+
+    if date_to:
+        audit_logs = audit_logs.filter(
+            created_at__date__lte=date_to
+        )
+
+    if request.GET.get("export") == "1":
+        response = HttpResponse(
+            content_type="text/csv; charset=utf-8"
+        )
+
+        response["Content-Disposition"] = (
+            'attachment; filename="bayan_bank_audit_logs.csv"'
+        )
+
+        writer = csv.writer(response)
+
+        writer.writerow([
+            "Date and Time",
+            "Username",
+            "Role",
+            "Action",
+            "Object Type",
+            "Object ID",
+            "Details",
+            "IP Address",
+        ])
+
+        for entry in audit_logs:
+            user = entry.user
+
+            role_name = (
+                user.role.name
+                if user and getattr(user, "role", None)
+                else "Unknown"
+            )
+
+            writer.writerow([
+                timezone.localtime(entry.created_at).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+                user.username if user else "System",
+                role_name,
+                entry.action,
+                entry.object_type,
+                entry.object_id,
+                entry.details,
+                entry.ip_address or "",
+            ])
+
+        return response
+
+    context = {
+        "audit_logs": audit_logs[:500],
+        "filter_user": username,
+        "filter_action": action,
+        "date_from": date_from,
+        "date_to": date_to,
+    }
+
+    return render(
+        request,
+        "adminpanel/audit_log.html",
+        context,
+    )
 
 
 def permission_denied(request, exception=None):

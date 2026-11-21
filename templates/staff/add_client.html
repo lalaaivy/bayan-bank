@@ -1,10 +1,208 @@
+
 {% extends "base.html" %}
+
 {% block title %}Add Client - Bayan Bank{% endblock %}
+
 {% block content %}
-<h3 class="mb-3">Add Client</h3>
-<a href="{% url 'staff_clients' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Clients</a>
-<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
-<div class="row g-3"><div class="col-md-6"><label class="form-label">First Name</label><input class="form-control" placeholder="Jose"></div><div class="col-md-6"><label class="form-label">Last Name</label><input class="form-control" placeholder="Rizal"></div><div class="col-md-6"><label class="form-label">Mobile</label><input class="form-control" placeholder="0917 555 0100"></div><div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" placeholder="jose@example.ph"></div><div class="col-12"><label class="form-label">Address</label><textarea class="form-control" rows="2" placeholder="Barangay, city, province"></textarea></div></div>
-<button class="btn btn-dark mt-3">Save Client</button>
-</form></div></div>
+<div class="container-fluid py-3">
+
+    <div class="mb-3">
+        <h3 class="mb-1">Add New Client</h3>
+        <p class="text-muted mb-0">
+            Create a client account and complete their banking profile.
+        </p>
+    </div>
+
+    <a href="{% url 'staff_clients' %}"
+       class="btn btn-sm btn-outline-secondary mb-3">
+        &larr; Back to Clients
+    </a>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Account Information</h6>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Username</label>
+                        {{ form.username }}
+                        {% for error in form.username.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        {{ form.email }}
+                        {% for error in form.email.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Password</label>
+                        {{ form.password }}
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Confirm Password</label>
+                        {{ form.confirm_password }}
+                        {% for error in form.confirm_password.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Personal Information</h6>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        {{ form.first_name }}
+                        {% for error in form.first_name.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        {{ form.last_name }}
+                        {% for error in form.last_name.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Birth</label>
+                        {{ form.date_of_birth }}
+                        {% for error in form.date_of_birth.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Sex</label>
+                        {{ form.sex }}
+                        {% for error in form.sex.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Civil Status</label>
+                        {{ form.civil_status }}
+                        {% for error in form.civil_status.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Nationality</label>
+                        {{ form.nationality }}
+                        {% for error in form.nationality.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Mobile Number</label>
+                        {{ form.phone }}
+                        {% for error in form.phone.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Valid ID Number</label>
+                        {{ form.id_number }}
+                        {% for error in form.id_number.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Complete Address</label>
+                        {{ form.address }}
+                        {% for error in form.address.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Employment and Income Information</h6>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Employment Status</label>
+                        {{ form.employment_status }}
+                        {% for error in form.employment_status.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Source of Income</label>
+                        {{ form.source_of_income }}
+                        {% for error in form.source_of_income.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Monthly Income (₱)</label>
+                        {{ form.monthly_income }}
+                        {% for error in form.monthly_income.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-dark">
+                <i class="bi bi-person-plus me-1"></i>
+                Create Client
+            </button>
+
+            <a href="{% url 'staff_clients' %}"
+               class="btn btn-outline-secondary">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
 {% endblock %}

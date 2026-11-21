@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Payment Calendar - Bayan Bank</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 25px 16px;
+            background: #f3f6fb;
+            color: #263445;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .header {
+            background: #123b70;
+            color: white;
+            padding: 25px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .header p {
+            margin-bottom: 0;
+            color: #dce8f8;
+        }
+
+        .content {
+            background: white;
+            padding: 25px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+        }
+
+        .dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+        }
+
+        .calendar-wrapper {
+            min-height: 500px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: #174f91;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        #calendar {
+            max-width: 100%;
+        }
+
+        .loading {
+            color: #68788d;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px 8px;
+            }
+
+            .header,
+            .content {
+                padding: 17px;
+            }
+
+            .fc .fc-toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .fc .fc-toolbar-title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <a href="{% if request.user.role.name == 'client' %}{% url 'portal_loans' %}{% else %}{% url 'staff_loans' %}{% endif %}"
+       class="back-link">
+        &larr; Back to Loans
+    </a>
+
+    <header class="header">
+        <h1>Bayan Bank</h1>
+        <p>Loan Payment Calendar</p>
+    </header>
+
+    <main class="content">
+
+        <h2>Installment Schedule</h2>
+        <p>
+            View scheduled loan payments, completed installments,
+            and overdue payments.
+        </p>
+
+        <div class="legend">
+            <div class="legend-item">
+                <span class="dot" style="background:#0d6efd"></span>
+                Upcoming
+            </div>
+
+            <div class="legend-item">
+                <span class="dot" style="background:#198754"></span>
+                Paid
+            </div>
+
+            <div class="legend-item">
+                <span class="dot" style="background:#dc3545"></span>
+                Overdue
+            </div>
+        </div>
+
+        <div class="calendar-wrapper">
+            <div id="calendar"></div>
+        </div>
+
+        <p id="calendar-status" class="loading" aria-live="polite">
+            Loading calendar...
+        </p>
+
+    </main>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const calendarElement = document.getElementById("calendar");
+    const statusElement = document.getElementById("calendar-status");
+
+    const calendar = new FullCalendar.Calendar(calendarElement, {
+        initialView: "dayGridMonth",
+        height: "auto",
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,listMonth"
+        },
+        events: {
+            url: "{% url 'loan_calendar_events' %}",
+            method: "GET",
+            failure: function () {
+                statusElement.textContent =
+                    "Unable to load loan payment events. Please refresh the page.";
+            }
+        },
+        eventClick: function (info) {
+            if (info.event.url) {
+                info.jsEvent.preventDefault();
+                window.location.href = info.event.url;
+            }
+        },
+        loading: function (isLoading) {
+            statusElement.textContent = isLoading
+                ? "Loading calendar..."
+                : "";
+        },
+        eventDidMount: function (info) {
+            info.el.title = info.event.title;
+        }
+    });
+
+    calendar.render();
+});
+</script>
+
+</body>
+</html>

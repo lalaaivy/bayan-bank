@@ -1,18 +1,22 @@
 
+from html import escape
 from io import BytesIO
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
+from reportlab.lib.styles import (
+    getSampleStyleSheet,
+    ParagraphStyle,
+)
+from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer,
     Table,
     TableStyle,
-    Preformatted,
+    KeepTogether,
 )
 
 from .calculations import monthly_installment
@@ -24,39 +28,97 @@ def generate_agreement_pdf(loan, agreement):
     document = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=45,
-        leftMargin=45,
-        topMargin=45,
-        bottomMargin=45,
+        rightMargin=18 * mm,
+        leftMargin=18 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
     )
 
     styles = getSampleStyleSheet()
 
+    navy = colors.HexColor("#163A63")
+    light_blue = colors.HexColor("#EAF2F8")
+    muted = colors.HexColor("#64748B")
+    border = colors.HexColor("#D5DEE8")
+
     title_style = ParagraphStyle(
         "AgreementTitle",
-        parent=styles["Heading1"],
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=21,
+        leading=26,
+        textColor=navy,
         alignment=TA_CENTER,
-        fontSize=17,
-        spaceAfter=15,
+        spaceAfter=5,
+    )
+
+    subtitle_style = ParagraphStyle(
+        "AgreementSubtitle",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        leading=16,
+        textColor=muted,
+        alignment=TA_CENTER,
+        spaceAfter=18,
+    )
+
+    section_style = ParagraphStyle(
+        "AgreementSection",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        leading=15,
+        textColor=navy,
+        spaceBefore=12,
+        spaceAfter=8,
+    )
+
+    body_style = ParagraphStyle(
+        "AgreementBody",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=14,
+        textColor=colors.HexColor("#263445"),
+        alignment=0,
+        spaceAfter=7,
+    )
+
+    label_style = ParagraphStyle(
+        "AgreementLabel",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=12,
+        textColor=navy,
+    )
+
+    value_style = ParagraphStyle(
+        "AgreementValue",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=12,
+        textColor=colors.HexColor("#263445"),
     )
 
     elements = []
 
     elements.append(
-        Paragraph(
-            "BAYAN BANK",
-            title_style,
-        )
+        Paragraph("BAYAN BANK", title_style)
+    )
+
+    elements.append(
+        Paragraph("LOAN AGREEMENT", subtitle_style)
     )
 
     elements.append(
         Paragraph(
-            "LOAN AGREEMENT",
-            styles["Heading2"],
+            "AGREEMENT DETAILS",
+            section_style,
         )
     )
-
-    elements.append(Spacer(1, 15))
 
     monthly = monthly_installment(
         loan.principal,
@@ -65,73 +127,155 @@ def generate_agreement_pdf(loan, agreement):
     )
 
     data = [
-        ["Agreement Number", agreement.agreement_number],
-        ["Agreement Date", str(agreement.agreement_date)],
-        ["Loan Number", str(loan.pk)],
-        ["Borrower", str(loan.client)],
-        ["Loan Product", str(loan.product.name)],
-        ["Principal", f"PHP {loan.principal:,.2f}"],
-        ["Annual Interest Rate", f"{loan.annual_rate}%"],
-        ["Loan Term", f"{loan.term_months} months"],
-        ["Estimated Monthly Payment", f"PHP {monthly:,.2f}"],
-        ["Loan Status", loan.get_status_display()],
+        ("Agreement Number", agreement.agreement_number),
+        ("Agreement Date", agreement.agreement_date),
+        ("Loan Number", loan.pk),
+        ("Borrower", loan.client),
+        ("Loan Product", loan.product.name),
+        ("Principal", f"PHP {loan.principal:,.2f}"),
+        ("Annual Interest Rate", f"{loan.annual_rate}%"),
+        ("Loan Term", f"{loan.term_months} months"),
+        ("Estimated Monthly Payment", f"PHP {monthly:,.2f}"),
+        ("Loan Status", loan.get_status_display()),
     ]
 
+    table_data = []
+
+    for label, value in data:
+        table_data.append([
+            Paragraph(
+                escape(str(label)),
+                label_style,
+            ),
+            Paragraph(
+                escape(str(value)),
+                value_style,
+            ),
+        ])
+
     table = Table(
-        data,
-        colWidths=[180, 310],
+        table_data,
+        colWidths=[58 * mm, 112 * mm],
         hAlign="LEFT",
     )
 
     table.setStyle(
         TableStyle([
-            ("BACKGROUND", (0, 0), (0, -1), colors.whitesmoke),
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BACKGROUND", (0, 0), (0, -1), light_blue),
+            ("BACKGROUND", (1, 0), (1, -1), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, border),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("LEFTPADDING", (0, 0), (-1, -1), 9),
             ("RIGHTPADDING", (0, 0), (-1, -1), 9),
-            ("TOPPADDING", (0, 0), (-1, -1), 7),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
         ])
     )
 
     elements.append(table)
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 12))
 
     elements.append(
         Paragraph(
             "TERMS AND CONDITIONS",
-            styles["Heading3"],
+            section_style,
         )
     )
 
-    elements.append(
-        Preformatted(
-            agreement.terms_and_conditions or
-            "No additional terms provided.",
-            styles["Code"],
-            maxLineLength=85,
-            splitChars=" ",
-        )
+    terms = (
+        agreement.terms_and_conditions
+        or "No additional terms and conditions provided."
     )
 
-    elements.append(Spacer(1, 20))
+    for paragraph_text in terms.splitlines():
+        paragraph_text = paragraph_text.strip()
 
-    if agreement.signed_at:
-        acceptance_text = (
-            "Accepted electronically on "
-            f"{agreement.signed_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
-        )
-    else:
-        acceptance_text = (
-            "Not yet accepted by the borrower."
-        )
+        if paragraph_text:
+            elements.append(
+                Paragraph(
+                    escape(paragraph_text),
+                    body_style,
+                )
+            )
+
+    elements.append(Spacer(1, 18))
 
     elements.append(
         Paragraph(
-            f"Agreement Acceptance: {acceptance_text}",
-            styles["Normal"],
+            "AGREEMENT ACCEPTANCE",
+            section_style,
         )
+    )
+
+    if agreement.signed_at:
+        signed_date = agreement.signed_at.strftime(
+            "%B %d, %Y at %I:%M %p"
+        )
+
+        acceptance_text = (
+            f"<b>Electronically accepted</b><br/>"
+            f"Acceptance Date: {escape(signed_date)}"
+        )
+
+        acceptance_color = colors.HexColor("#E8F5E9")
+        acceptance_text_color = colors.HexColor("#166534")
+
+    else:
+        acceptance_text = (
+            "<b>Not yet accepted by the borrower.</b><br/>"
+            "The borrower must review and accept this agreement "
+            "before loan disbursement."
+        )
+
+        acceptance_color = colors.HexColor("#FFF7E6")
+        acceptance_text_color = colors.HexColor("#92400E")
+
+    acceptance_style = ParagraphStyle(
+        "Acceptance",
+        parent=body_style,
+        textColor=acceptance_text_color,
+        leading=15,
+    )
+
+    acceptance_table = Table(
+        [[
+            Paragraph(
+                acceptance_text,
+                acceptance_style,
+            )
+        ]],
+        colWidths=[170 * mm],
+    )
+
+    acceptance_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), acceptance_color),
+            ("BOX", (0, 0), (-1, -1), 0.6, border),
+            ("LEFTPADDING", (0, 0), (-1, -1), 12),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+            ("TOPPADDING", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ])
+    )
+
+    elements.append(
+        KeepTogether([
+            acceptance_table,
+            Spacer(1, 18),
+            Paragraph(
+                "This document is generated electronically by Bayan Bank. "
+                "The electronic acceptance status shown above reflects "
+                "the agreement record in the banking system.",
+                ParagraphStyle(
+                    "FooterNote",
+                    parent=styles["Normal"],
+                    fontSize=7.5,
+                    leading=10,
+                    textColor=muted,
+                    alignment=TA_CENTER,
+                ),
+            ),
+        ])
     )
 
     document.build(elements)
