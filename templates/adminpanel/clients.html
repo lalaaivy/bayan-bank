@@ -3,12 +3,50 @@
 {% block content %}
 <h3 class="mb-3">Client Management</h3>
 <a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Admin Dashboard</a>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-5">
+    <input class="form-control" name="q" value="{{ q }}" placeholder="Search by username or name">
+  </div>
+  <div class="col-md-3">
+    <select class="form-select" name="status">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+      <option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4 d-flex gap-2">
+    <button class="btn btn-dark">Filter</button>
+    <a href="{% url 'admin_clients' %}" class="btn btn-outline-secondary">Reset</a>
+  </div>
+</form>
+
 <div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
-  <thead><tr><th>Client</th><th>Contact</th><th>Active Loans</th><th>Savings</th><th>Verification</th><th>Account Status</th><th></th></tr></thead>
+  <thead><tr><th>Client ID</th><th>Name</th><th>Username</th><th>Status</th><th>Registered</th><th></th></tr></thead>
   <tbody>
-    <tr><td>Maria Santos</td><td>0917 555 0142</td><td>1</td><td>&#8369; 18,250.00</td><td><span class="badge text-bg-success">Verified</span></td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
-    <tr><td>Liza Navarro</td><td>0932 778 4510</td><td>0</td><td>&#8369; 2,500.00</td><td><span class="badge text-bg-warning">Pending Verification</span></td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'verify_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
-    <tr><td>Juan Dela Cruz</td><td>0918 234 6610</td><td>2</td><td>&#8369; 42,800.00</td><td><span class="badge text-bg-success">Verified</span></td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
+  {% for client in clients %}
+    <tr>
+      <td>{{ client.client_code }}</td>
+      <td>{{ client.user.get_full_name|default:"-" }}</td>
+      <td>{{ client.user.username }}</td>
+      <td>
+        {% if client.verification_status == "active" %}
+          <span class="badge text-bg-success">{{ client.get_verification_status_display }}</span>
+        {% elif client.verification_status == "pending" %}
+          <span class="badge text-bg-warning">{{ client.get_verification_status_display }}</span>
+        {% elif client.verification_status == "rejected" %}
+          <span class="badge text-bg-danger">{{ client.get_verification_status_display }}</span>
+        {% else %}
+          <span class="badge text-bg-secondary">{{ client.get_verification_status_display }}</span>
+        {% endif %}
+      </td>
+      <td>{{ client.created_at|date:"M d, Y" }}</td>
+      <td><a href="{% url 'verify_client_detail' client.pk %}" class="btn btn-sm btn-outline-dark">Review</a></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="text-center text-muted py-4">No clients found.</td></tr>
+  {% endfor %}
   </tbody>
 </table></div></div>
 {% endblock %}

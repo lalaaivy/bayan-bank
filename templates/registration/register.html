@@ -1,29 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Client Registration - Bayan Bank{% endblock %}
+{% block title %}Register - Bayan Bank{% endblock %}
 {% block content %}
-<div class="row justify-content-center py-4">
-  <div class="col-lg-8 col-xl-7">
-    <div class="card auth-card">
-      <div class="card-body">
-        <div class="auth-logo"><i class="bi bi-bank2" aria-hidden="true"></i></div>
-        <h3 class="text-center mb-1">Create a Client Account</h3>
-        <p class="text-center text-muted mb-4">A better way to grow together.</p>
-        <a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary mb-3">Back to Login</a>
-        <form method="post">{% csrf_token %}
-          <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Username</label><input class="form-control" name="username" placeholder="maria.santos"></div>
-            <div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" name="full_name" placeholder="Maria Santos"></div>
-            <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" placeholder="maria@example.ph"></div>
-            <div class="col-md-6"><label class="form-label">Mobile Number</label><input class="form-control" name="mobile" placeholder="0917 555 0142"></div>
-            <div class="col-md-6"><label class="form-label">Password</label><input type="password" class="form-control" name="password"></div>
-            <div class="col-md-6"><label class="form-label">Confirm Password</label><input type="password" class="form-control" name="confirm_password"></div>
-          </div>
-          <button class="btn btn-primary mt-3 w-100">Register</button>
-          <a href="{% url 'complete_profile' %}" class="btn btn-outline-primary mt-2 w-100">Continue to Complete Profile</a>
-        </form>
-        {# GOOGLE BUTTON SPOT #}
-      </div>
-    </div>
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h3 class="mb-3">Create your account</h3>
+    <div class="card shadow-sm"><div class="card-body">
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+        <div class="col-md-6">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <div class="col-12">
+          <button class="btn btn-dark">Register</button>
+          <a href="{% url 'login' %}" class="ms-2">I already have an account</a>
+        </div>
+      </form>
+    </div></div>
   </div>
 </div>
 {% endblock %}

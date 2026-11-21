@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
-
+from decimal import Decimal
 
 # ==========================================
 # 1. LOAN PRODUCTS
@@ -268,6 +268,14 @@ class LoanRule(models.Model):
 
     minimum_age = models.PositiveSmallIntegerField(
         default=18,
+    )
+
+    max_installment_ratio = models.DecimalField(
+        max_digits=4, decimal_places=2, default=Decimal("0.40"),
+    )
+
+    min_savings_ratio = models.DecimalField(
+        max_digits=4, decimal_places=2, default=Decimal("0.10"),
     )
 
     is_active = models.BooleanField(default=True)

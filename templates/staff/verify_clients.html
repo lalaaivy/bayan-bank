@@ -4,9 +4,20 @@
 <h3 class="mb-3">Client Verification Queue</h3>
 <a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
 <div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
-  <thead><tr><th>Client</th><th>ID Type</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+  <thead><tr><th>Client ID</th><th>Client</th><th>ID Type</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
   <tbody>{% for client in clients %}
-    <tr><td>{{ client.name }}</td><td>{{ client.id_type }}</td><td>{{ client.submitted }}</td><td><span class="badge text-bg-warning">Pending Verification</span></td><td><a href="{% url 'verify_client_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
+    {% with doc=client.documents.last %}
+    <tr>
+      <td>{{ client.client_code }}</td>
+      <td>{{ client.user.get_full_name|default:client.user.username }}</td>
+      <td>{% if doc %}{{ doc.get_id_type_display }}{% else %}<span class="text-muted">No ID uploaded</span>{% endif %}</td>
+      <td>{% if doc %}{{ doc.uploaded_at|date:"M d, Y" }}{% else %}-{% endif %}</td>
+      <td><span class="badge text-bg-warning">{{ client.get_verification_status_display }}</span></td>
+      <td><a href="{% url 'verify_client_detail' client.pk %}" class="btn btn-sm btn-outline-dark">Review</a></td>
+    </tr>
+    {% endwith %}
+  {% empty %}
+    <tr><td colspan="6" class="text-center text-muted py-4">No clients are waiting for verification.</td></tr>
   {% endfor %}</tbody>
 </table></div></div>
 {% endblock %}

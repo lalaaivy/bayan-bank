@@ -22,7 +22,14 @@ def make_user(name, role):
 def make_client(name):
     user = make_user(name, Role.CLIENT)
     # dummy encrypted value so these tests do not need FIELD_KEY
-    return Client.objects.create(user=user, id_number_encrypted=b"x", id_number_hash=f"hash-{name}")
+    return Client.objects.create(
+        user=user,
+        id_number_encrypted=b"x",
+        id_number_hash=f"hash-{name}",
+        verification_status=Client.VerificationStatus.ACTIVE,
+        monthly_income=Decimal("50000.00"),
+        credit_score=700,
+    )
 
 
 class MoneyInputTests(TestCase):
@@ -123,6 +130,8 @@ class LoanTests(TestCase):
         return loan_services.apply_for_loan(self.client_a, self.product, principal, months, self.staff)
 
     def active_loan(self):
+        # The client needs savings of at least 10% of the loan to be eligible.
+        savings.deposit(self.account.pk, "5000", self.staff)
         loan = self.apply()
         loan_services.approve_loan(loan.pk, self.officer)
         return loan_services.disburse_loan(loan.pk, self.officer, self.account.pk)
@@ -176,7 +185,7 @@ class LoanTests(TestCase):
         loan = self.active_loan()
         self.account.refresh_from_db()
         self.assertEqual(loan.status, Loan.Status.ACTIVE)
-        self.assertEqual(self.account.balance, Decimal("12000.00"))
+        self.assertEqual(self.account.balance, Decimal("17000.00"))  # 5,000 savings + 12,000 loan
         items = list(loan.installments.all())
         self.assertEqual(len(items), 12)
         self.assertEqual(sum(i.principal_due for i in items), Decimal("12000.00"))
