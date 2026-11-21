@@ -17,6 +17,11 @@ urlpatterns = [
         views.portal_accept_agreement,
         name="portal_accept_agreement",
     ),
+    path(
+        "portal/loans/<int:loan_id>/repay/",
+        views.portal_loan_repay,
+        name="portal_loan_repay",
+    ),
 
     # Staff loan management
     path("staff/loans/", views.staff_loans, name="staff_loans"),

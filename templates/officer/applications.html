@@ -1,12 +1,104 @@
+
 {% extends "base.html" %}
+
 {% block title %}Loan Applications - Bayan Bank{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3"><h3 class="mb-0">Loan Applications</h3><div class="btn-group"><a href="{% url 'loan_applications' %}" class="btn btn-sm {% if not status_filter %}btn-dark{% else %}btn-outline-dark{% endif %}">All</a><a href="{% url 'loan_applications' %}?status=pending" class="btn btn-sm {% if status_filter == 'Pending' %}btn-dark{% else %}btn-outline-dark{% endif %}">Pending</a><a href="{% url 'loan_applications' %}?status=approved" class="btn btn-sm {% if status_filter == 'Approved' %}btn-dark{% else %}btn-outline-dark{% endif %}">Approved</a><a href="{% url 'loan_applications' %}?status=rejected" class="btn btn-sm {% if status_filter == 'Rejected' %}btn-dark{% else %}btn-outline-dark{% endif %}">Rejected</a></div></div>
-<p><a href="{% url 'officer_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a></p>
-<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
-<thead><tr><th>Application</th><th>Applicant</th><th>Product</th><th>Requested</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
-<tbody>{% for application in applications %}
-<tr><td>{{ application.reference }}</td><td>{{ application.name }}</td><td>{{ application.product }}</td><td>&#8369; {{ application.amount }}</td><td>{{ application.date }}</td><td><span class="badge {% if application.status == 'Pending' %}text-bg-warning{% elif application.status == 'Approved' %}text-bg-success{% else %}text-bg-danger{% endif %}">{{ application.status }}</span></td><td><a href="{% url 'loan_application_detail' %}" class="btn btn-sm btn-outline-dark">Review</a></td></tr>
-{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">No applications in this status.</td></tr>{% endfor %}
-</tbody></table></div></div>
+<div class="container-fluid py-3">
+
+    <!-- HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <h3 class="mb-0">Loan Applications</h3>
+
+        <div class="btn-group">
+            <a href="{% url 'loan_applications' %}"
+               class="btn btn-sm {% if not status_filter %}btn-dark{% else %}btn-outline-dark{% endif %}">
+                All
+            </a>
+
+            <a href="{% url 'loan_applications' %}?status=pending"
+               class="btn btn-sm {% if status_filter == 'Pending' %}btn-dark{% else %}btn-outline-dark{% endif %}">
+                Pending
+            </a>
+
+            <a href="{% url 'loan_applications' %}?status=approved"
+               class="btn btn-sm {% if status_filter == 'Approved' %}btn-dark{% else %}btn-outline-dark{% endif %}">
+                Approved
+            </a>
+
+            <a href="{% url 'loan_applications' %}?status=rejected"
+               class="btn btn-sm {% if status_filter == 'Rejected' %}btn-dark{% else %}btn-outline-dark{% endif %}">
+                Rejected
+            </a>
+        </div>
+    </div>
+
+    <p>
+        <a href="{% url 'officer_home' %}"
+           class="btn btn-sm btn-outline-secondary">
+            &larr; Back to Dashboard
+        </a>
+    </p>
+
+    <!-- APPLICATIONS TABLE -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>Applicant</th>
+                        <th>Product</th>
+                        <th>Requested</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for application in applications %}
+                    <tr>
+                        <td>{{ application.reference }}</td>
+                        <td>{{ application.name }}</td>
+                        <td>{{ application.product }}</td>
+                        <td>&#8369; {{ application.amount }}</td>
+                        <td>{{ application.date }}</td>
+
+                        <td>
+                            <span class="badge
+                                {% if application.status == 'Pending' %}
+                                    text-bg-warning
+                                {% elif application.status == 'Approved' %}
+                                    text-bg-success
+                                {% else %}
+                                    text-bg-danger
+                                {% endif %}">
+                                {{ application.status }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <a href="{% url 'loan_application_detail' application.pk %}"
+                               class="btn btn-sm btn-outline-dark">
+                                Review
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No applications in this status.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

@@ -1,26 +1,418 @@
+
 {% extends "base.html" %}
+
 {% block title %}Application Review - Bayan Bank{% endblock %}
+
 {% block content %}
-<a href="{% url 'loan_applications' %}" class="btn btn-sm btn-outline-secondary mb-2">Back to applications</a>
-<div class="d-flex justify-content-between align-items-center my-3"><h3 class="mb-0">APP-2026-1184</h3><span class="badge text-bg-warning">Pending</span></div>
+
+<a href="{% url 'loan_applications' %}"
+   class="btn btn-sm btn-outline-secondary mb-2">
+    <i class="bi bi-arrow-left"></i> Back to applications
+</a>
+
+<div class="d-flex justify-content-between align-items-center my-3">
+    <div>
+        <h3 class="mb-1">
+            APP-{{ loan.applied_at|date:"Y" }}-{{ loan.pk|stringformat:"04d" }}
+        </h3>
+        <small class="text-muted">
+            Application submitted {{ loan.applied_at|date:"M d, Y h:i A" }}
+        </small>
+    </div>
+
+    {% if loan.status == "pending" %}
+        <span class="badge text-bg-warning">Pending</span>
+    {% elif loan.status == "approved" %}
+        <span class="badge text-bg-success">Approved</span>
+    {% elif loan.status == "rejected" %}
+        <span class="badge text-bg-danger">Rejected</span>
+    {% elif loan.status == "active" %}
+        <span class="badge text-bg-primary">Active</span>
+    {% else %}
+        <span class="badge text-bg-secondary">{{ loan.get_status_display }}</span>
+    {% endif %}
+</div>
+
 <div class="row g-3 mb-4">
-  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Applicant Information</div><div class="card-body"><dl class="row mb-0"><dt class="col-sm-4">Name</dt><dd class="col-sm-8">Liza Navarro</dd><dt class="col-sm-4">Contact</dt><dd class="col-sm-8">0932 778 4510</dd><dt class="col-sm-4">Address</dt><dd class="col-sm-8">Makati City, Metro Manila</dd><dt class="col-sm-4">Employment</dt><dd class="col-sm-8">Sari-sari Store Owner</dd></dl></div></div></div>
-  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Loan Request</div><div class="card-body"><dl class="row mb-0"><dt class="col-sm-5">Product</dt><dd class="col-sm-7">Business Loan</dd><dt class="col-sm-5">Amount</dt><dd class="col-sm-7">&#8369; 150,000.00</dd><dt class="col-sm-5">Term</dt><dd class="col-sm-7">18 months</dd><dt class="col-sm-5">Purpose</dt><dd class="col-sm-7">Inventory expansion and store renovation</dd></dl></div></div></div>
+
+    <!-- Applicant Information -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <strong>Applicant Information</strong>
+            </div>
+
+            <div class="card-body">
+                <dl class="row mb-0">
+
+                    <dt class="col-sm-4">Name</dt>
+                    <dd class="col-sm-8">{{ applicant_name }}</dd>
+
+                    <dt class="col-sm-4">Username</dt>
+                    <dd class="col-sm-8">{{ client.user.username }}</dd>
+
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ applicant_email|default:"Not provided" }}</dd>
+
+                    <dt class="col-sm-4">Contact</dt>
+                    <dd class="col-sm-8">{{ applicant_phone|default:"Not provided" }}</dd>
+
+                    <dt class="col-sm-4">Address</dt>
+                    <dd class="col-sm-8">{{ applicant_address|default:"Not provided" }}</dd>
+
+                    <dt class="col-sm-4">Employment</dt>
+                    <dd class="col-sm-8">{{ employment_status|default:"Not provided" }}</dd>
+
+                    <dt class="col-sm-4">Income Source</dt>
+                    <dd class="col-sm-8">{{ source_of_income|default:"Not provided" }}</dd>
+
+                    <dt class="col-sm-4">Age</dt>
+                    <dd class="col-sm-8">
+                        {% if age != None %}
+                            {{ age }} years old
+                        {% else %}
+                            Not provided
+                        {% endif %}
+                    </dd>
+
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Request -->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <strong>Loan Request</strong>
+            </div>
+
+            <div class="card-body">
+                <dl class="row mb-0">
+
+                    <dt class="col-sm-5">Product</dt>
+                    <dd class="col-sm-7">{{ loan.product.name }}</dd>
+
+                    <dt class="col-sm-5">Amount</dt>
+                    <dd class="col-sm-7">₱{{ loan.principal|floatformat:2 }}</dd>
+
+                    <dt class="col-sm-5">Interest Rate</dt>
+                    <dd class="col-sm-7">{{ loan.annual_rate }}%</dd>
+
+                    <dt class="col-sm-5">Term</dt>
+                    <dd class="col-sm-7">{{ loan.term_months }} months</dd>
+
+                    <dt class="col-sm-5">Purpose</dt>
+                    <dd class="col-sm-7">{{ loan.purpose|default:"Not specified" }}</dd>
+
+                    <dt class="col-sm-5">Application Date</dt>
+                    <dd class="col-sm-7">{{ loan.applied_at|date:"M d, Y" }}</dd>
+
+                </dl>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<!-- Financial Information -->
 <div class="card shadow-sm mb-3">
-  <div class="card-header">Eligibility Assessment</div>
-  <div class="card-body">
-    <p>Applicant monthly income: <strong>&#8369; 55,000.00</strong> | Proposed installment: <strong>&#8369; 9,445.22</strong> | Applicant savings: <strong>&#8369; 22,500.00</strong></p>
-    <ul class="list-group mb-3">
-      <li class="list-group-item d-flex justify-content-between"><span>Installment is at most 40% of monthly income (limit: &#8369; 22,000.00)</span><span class="text-success" aria-label="Pass">&#10003; Pass</span></li>
-      <li class="list-group-item d-flex justify-content-between"><span>Savings are at least 10% of the loan amount (required: &#8369; 15,000.00)</span><span class="text-success" aria-label="Pass">&#10003; Pass</span></li>
-      <li class="list-group-item d-flex justify-content-between"><span>Credit score is at least 600 (score: 678)</span><span class="text-success" aria-label="Pass">&#10003; Pass</span></li>
-    </ul>
-    <strong>Overall: <span class="badge text-bg-success">Eligible</span></strong>
-  </div>
+    <div class="card-header">
+        <strong>Applicant Financial Information</strong>
+    </div>
+
+    <div class="card-body">
+        <div class="row g-3">
+
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted">Monthly Income</small>
+                    <h5 class="mb-0 mt-2">₱{{ monthly_income|floatformat:2 }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted">Proposed Installment</small>
+                    <h5 class="mb-0 mt-2">₱{{ proposed_installment|floatformat:2 }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted">Active Savings</small>
+                    <h5 class="mb-0 mt-2">₱{{ savings_balance|floatformat:2 }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted">Credit Score</small>
+                    <h5 class="mb-0 mt-2">{{ credit_score }}</h5>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
-<form method="post">{% csrf_token %}
-  <div class="mb-3"><label class="form-label" for="remarks">Remarks</label><textarea class="form-control" id="remarks" name="remarks" rows="3" placeholder="Add review notes"></textarea></div>
-  <div class="d-flex gap-2"><button name="decision" value="approved" class="btn btn-success">Approve</button><button name="decision" value="rejected" class="btn btn-danger">Reject</button><a href="{% url 'loan_applications' %}" class="btn btn-outline-dark">Back</a></div>
-</form>
+
+<!-- Eligibility Assessment -->
+<div class="card shadow-sm mb-3">
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Eligibility Assessment</strong>
+
+        {% if eligibility %}
+            {% if eligibility.result == "eligible" %}
+                <span class="badge text-bg-success">Eligible</span>
+            {% elif eligibility.result == "ineligible" %}
+                <span class="badge text-bg-danger">Ineligible</span>
+            {% else %}
+                <span class="badge text-bg-warning">Needs Review</span>
+            {% endif %}
+        {% else %}
+            <span class="badge text-bg-secondary">Not Assessed</span>
+        {% endif %}
+    </div>
+
+    <div class="card-body">
+
+        {% if eligibility %}
+
+            <p class="text-muted mb-3">
+                Latest assessment:
+                {{ eligibility.checked_at|date:"M d, Y h:i A" }}
+            </p>
+
+            {% if eligibility.remarks %}
+                <div class="alert alert-light border">
+                    <strong>Assessment Remarks:</strong><br>
+                    {{ eligibility.remarks }}
+                </div>
+            {% endif %}
+
+        {% else %}
+
+            <div class="alert alert-warning">
+                No saved eligibility assessment was found for this application.
+            </div>
+
+        {% endif %}
+
+        <div class="mb-3">
+            <strong>Eligibility Criteria</strong>
+        </div>
+
+        <ul class="list-group mb-3">
+
+            {% for criterion in criteria %}
+                <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+
+                    <div>
+                        <strong>{{ criterion.label }}</strong>
+                        <div class="small text-muted">{{ criterion.detail }}</div>
+                    </div>
+
+                    {% if criterion.review %}
+                        <span class="badge text-bg-warning">Review</span>
+                    {% elif criterion.passed %}
+                        <span class="badge text-bg-success">Pass</span>
+                    {% else %}
+                        <span class="badge text-bg-danger">Fail</span>
+                    {% endif %}
+
+                </li>
+            {% endfor %}
+
+        </ul>
+
+        <div class="small text-muted">
+            Assessment thresholds are based on the loan product's configured rules.
+            Approval requires a fresh successful eligibility assessment.
+        </div>
+
+    </div>
+</div>
+
+<!-- Supporting Documents -->
+<div class="card shadow-sm mb-3">
+    <div class="card-header">
+        <strong>Supporting Documents</strong>
+    </div>
+
+    <div class="card-body">
+
+        {% if documents %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Document Type</th>
+                            <th>Uploaded</th>
+                            <th>Uploaded By</th>
+                            <th>File</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for document in documents %}
+                            <tr>
+                                <td>{{ document.get_document_type_display }}</td>
+
+                                <td>
+                                    {{ document.uploaded_at|date:"M d, Y h:i A" }}
+                                </td>
+
+                                <td>
+                                    {% if document.uploaded_by %}
+                                        {{ document.uploaded_by.username }}
+                                    {% else %}
+                                        Not available
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if document.file %}
+                                        <a href="{% url 'loan_document_download' document.pk %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-file-earmark-arrow-down"></i>
+                                            View Document
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">No file</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <p class="text-muted mb-0">
+                No supporting documents have been uploaded for this application.
+            </p>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- Decision Section -->
+{% if loan.status == "pending" %}
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">
+            <strong>Application Decision</strong>
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">
+                        Remarks / Rejection Reason
+                    </label>
+
+                    <textarea
+                        class="form-control"
+                        id="remarks"
+                        name="remarks"
+                        rows="3"
+                        maxlength="255"
+                        placeholder="Provide a reason if rejecting this application."
+                    ></textarea>
+
+                    <small class="text-muted">
+                        A rejection reason is required when rejecting an application.
+                        Approval remarks are not stored by the current loan system.
+                    </small>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    <button
+                        type="submit"
+                        name="decision"
+                        value="approved"
+                        class="btn btn-success"
+                        onclick="return confirm('Are you sure you want to approve this loan application?');"
+                    >
+                        <i class="bi bi-check-circle"></i>
+                        Approve Application
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="decision"
+                        value="rejected"
+                        class="btn btn-danger"
+                        onclick="return confirm('Are you sure you want to reject this loan application?');"
+                    >
+                        <i class="bi bi-x-circle"></i>
+                        Reject Application
+                    </button>
+
+                    <a href="{% url 'loan_applications' %}"
+                       class="btn btn-outline-dark">
+                        Back
+                    </a>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+{% else %}
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5>Application Decision</h5>
+
+            {% if loan.status == "rejected" %}
+                <p class="text-danger mb-1">
+                    This application was rejected.
+                </p>
+
+                {% if loan.reject_reason %}
+                    <strong>Rejection Reason:</strong>
+                    <p class="mb-0">{{ loan.reject_reason }}</p>
+                {% endif %}
+
+            {% elif loan.status == "approved" %}
+                <p class="text-success mb-1">
+                    This application has been approved.
+                </p>
+
+            {% else %}
+                <p class="text-muted mb-0">
+                    This application is no longer pending review.
+                </p>
+            {% endif %}
+
+            {% if loan.decided_by %}
+                <small class="text-muted d-block mt-2">
+                    Reviewed by: {{ loan.decided_by.get_full_name|default:loan.decided_by.username }}
+                </small>
+            {% endif %}
+
+            {% if loan.decided_at %}
+                <small class="text-muted d-block">
+                    Decision date: {{ loan.decided_at|date:"M d, Y h:i A" }}
+                </small>
+            {% endif %}
+
+            <a href="{% url 'loan_applications' %}"
+               class="btn btn-outline-dark mt-3">
+                Back to Applications
+            </a>
+
+        </div>
+    </div>
+
+{% endif %}
+
 {% endblock %}

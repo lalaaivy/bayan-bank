@@ -1,18 +1,16 @@
 
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
-from django.test import RequestFactory, TestCase
-from django.urls import reverse
 from cryptography.fernet import Fernet
-from django.test import override_settings
+from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from accounts.models import Role
-from accounts.views import home, portal_home, staff_home
 from clients.models import Client
 from loans.models import Loan, LoanProduct
 from savings.models import SavingsAccount
+
 
 @override_settings(FIELD_KEY=Fernet.generate_key().decode())
 class DashboardTests(TestCase):
@@ -24,7 +22,9 @@ class DashboardTests(TestCase):
         cls.client_role, _ = Role.objects.get_or_create(name="client")
         cls.staff_role, _ = Role.objects.get_or_create(name="staff")
         cls.admin_role, _ = Role.objects.get_or_create(name="admin")
-        cls.officer_role, _ = Role.objects.get_or_create(name="loan_officer")
+        cls.officer_role, _ = Role.objects.get_or_create(
+            name="loan_officer"
+        )
 
         cls.user = User.objects.create_user(
             username="testclient",
@@ -50,22 +50,15 @@ class DashboardTests(TestCase):
             role=cls.officer_role,
         )
 
-        cls.client_profile = Client(
-            user=cls.user,
-        )
+        cls.client_profile = Client(user=cls.user)
         cls.client_profile.set_id_number("TEST-001")
         cls.client_profile.save()
 
+        # Each client is allowed only one savings account.
         SavingsAccount.objects.create(
             client=cls.client_profile,
             account_number="SAV001",
-            balance=Decimal("1500.00"),
-        )
-
-        SavingsAccount.objects.create(
-            client=cls.client_profile,
-            account_number="SAV002",
-            balance=Decimal("2500.00"),
+            balance=Decimal("4000.00"),
         )
 
         cls.product = LoanProduct.objects.create(
@@ -87,20 +80,29 @@ class DashboardTests(TestCase):
                 status=status,
             )
 
-    def setUp(self):
-        self.factory = RequestFactory()
-
-    
     def test_client_dashboard_data(self):
         self.client.force_login(self.user)
+
         response = self.client.get(reverse("portal_home"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["balance"], Decimal("4000.00"))
+        self.assertEqual(
+            response.context["balance"],
+            Decimal("4000.00"),
+        )
         self.assertEqual(response.context["loans"].count(), 2)
+
+    def test_client_has_only_one_savings_account(self):
+        self.assertEqual(
+            SavingsAccount.objects.filter(
+                client=self.client_profile
+            ).count(),
+            1,
+        )
 
     def test_staff_dashboard_counts(self):
         self.client.force_login(self.staff)
+
         response = self.client.get(reverse("staff_home"))
 
         self.assertEqual(response.status_code, 200)
@@ -122,26 +124,30 @@ class DashboardTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_home_redirects_client(self):
-        request = self.factory.get(reverse("home"))
-        request.user = self.user
+        self.client.force_login(self.user)
 
-        response = home(request)
+        response = self.client.get(reverse("home"))
 
-        self.assertEqual(response.url, reverse("portal_home"))
+        self.assertRedirects(
+            response,
+            reverse("portal_home"),
+        )
 
     def test_home_redirects_staff(self):
-        request = self.factory.get(reverse("home"))
-        request.user = self.staff
+        self.client.force_login(self.staff)
 
-        response = home(request)
+        response = self.client.get(reverse("home"))
 
-        self.assertEqual(response.url, reverse("staff_home"))
+        self.assertRedirects(
+            response,
+            reverse("staff_home"),
+        )
 
-    def test_admin_and_officer_access(self):
+    def test_admin_and_officer_can_access_staff_dashboard(self):
         for user in [self.admin, self.officer]:
-            request = self.factory.get(reverse("staff_home"))
-            request.user = user
+            with self.subTest(role=user.role.name):
+                self.client.force_login(user)
 
-            response = staff_home(request)
+                response = self.client.get(reverse("staff_home"))
 
-            self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, 200)

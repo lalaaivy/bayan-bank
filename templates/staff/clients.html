@@ -1,20 +1,180 @@
+
 {% extends "base.html" %}
+
 {% block title %}Clients - Bayan Bank{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Clients</h3>
-  <div class="input-group client-search"><input type="search" class="form-control" placeholder="Search name or contact"><button class="btn btn-outline-dark">Search</button></div>
+<div class="container-fluid py-3">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div>
+            <h3 class="mb-1">Client Management</h3>
+            <p class="text-muted mb-0">View and manage registered bank clients.</p>
+        </div>
+
+        <a href="{% url 'staff_add_client' %}" class="btn btn-dark">
+            <i class="bi bi-person-plus me-1"></i> Add Client
+        </a>
+    </div>
+
+    <div class="mb-3">
+        <a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2">
+
+                <div class="col-md-6">
+                    <input
+                        type="search"
+                        name="q"
+                        class="form-control"
+                        placeholder="Search client name, username, email, or mobile number"
+                        value="{{ q|default:'' }}"
+                    >
+                </div>
+
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">All Verification Statuses</option>
+
+                        {% for value, label in statuses %}
+                            <option value="{{ value }}"
+                                {% if status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-dark flex-fill">
+                        <i class="bi bi-search me-1"></i> Search
+                    </button>
+
+                    <a href="{% url 'staff_clients' %}" class="btn btn-outline-secondary">
+                        Reset
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Client Table -->
+    <div class="card shadow-sm border-0">
+
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0">Registered Clients</h6>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Client ID</th>
+                        <th>Client Name</th>
+                        <th>Contact</th>
+                        <th>Active Loans</th>
+                        <th>Savings Balance</th>
+                        <th>Verification Status</th>
+                        <th style="min-width: 240px;">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for client in clients %}
+                        <tr>
+
+                            <td>
+                                <span class="fw-semibold">
+                                    {{ client.client_code }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="fw-semibold">
+                                    {{ client.user.get_full_name|default:client.user.username }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ client.user.email|default:"No email provided" }}
+                                </small>
+                            </td>
+
+                            <td>
+                                {{ client.phone|default:"Not provided" }}
+                            </td>
+
+                            <td>
+                                {{ client.loans_count|default:0 }}
+                            </td>
+
+                            <td>
+                                ₱{{ client.savings_balance|default:0|floatformat:2 }}
+                            </td>
+
+                            <td>
+                                {% if client.verification_status == "active" %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% elif client.verification_status == "pending" %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif client.verification_status == "rejected" %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        {{ client.get_verification_status_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="d-flex flex-wrap gap-2">
+
+                                    <a
+                                        href="{% url 'staff_client_detail' client.pk %}"
+                                        class="btn btn-sm btn-dark"
+                                    >
+                                        <i class="bi bi-person-lines-fill me-1"></i>
+                                        View Details
+                                    </a>
+
+                                    <a
+                                        href="{% url 'verify_client_detail' client.pk %}"
+                                        class="btn btn-sm btn-outline-primary"
+                                    >
+                                        <i class="bi bi-shield-check me-1"></i>
+                                        Review Verification
+                                    </a>
+
+                                </div>
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="bi bi-people fs-3 d-block mb-2"></i>
+                                No clients found.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+        <div class="card-footer bg-white text-muted small">
+            Showing up to 200 client records.
+        </div>
+
+    </div>
+
 </div>
-<div class="mb-3"><a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a> <a href="{% url 'staff_add_client' %}" class="btn btn-sm btn-dark">Add Client</a></div>
-<div class="card shadow-sm"><div class="table-responsive">
-<table class="table mb-0 align-middle">
-  <thead><tr><th>Name</th><th>Contact</th><th>Active Loans</th><th>Savings Balance</th><th>Status</th><th></th></tr></thead>
-  <tbody>
-    <tr><td>Maria Santos</td><td>0917 555 0142</td><td>1</td><td>&#8369; 18,250.00</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
-    <tr><td>Juan Dela Cruz</td><td>0918 234 6610</td><td>2</td><td>&#8369; 42,800.00</td><td><span class="badge text-bg-success">Active</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
-    <tr><td>Anna Reyes</td><td>0995 812 2204</td><td>1</td><td>&#8369; 9,600.00</td><td><span class="badge text-bg-warning">Review</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
-    <tr><td>Carlos Mendoza</td><td>0927 441 1093</td><td>0</td><td>&#8369; 31,120.00</td><td><span class="badge text-bg-secondary">Dormant</span></td><td><a href="{% url 'staff_client_detail' %}" class="btn btn-sm btn-outline-dark">View</a></td></tr>
-  </tbody>
-</table>
-</div></div>
 {% endblock %}
