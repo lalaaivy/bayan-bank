@@ -1,3 +1,4 @@
+
 from decimal import Decimal
 
 from django.db.models import Sum
@@ -127,7 +128,14 @@ class LoanTests(TestCase):
         )
 
     def apply(self, principal="12000", months=12):
-        return loan_services.apply_for_loan(self.client_a, self.product, principal, months, self.staff)
+        return loan_services.apply_for_loan(
+            self.client_a,
+            self.product,
+            principal,
+            months,
+            self.staff,
+            purpose="Personal and household expenses",
+        )
 
     def active_loan(self):
         # The client needs savings of at least 10% of the loan to be eligible.
@@ -160,7 +168,14 @@ class LoanTests(TestCase):
         with self.assertRaises(BankError):
             loan_services.approve_loan(loan.pk, self.officer)
         own = Client.objects.create(user=self.officer, id_number_encrypted=b"x", id_number_hash="h-off")
-        own_loan = loan_services.apply_for_loan(own, self.product, "2000", 6, self.officer)
+        own_loan = loan_services.apply_for_loan(
+            own,
+            self.product,
+            "2000",
+            6,
+            self.officer,
+            purpose="Personal expenses",
+        )
         with self.assertRaises(BankError):
             loan_services.approve_loan(own_loan.pk, self.officer)
 
