@@ -1,3 +1,4 @@
+
 from decimal import Decimal
 
 from django.db import transaction
@@ -7,6 +8,7 @@ from django.utils import timezone
 from accounting.models import LedgerEntry
 from accounting.money import BankError, to_money
 from audit.services import log
+from notifications.models import Notification
 from savings.models import SavingsAccount
 
 from .calculations import build_schedule
@@ -37,6 +39,15 @@ def _get_loan_locked(loan_id):
         return Loan.objects.select_for_update().get(pk=loan_id)
     except Loan.DoesNotExist:
         raise BankError("Loan not found.")
+
+
+def _notify_client(loan, kind, message):
+    """Create a notification for the borrower."""
+    Notification.objects.create(
+        user=loan.client.user,
+        kind=kind,
+        message=message[:255],
+    )
 
 
 def _evaluate(loan, checked_by):
@@ -160,7 +171,6 @@ def apply_for_loan(client, product, principal, term_months, by):
             f"Term must be between {product.min_months} and {product.max_months} months."
         )
 
-    # Prevent applications from clients with overdue loans
     check_overdue_loans(client)
 
     loan = Loan.objects.create(
@@ -173,7 +183,6 @@ def apply_for_loan(client, product, principal, term_months, by):
 
     log(by, "loan_apply", loan, principal=principal, term_months=term_months)
 
-    # The system runs the eligibility check automatically.
     _evaluate(loan, None)
     return loan
 
@@ -200,19 +209,24 @@ def approve_loan(loan_id, by):
         EligibilityCheck.objects.filter(loan=loan).order_by("-pk").first()
     )
     if latest_check is None:
-        # Older applications that were never checked get checked now.
         latest_check = _evaluate(loan, by)
 
     if latest_check.result == EligibilityCheck.Result.INELIGIBLE:
         raise BankError(
             "This loan cannot be approved because the client is not eligible."
         )
-    # Eligible and Needs Review can both be approved by the loan officer.
 
     loan.status = Loan.Status.APPROVED
     loan.decided_by = by
     loan.decided_at = timezone.now()
     loan.save(update_fields=["status", "decided_by", "decided_at"])
+
+    _notify_client(
+        loan,
+        Notification.Kind.LOAN_APPROVED,
+        f"Your loan application for P{loan.principal:,.2f} has been approved. "
+        "Please review your loan agreement.",
+    )
 
     log(by, "loan_approve", loan)
     return loan
@@ -243,6 +257,13 @@ def reject_loan(loan_id, by, reason):
     loan.reject_reason = reason[:255]
     loan.save(update_fields=["status", "decided_by", "decided_at", "reject_reason"])
 
+    _notify_client(
+        loan,
+        Notification.Kind.LOAN_REJECTED,
+        f"Your loan application for P{loan.principal:,.2f} was rejected. "
+        f"Reason: {reason}",
+    )
+
     log(by, "loan_reject", loan, reason=reason)
     return loan
 
@@ -269,12 +290,21 @@ def create_loan_agreement(
     if hasattr(loan, "agreement"):
         raise BankError("This loan already has an agreement.")
 
-    return LoanAgreement.objects.create(
+    agreement = LoanAgreement.objects.create(
         loan=loan,
         agreement_number=agreement_number.strip(),
         agreement_date=agreement_date,
         terms_and_conditions=terms_and_conditions,
     )
+
+    _notify_client(
+        loan,
+        Notification.Kind.AGREEMENT_READY,
+        f"Your loan agreement {agreement.agreement_number} is ready. "
+        "Please sign in to review and accept it.",
+    )
+
+    return agreement
 
 
 @transaction.atomic
@@ -367,6 +397,13 @@ def disburse_loan(loan_id, by, savings_account_id):
     loan.disbursed_at = timezone.now()
     loan.start_date = today
     loan.save(update_fields=["status", "disbursed_at", "start_date"])
+
+    _notify_client(
+        loan,
+        Notification.Kind.LOAN_DISBURSED,
+        f"Your loan of P{loan.principal:,.2f} has been disbursed "
+        f"to savings account {account.account_number}.",
+    )
 
     log(by, "loan_disburse", loan, account=account.account_number, amount=loan.principal)
     return loan

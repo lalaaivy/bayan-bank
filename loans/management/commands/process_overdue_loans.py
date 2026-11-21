@@ -7,6 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from loans.models import Installment, Loan
+from notifications.models import Notification
 
 
 PENALTY_RATE = Decimal("0.02")
@@ -14,7 +15,7 @@ CENT = Decimal("0.01")
 
 
 class Command(BaseCommand):
-    help = "Mark overdue installments and apply one-time 2% penalties."
+    help = "Mark overdue installments, apply one-time penalties, and notify clients."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -30,6 +31,7 @@ class Command(BaseCommand):
         overdue_count = 0
         penalty_count = 0
         paid_count = 0
+        notification_count = 0
 
         with transaction.atomic():
             installments = (
@@ -39,6 +41,7 @@ class Command(BaseCommand):
                     due_date__lt=today,
                 )
                 .exclude(status=Installment.Status.PAID)
+                .select_related("loan__client__user")
                 .order_by("pk")
             )
 
@@ -55,10 +58,28 @@ class Command(BaseCommand):
 
                 fields = []
 
-                if installment.status != Installment.Status.OVERDUE:
+                newly_overdue = (
+                    installment.status != Installment.Status.OVERDUE
+                )
+
+                if newly_overdue:
                     installment.status = Installment.Status.OVERDUE
                     fields.append("status")
                     overdue_count += 1
+
+                    loan = installment.loan
+
+                    Notification.objects.create(
+                        user=loan.client.user,
+                        kind=Notification.Kind.INSTALLMENT_OVERDUE,
+                        message=(
+                            f"Your installment #{installment.number} "
+                            f"for loan #{loan.pk} is overdue. "
+                            f"Outstanding amount: P{unpaid:,.2f}."
+                        ),
+                    )
+
+                    notification_count += 1
 
                 if installment.penalty_amount == 0:
                     penalty = (unpaid * PENALTY_RATE).quantize(
@@ -99,6 +120,7 @@ class Command(BaseCommand):
                 f"Processing date: {today}\n"
                 f"Newly overdue: {overdue_count}\n"
                 f"New penalties: {penalty_count}\n"
+                f"New overdue notifications: {notification_count}\n"
                 f"Loans marked paid: {paid_count}"
             )
         )

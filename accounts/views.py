@@ -1,3 +1,4 @@
+
 from decimal import Decimal
 
 from django.contrib import messages
@@ -11,6 +12,7 @@ from django.utils import timezone
 from audit.services import log
 from clients.models import Client, ClientDocument
 from loans.models import Loan, LoanProduct
+from notifications.models import Notification
 from savings.models import SavingsAccount
 
 from .decorators import client_required, role_required
@@ -99,7 +101,6 @@ def upload_id(request):
         document.client = client
         document.save()
 
-        # A rejected client who re-uploads goes back to the review queue.
         client.verification_status = Client.VerificationStatus.PENDING
         client.save(update_fields=["verification_status"])
 
@@ -117,9 +118,35 @@ def accept_agreement(request):
     return _demo_form(request, "portal/accept_agreement.html", "loan_detail")
 
 
-@role_required("client")
+@client_required
 def notifications(request):
-    return render(request, "portal/notifications.html")
+    if request.method == "POST":
+        notification_id = request.POST.get("notification_id")
+
+        notification = get_object_or_404(
+            Notification,
+            pk=notification_id,
+            user=request.user,
+        )
+
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+
+    messages.success(request, "Notification marked as read.")
+    return redirect(request.path)
+
+    notification_list = Notification.objects.filter(
+        user=request.user
+    ).order_by("-created_at", "-id")
+
+    unread_count = notification_list.filter(is_read=False).count()
+
+    context = {
+        "notifications": notification_list,
+        "unread_count": unread_count,
+    }
+
+    return render(request, "portal/notifications.html", context)
 
 
 @role_required("client")
@@ -249,7 +276,6 @@ def verify_client_detail(request, client_id):
             messages.success(request, f"{client.client_code} {result}.")
             return redirect("verify_clients")
 
-    # Show only the last 4 characters of the ID number.
     id_number = str(client.get_id_number())
     masked_id = "****" + id_number[-4:]
 
