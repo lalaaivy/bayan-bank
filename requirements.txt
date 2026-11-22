@@ -1,3 +1,4 @@
+
 argon2-cffi==25.1.0
 argon2-cffi-bindings==26.1.0
 asgiref==3.13.0
@@ -7,6 +8,7 @@ cryptography==50.0.2
 Django==6.1.3
 django-axes==9.0.0
 et_xmlfile==2.0.0
+openai==3.57.0
 openpyxl==3.1.5
 pillow==13.0.0
 pycparser==3.12

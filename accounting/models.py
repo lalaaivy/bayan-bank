@@ -4,28 +4,26 @@ from django.db import models
 from django.db.models import Q, F
 
 
-# --------------------------------------------------
-# REGULAR BANK ACCOUNT
-# --------------------------------------------------
-
 class BankAccount(models.Model):
+    """The client's regular bank account for holding available funds."""
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
         FROZEN = "frozen", "Frozen"
         CLOSED = "closed", "Closed"
 
-    client = models.ForeignKey(
+    client = models.OneToOneField(
         "clients.Client",
         on_delete=models.PROTECT,
-        related_name="bank_accounts",
+        related_name="bank_account",
     )
 
     account_number = models.CharField(
-        max_length=30,
+        max_length=20,
         unique=True,
     )
 
+    # Cached balance, updated only through financial services.
     balance = models.DecimalField(
         max_digits=14,
         decimal_places=2,
@@ -33,7 +31,7 @@ class BankAccount(models.Model):
     )
 
     status = models.CharField(
-        max_length=20,
+        max_length=10,
         choices=Status.choices,
         default=Status.ACTIVE,
     )
@@ -41,33 +39,28 @@ class BankAccount(models.Model):
     opened_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-opened_at", "-id"]
         constraints = [
             models.CheckConstraint(
                 condition=Q(balance__gte=0),
-                name="bank_account_balance_nonnegative",
+                name="bank_account_balance_not_negative",
             ),
         ]
 
     def __str__(self):
-        return f"{self.account_number} - {self.client}"
+        return self.account_number
 
-
-# --------------------------------------------------
-# LEDGER ENTRY
-# --------------------------------------------------
 
 class LedgerEntry(models.Model):
     """Append-only. Corrections use new reversing entries."""
 
     class EntryType(models.TextChoices):
-        DEPOSIT = "deposit"
-        WITHDRAWAL = "withdrawal"
-        TRANSFER_IN = "transfer_in"
-        TRANSFER_OUT = "transfer_out"
-        LOAN_DISBURSEMENT = "loan_disbursement"
-        LOAN_PAYMENT = "loan_payment"
-        INTEREST = "interest"
+        DEPOSIT = "deposit", "Deposit"
+        WITHDRAWAL = "withdrawal", "Withdrawal"
+        TRANSFER_IN = "transfer_in", "Transfer In"
+        TRANSFER_OUT = "transfer_out", "Transfer Out"
+        LOAN_DISBURSEMENT = "loan_disbursement", "Loan Disbursement"
+        LOAN_PAYMENT = "loan_payment", "Loan Payment"
+        INTEREST_CREDIT = "interest_credit", "Interest Credit"
 
     entry_type = models.CharField(
         max_length=20,
@@ -86,16 +79,16 @@ class LedgerEntry(models.Model):
         blank=True,
     )
 
-    savings_account = models.ForeignKey(
-        "savings.SavingsAccount",
+    bank_account = models.ForeignKey(
+        BankAccount,
         null=True,
         blank=True,
         on_delete=models.PROTECT,
         related_name="ledger_entries",
     )
 
-    bank_account = models.ForeignKey(
-        "accounting.BankAccount",
+    savings_account = models.ForeignKey(
+        "savings.SavingsAccount",
         null=True,
         blank=True,
         on_delete=models.PROTECT,
@@ -125,6 +118,7 @@ class LedgerEntry(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
         constraints = [
             models.CheckConstraint(
                 condition=Q(amount__gt=0),
@@ -146,7 +140,7 @@ class LedgerEntry(models.Model):
                         "transfer_out",
                         "loan_disbursement",
                         "loan_payment",
-                        "interest",
+                        "interest_credit",
                     ]
                 ),
                 name="ledger_valid_entry_type",
@@ -158,6 +152,7 @@ class LedgerEntry(models.Model):
             raise PermissionError(
                 "Ledger entries cannot be edited."
             )
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -192,6 +187,16 @@ class ReportExport(models.Model):
         default=Format.PDF,
     )
 
+    # Regular bank account transaction statement.
+    bank_account = models.ForeignKey(
+        BankAccount,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="report_exports",
+    )
+
+    # Savings account transaction statement.
     savings_account = models.ForeignKey(
         "savings.SavingsAccount",
         on_delete=models.PROTECT,
@@ -223,6 +228,7 @@ class ReportExport(models.Model):
 
     class Meta:
         ordering = ["-generated_at", "-id"]
+
         constraints = [
             models.CheckConstraint(
                 condition=Q(date_to__gte=F("date_from")),
@@ -232,13 +238,21 @@ class ReportExport(models.Model):
                 condition=(
                     Q(
                         report_type="transaction",
+                        bank_account__isnull=False,
+                        savings_account__isnull=True,
+                        loan__isnull=True,
+                    )
+                    | Q(
+                        report_type="transaction",
+                        bank_account__isnull=True,
                         savings_account__isnull=False,
                         loan__isnull=True,
                     )
                     | Q(
                         report_type="loan",
-                        loan__isnull=False,
+                        bank_account__isnull=True,
                         savings_account__isnull=True,
+                        loan__isnull=False,
                     )
                 ),
                 name="report_valid_subject",

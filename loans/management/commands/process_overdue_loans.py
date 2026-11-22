@@ -15,10 +15,7 @@ CENT = Decimal("0.01")
 
 
 class Command(BaseCommand):
-    help = (
-        "Mark overdue installments, apply one-time 2% "
-        "penalties, and notify clients."
-    )
+    help = "Mark overdue installments, apply one-time penalties, and notify clients."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -65,11 +62,29 @@ class Command(BaseCommand):
                 fields = []
                 newly_overdue = False
 
-                if installment.status != Installment.Status.OVERDUE:
+                newly_overdue = (
+                    installment.status != Installment.Status.OVERDUE
+                )
+
+                if newly_overdue:
                     installment.status = Installment.Status.OVERDUE
                     fields.append("status")
                     overdue_count += 1
                     newly_overdue = True
+
+                    loan = installment.loan
+
+                    Notification.objects.create(
+                        user=loan.client.user,
+                        kind=Notification.Kind.INSTALLMENT_OVERDUE,
+                        message=(
+                            f"Your installment #{installment.number} "
+                            f"for loan #{loan.pk} is overdue. "
+                            f"Outstanding amount: P{unpaid:,.2f}."
+                        ),
+                    )
+
+                    notification_count += 1
 
                 if installment.penalty_amount == 0:
                     penalty = (
@@ -133,7 +148,7 @@ class Command(BaseCommand):
                 f"Processing date: {today}\n"
                 f"Newly overdue: {overdue_count}\n"
                 f"New penalties: {penalty_count}\n"
-                f"Loans marked paid: {paid_count}\n"
-                f"Notifications created: {notification_count}"
+                f"New overdue notifications: {notification_count}\n"
+                f"Loans marked paid: {paid_count}"
             )
         )

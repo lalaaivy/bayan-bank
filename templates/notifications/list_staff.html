@@ -1,0 +1,164 @@
+
+{% extends "base.html" %}
+
+{% block title %}Notifications | Bayan Bank{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold mb-1">Notifications</h2>
+      <p class="text-muted mb-0">
+        Stay updated on important banking activities and alerts.
+      </p>
+    </div>
+
+    {% if unread_count %}
+    <form method="post" action="{% url 'mark_all_notifications_read' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-primary">
+        <i class="bi bi-check2-all me-1" aria-hidden="true"></i>
+        Mark all as read
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-3">
+            <i class="bi bi-bell fs-4" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="text-muted small">Total Notifications</div>
+            <div class="fs-4 fw-bold">{{ notifications|length }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-3">
+            <i class="bi bi-envelope fs-4" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="text-muted small">Unread Notifications</div>
+            <div class="fs-4 fw-bold">{{ unread_count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+      <h3 class="h6 fw-bold mb-0">Recent Notifications</h3>
+    </div>
+
+    <div class="card-body p-0">
+
+      {% for notification in notifications %}
+      <div class="staff-notification-item d-flex align-items-start gap-3 p-3 border-bottom
+        {% if not notification.is_read %}unread{% endif %}">
+
+        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0"
+             style="width: 44px; height: 44px;">
+
+          {% if notification.kind == "loan_approved" %}
+            <i class="bi bi-check-circle-fill text-success fs-5" aria-hidden="true"></i>
+          {% elif notification.kind == "loan_rejected" %}
+            <i class="bi bi-x-circle-fill text-danger fs-5" aria-hidden="true"></i>
+          {% elif notification.kind == "agreement_ready" %}
+            <i class="bi bi-file-earmark-text-fill text-primary fs-5" aria-hidden="true"></i>
+          {% elif notification.kind == "loan_disbursed" %}
+            <i class="bi bi-cash-stack text-success fs-5" aria-hidden="true"></i>
+          {% elif notification.kind == "loan_payment_recorded" %}
+            <i class="bi bi-cash-coin text-success fs-5" aria-hidden="true"></i>
+          {% elif notification.kind == "installment_overdue" %}
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-5" aria-hidden="true"></i>
+          {% else %}
+            <i class="bi bi-bell-fill text-secondary fs-5" aria-hidden="true"></i>
+          {% endif %}
+
+        </div>
+
+        <div class="flex-grow-1 min-width-0">
+          <div class="d-flex flex-wrap justify-content-between gap-2">
+
+            <strong class="text-dark">
+              {{ notification.get_kind_display|default:notification.kind|title }}
+            </strong>
+
+            <small class="text-muted">
+              {{ notification.created_at|date:"M d, Y · h:i A" }}
+            </small>
+
+          </div>
+
+          <p class="text-muted mb-2 mt-1 notification-message">
+            {{ notification.message }}
+          </p>
+
+          {% if notification.is_read %}
+            <span class="badge bg-secondary">Read</span>
+          {% else %}
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary">New</span>
+
+              <form method="post"
+                    action="{% url 'mark_notification_read' notification.id %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-sm btn-link text-decoration-none p-0">
+                  Mark as read
+                </button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      {% empty %}
+      <div class="text-center py-5 px-3">
+        <i class="bi bi-bell-slash text-muted" style="font-size: 3rem;" aria-hidden="true"></i>
+        <h3 class="h6 fw-bold mt-3">No notifications yet</h3>
+        <p class="text-muted mb-0">
+          Important updates and alerts will appear here.
+        </p>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .staff-notification-item {
+    transition: background-color .2s ease;
+  }
+
+  .staff-notification-item:last-child {
+    border-bottom: none !important;
+  }
+
+  .staff-notification-item:hover {
+    background-color: #f8faff;
+  }
+
+  .staff-notification-item.unread {
+    background-color: #f0f6ff;
+    border-left: 3px solid #0d6efd;
+  }
+
+  .notification-message {
+    overflow-wrap: anywhere;
+  }
+</style>
+{% endblock %}

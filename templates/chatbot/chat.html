@@ -1,0 +1,643 @@
+
+{% extends "base_client.html" %}
+
+{% block title %}Kabayan AI Assistant - Bayan Bank{% endblock %}
+
+{% block content %}
+<div class="kabayan-page">
+
+    <div class="kabayan-card">
+
+        <div class="kabayan-header">
+            <div class="kabayan-avatar">
+                <i class="bi bi-robot"></i>
+            </div>
+
+            <div class="kabayan-header-info">
+                <h2>Kabayan</h2>
+                <span>
+                    <span class="kabayan-online-dot"></span>
+                    Bayan Bank AI Assistant
+                </span>
+            </div>
+
+            <span class="kabayan-ai-label">AI ASSISTANT</span>
+        </div>
+
+        <div class="kabayan-messages" id="kabayanMessages" aria-live="polite">
+
+            <div class="kabayan-message assistant">
+                <div class="kabayan-message-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+
+                <div class="kabayan-message-content">
+                    <div class="kabayan-bubble">
+                        Hello! I'm Kabayan, your Bayan Bank AI Assistant.
+
+                        <br><br>
+
+                        I can help you understand our banking services,
+                        savings accounts, loan applications, and repayments.
+
+                        <br><br>
+
+                        How can I help you today?
+                    </div>
+
+                    <small>Just now</small>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="kabayan-suggestions" id="kabayanSuggestions">
+            <p>Suggested questions</p>
+
+            <div class="kabayan-suggestion-list">
+                <button type="button" data-question="How can I apply for a loan?">
+                    How can I apply for a loan?
+                </button>
+
+                <button type="button" data-question="How does savings interest work?">
+                    How does savings interest work?
+                </button>
+
+                <button type="button" data-question="How can I repay my loan online?">
+                    How can I repay my loan online?
+                </button>
+
+                <button type="button" data-question="What banking services does Bayan Bank offer?">
+                    Banking services
+                </button>
+            </div>
+        </div>
+
+        <form id="kabayanForm" class="kabayan-input-area">
+
+            {% csrf_token %}
+
+            <div class="kabayan-input-wrapper">
+                <textarea
+                    id="kabayanInput"
+                    name="message"
+                    placeholder="Ask Kabayan anything..."
+                    maxlength="1000"
+                    rows="1"
+                    aria-label="Your message"
+                    required
+                ></textarea>
+
+                <button
+                    type="submit"
+                    id="kabayanSend"
+                    aria-label="Send message"
+                >
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+
+            <div class="kabayan-input-footer">
+                <span>Press Enter to send · Shift + Enter for a new line</span>
+                <span id="kabayanCharCount">0 / 1000</span>
+            </div>
+
+        </form>
+
+    </div>
+
+    <p class="kabayan-disclaimer">
+        <i class="bi bi-shield-check"></i>
+        Kabayan is an AI assistant. Do not share passwords, PINs,
+        OTPs, or other confidential information.
+        Always verify important financial information through your account.
+    </p>
+
+</div>
+
+<style>
+    .kabayan-page {
+        max-width: 850px;
+        margin: 0 auto;
+        padding: 10px 0 25px;
+    }
+
+    .kabayan-card {
+        background: #fff;
+        border: 1px solid #e7edf5;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 35px rgba(20, 49, 85, .07);
+        display: flex;
+        flex-direction: column;
+        min-height: 650px;
+        max-height: 760px;
+    }
+
+    .kabayan-header {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 20px 23px;
+        background: linear-gradient(120deg, #0c3977, #1767c2);
+        color: #fff;
+    }
+
+    .kabayan-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
+        background: rgba(255,255,255,.17);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .kabayan-header-info {
+        flex: 1;
+    }
+
+    .kabayan-header-info h2 {
+        font-size: 18px;
+        font-weight: 800;
+        margin: 0 0 3px;
+    }
+
+    .kabayan-header-info span {
+        font-size: 12px;
+        color: #dceaff;
+    }
+
+    .kabayan-online-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        background: #49e3a3;
+        border-radius: 50%;
+        margin-right: 4px;
+    }
+
+    .kabayan-ai-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        background: rgba(255,255,255,.15);
+        padding: 7px 10px;
+        border-radius: 20px;
+    }
+
+    .kabayan-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-height: 300px;
+    }
+
+    .kabayan-message {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        max-width: 88%;
+    }
+
+    .kabayan-message.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .kabayan-message-avatar {
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border-radius: 11px;
+        background: #eaf2ff;
+        color: #1767c2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .kabayan-message.user .kabayan-message-avatar {
+        background: #1767c2;
+        color: #fff;
+    }
+
+    .kabayan-message-content {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .kabayan-bubble {
+        padding: 13px 16px;
+        border-radius: 4px 16px 16px 16px;
+        background: #f1f5fa;
+        color: #25364a;
+        font-size: 13px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .kabayan-message.user .kabayan-bubble {
+        background: #1767c2;
+        color: #fff;
+        border-radius: 16px 4px 16px 16px;
+    }
+
+    .kabayan-message-content small {
+        color: #95a1b1;
+        font-size: 10px;
+    }
+
+    .kabayan-message.user .kabayan-message-content small {
+        text-align: right;
+    }
+
+    .kabayan-suggestions {
+        padding: 0 24px 18px;
+    }
+
+    .kabayan-suggestions p {
+        color: #8995a5;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 9px;
+    }
+
+    .kabayan-suggestion-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .kabayan-suggestion-list button {
+        border: 1px solid #dce7f5;
+        background: #fff;
+        color: #1767c2;
+        border-radius: 20px;
+        padding: 8px 12px;
+        font-size: 11px;
+        transition: .2s ease;
+    }
+
+    .kabayan-suggestion-list button:hover {
+        background: #edf5ff;
+        border-color: #1767c2;
+    }
+
+    .kabayan-input-area {
+        border-top: 1px solid #edf0f5;
+        padding: 17px 22px;
+        background: #fff;
+    }
+
+    .kabayan-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f4f7fb;
+        border: 1px solid #e1e8f1;
+        border-radius: 15px;
+        padding: 8px 9px 8px 14px;
+    }
+
+    .kabayan-input-wrapper textarea {
+        flex: 1;
+        resize: none;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: #25364a;
+        font-size: 13px;
+        max-height: 100px;
+        min-height: 25px;
+        padding: 5px 0;
+    }
+
+    .kabayan-input-wrapper textarea:focus {
+        outline: none;
+        box-shadow: none;
+    }
+
+    .kabayan-input-wrapper button {
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 12px;
+        background: #1767c2;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: .2s ease;
+    }
+
+    .kabayan-input-wrapper button:hover {
+        background: #0c3977;
+    }
+
+    .kabayan-input-wrapper button:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    .kabayan-input-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 8px;
+        color: #a0aaba;
+        font-size: 10px;
+    }
+
+    .kabayan-disclaimer {
+        margin: 14px 5px 0;
+        color: #8793a3;
+        font-size: 11px;
+        line-height: 1.6;
+        text-align: center;
+    }
+
+    .kabayan-disclaimer i {
+        color: #1767c2;
+        margin-right: 3px;
+    }
+
+    .kabayan-typing {
+        display: flex;
+        gap: 4px;
+        padding: 5px 0;
+    }
+
+    .kabayan-typing span {
+        width: 6px;
+        height: 6px;
+        background: #8da5c2;
+        border-radius: 50%;
+        animation: kabayanBounce .8s infinite alternate;
+    }
+
+    .kabayan-typing span:nth-child(2) {
+        animation-delay: .2s;
+    }
+
+    .kabayan-typing span:nth-child(3) {
+        animation-delay: .4s;
+    }
+
+    @keyframes kabayanBounce {
+        to {
+            transform: translateY(-5px);
+            opacity: .45;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .kabayan-page {
+            padding: 0;
+        }
+
+        .kabayan-card {
+            min-height: 570px;
+            max-height: 700px;
+            border-radius: 15px;
+        }
+
+        .kabayan-header {
+            padding: 16px;
+        }
+
+        .kabayan-messages {
+            padding: 17px 13px;
+        }
+
+        .kabayan-message {
+            max-width: 96%;
+        }
+
+        .kabayan-suggestions {
+            padding: 0 14px 14px;
+        }
+
+        .kabayan-input-area {
+            padding: 13px;
+        }
+
+        .kabayan-ai-label {
+            font-size: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const form = document.getElementById("kabayanForm");
+    const input = document.getElementById("kabayanInput");
+    const sendButton = document.getElementById("kabayanSend");
+    const messages = document.getElementById("kabayanMessages");
+    const suggestions = document.getElementById("kabayanSuggestions");
+    const charCount = document.getElementById("kabayanCharCount");
+
+    if (!form || !input || !sendButton || !messages) {
+        return;
+    }
+
+    const endpoint = "{% url 'chatbot:chat_message' %}";
+    const csrfToken = form.querySelector(
+        "[name=csrfmiddlewaretoken]"
+    ).value;
+
+    function scrollToBottom() {
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addMessage(text, sender) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "kabayan-message " + sender;
+
+        const avatar = document.createElement("div");
+        avatar.className = "kabayan-message-avatar";
+
+        const avatarIcon = document.createElement("i");
+        avatarIcon.className = sender === "assistant"
+            ? "bi bi-robot"
+            : "bi bi-person-fill";
+
+        avatar.appendChild(avatarIcon);
+
+        const content = document.createElement("div");
+        content.className = "kabayan-message-content";
+
+        const bubble = document.createElement("div");
+        bubble.className = "kabayan-bubble";
+
+        // Use textContent to prevent HTML/script injection.
+        bubble.textContent = text;
+
+        const timestamp = document.createElement("small");
+        timestamp.textContent = "Just now";
+
+        content.appendChild(bubble);
+        content.appendChild(timestamp);
+
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(content);
+
+        messages.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    function showTyping() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "kabayan-message assistant";
+        wrapper.id = "kabayanTyping";
+
+        const avatar = document.createElement("div");
+        avatar.className = "kabayan-message-avatar";
+
+        const icon = document.createElement("i");
+        icon.className = "bi bi-robot";
+
+        avatar.appendChild(icon);
+
+        const content = document.createElement("div");
+        content.className = "kabayan-message-content";
+
+        const bubble = document.createElement("div");
+        bubble.className = "kabayan-bubble";
+
+        const typing = document.createElement("div");
+        typing.className = "kabayan-typing";
+
+        for (let i = 0; i < 3; i++) {
+            typing.appendChild(document.createElement("span"));
+        }
+
+        bubble.appendChild(typing);
+        content.appendChild(bubble);
+
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(content);
+
+        messages.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    function removeTyping() {
+        const typing = document.getElementById("kabayanTyping");
+
+        if (typing) {
+            typing.remove();
+        }
+    }
+
+    async function sendMessage(message) {
+        if (!message || sendButton.disabled) {
+            return;
+        }
+
+        addMessage(message, "user");
+
+        input.value = "";
+        charCount.textContent = "0 / 1000";
+        input.style.height = "auto";
+
+        suggestions.style.display = "none";
+        sendButton.disabled = true;
+        showTyping();
+
+        try {
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            });
+
+            const data = await response.json();
+
+            removeTyping();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || "Something went wrong."
+                );
+            }
+
+            addMessage(
+                data.reply || "I couldn't generate a response.",
+                "assistant"
+            );
+
+        } catch (error) {
+            removeTyping();
+
+            addMessage(
+                error.message || (
+                    "Kabayan is temporarily unavailable. Please try again."
+                ),
+                "assistant"
+            );
+
+        } finally {
+            sendButton.disabled = false;
+            input.focus();
+        }
+    }
+
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const message = input.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+        sendMessage(message);
+    });
+
+    input.addEventListener("input", function () {
+        charCount.textContent = input.value.length + " / 1000";
+
+        input.style.height = "auto";
+        input.style.height = Math.min(
+            input.scrollHeight,
+            100
+        ) + "px";
+    });
+
+    input.addEventListener("keydown", function (event) {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey &&
+            !event.isComposing
+        ) {
+            event.preventDefault();
+            form.requestSubmit();
+        }
+    });
+
+    document.querySelectorAll(
+        ".kabayan-suggestion-list button"
+    ).forEach(function (button) {
+        button.addEventListener("click", function () {
+            sendMessage(
+                button.dataset.question || ""
+            );
+        });
+    });
+})();
+</script>
+{% endblock %}

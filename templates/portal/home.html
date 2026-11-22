@@ -1,288 +1,417 @@
 
-{% extends "base.html" %}
-{% load humanize %}
-
+{% extends "base_client.html" %}
 {% block title %}My Dashboard - Bayan Bank{% endblock %}
 
 {% block content %}
-
-<h3 class="mb-4">
-  Welcome, {{ request.user.get_full_name|default:request.user.username }}
-</h3>
-
-<!-- ===================================== -->
-<!-- DASHBOARD SUMMARY -->
-<!-- ===================================== -->
-
-<div class="row g-3 mb-4">
-
-  <div class="col-md-3">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Savings Balance</div>
-        <div class="fs-3 fw-bold">
-          ₱ {{ balance|floatformat:2|intcomma }}
-        </div>
-      </div>
-    </div>
+<div class="client-greeting d-flex align-items-center gap-3 mb-3">
+  <div class="user-avatar dashboard-avatar">
+    {% if request.user.first_name %}
+      {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+    {% else %}
+      {{ request.user.username|first|upper }}
+    {% endif %}
   </div>
 
-  <div class="col-md-3">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Regular Bank Balance</div>
-        <div class="fs-3 fw-bold">
-          ₱ {{ bank_balance|floatformat:2|intcomma }}
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="flex-grow-1">
+    <h3 class="mb-1">
+      Hey, {{ request.user.first_name|default:request.user.username }}!
+    </h3>
 
-  <div class="col-md-3">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">My Loans</div>
-        <div class="fs-3 fw-bold">
-          {{ loans|length }}
-        </div>
-      </div>
-    </div>
+    {% if client.verification_status == "active" %}
+      <span class="badge text-bg-success">
+        <i class="bi bi-patch-check me-1" aria-hidden="true"></i>
+        {{ client.get_verification_status_display }}
+      </span>
+    {% elif client.verification_status == "rejected" %}
+      <span class="badge text-bg-danger">
+        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+        {{ client.get_verification_status_display }}
+      </span>
+    {% elif client.verification_status == "pending" %}
+      <span class="badge text-bg-warning">
+        <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>
+        {{ client.get_verification_status_display }}
+      </span>
+    {% else %}
+      <span class="badge text-bg-secondary">
+        {{ client.get_verification_status_display }}
+      </span>
+    {% endif %}
   </div>
-
-  <div class="col-md-3">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Savings Accounts</div>
-        <div class="fs-3 fw-bold">
-          {{ accounts|length }}
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
+<!-- Verification status -->
+{% if client.verification_status == "rejected" %}
+  <div class="alert alert-danger mb-4">
+    <strong>Your ID verification was rejected.</strong>
 
-<!-- ===================================== -->
-<!-- REGULAR BANK ACCOUNTS -->
-<!-- ===================================== -->
+    {% if latest_document and latest_document.remark %}
+      <div class="mt-1">
+        Reason from staff: {{ latest_document.remark }}
+      </div>
+    {% endif %}
 
-<div class="card shadow-sm mb-4">
-  <div class="card-header">
-    My Regular Bank Accounts
+    <div class="mt-2">
+      <a href="{% url 'upload_id' %}" class="btn btn-sm btn-danger">
+        Upload ID again
+      </a>
+    </div>
   </div>
 
+{% elif client.verification_status == "pending" %}
+  <div class="alert alert-warning mb-4">
+    {% if latest_document %}
+      <strong>Your ID is under review.</strong>
+      Staff will update your status soon.
+    {% else %}
+      <strong>Please upload your ID</strong> so staff can verify your account.
+      <div class="mt-2">
+        <a href="{% url 'upload_id' %}" class="btn btn-sm btn-dark">
+          Upload ID
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+{% elif client.verification_status == "active" %}
+  <div class="alert alert-success mb-4">
+    <strong>Your account is verified.</strong>
+    You can now use all banking features.
+  </div>
+{% endif %}
+
+<!-- Regular bank account -->
+<section class="card fintech-card--blue mb-4">
   <div class="card-body">
-
-    {% for account in bank_accounts %}
-
-      <div class="d-flex justify-content-between align-items-center border-bottom py-3">
-        <div>
-          <strong>{{ account.account_number }}</strong>
-
-          <div class="text-muted small">
-            {{ account.get_status_display }}
-          </div>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <div class="small opacity-75 mb-2">
+          Regular Bank Account Balance
         </div>
 
-        <div class="fw-bold">
-          ₱ {{ account.balance|floatformat:2|intcomma }}
+        <div class="amount-large">
+          &#8369; {{ bank_balance|floatformat:2 }}
         </div>
+      </div>
+
+      <span class="icon-circle blue">
+        <i class="bi bi-bank" aria-hidden="true"></i>
+      </span>
+    </div>
+
+    {% if bank_account %}
+      <div class="small opacity-75">
+        Account Number: {{ bank_account.account_number }}
+      </div>
+
+      <div class="small opacity-75 mt-1">
+        Status: {{ bank_account.get_status_display }}
+      </div>
+    {% else %}
+      <div class="small opacity-75">
+        Your regular bank account will be created after ID verification.
+      </div>
+    {% endif %}
+
+    <div class="small opacity-75 mt-3">
+      Your regular account receives loan disbursements and is the source
+      of transfers to your savings account.
+    </div>
+  </div>
+</section>
+
+<!-- Savings account -->
+<section class="card fintech-card--yellow mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <div class="small opacity-75 mb-2">
+          Savings Account Balance
+        </div>
+
+        <div class="amount-large">
+          &#8369; {{ balance|floatformat:2 }}
+        </div>
+      </div>
+
+      <span class="icon-circle green">
+        <i class="bi bi-wallet2" aria-hidden="true"></i>
+      </span>
+    </div>
+
+    {% if accounts %}
+      {% for account in accounts %}
+        <div class="small opacity-75">
+          Account Number: {{ account.account_number }}
+        </div>
+        <div class="small opacity-75 mt-1">
+          Status: {{ account.get_status_display }}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="small opacity-75">
+        You do not have a savings account yet.
+      </div>
+    {% endif %}
+
+    <div class="small opacity-75 mt-3">
+      Your savings account is the only account that earns interest.
+    </div>
+
+    <a href="{% url 'portal_savings' %}"
+       class="btn btn-sm mt-3">
+      View Savings Details
+      <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+    </a>
+  </div>
+</section>
+
+<!-- Interest earned -->
+<section class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <div class="small text-muted mb-2">
+          Total Interest Earned
+        </div>
+
+        <div class="amount-large">
+          &#8369; {{ total_interest|floatformat:2 }}
+        </div>
+      </div>
+
+      <span class="icon-circle green">
+        <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+      </span>
+    </div>
+
+    {% if latest_interest %}
+      <div class="small text-muted">
+        Latest interest credited:
+        {{ latest_interest.posted_at|date:"M d, Y" }}
+      </div>
+    {% else %}
+      <div class="small text-muted">
+        No interest has been credited to your account yet.
+      </div>
+    {% endif %}
+
+    <div class="small text-muted mt-2">
+      Interest is credited to your savings account only.
+    </div>
+
+    <a href="{% url 'savings_history' %}"
+       class="btn btn-sm mt-3">
+      View Interest History
+      <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+    </a>
+  </div>
+</section>
+
+<!-- Quick actions -->
+<section class="mb-4" aria-label="Quick banking actions">
+  <h5 class="mb-3">Quick Banking Actions</h5>
+
+  <div class="quick-actions">
+    <a class="quick-action"
+       href="{% url 'portal_savings' %}#transfer">
+      <span class="icon-circle blue">
+        <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+      </span>
+      <span>Transfer to Savings</span>
+    </a>
+
+    <a class="quick-action"
+       href="{% url 'portal_savings' %}#deposit-info">
+      <span class="icon-circle green">
+        <i class="bi bi-bank" aria-hidden="true"></i>
+      </span>
+      <span>Deposit Information</span>
+    </a>
+
+    <a class="quick-action"
+       href="{% url 'portal_savings' %}#branch-services">
+      <span class="icon-circle red">
+        <i class="bi bi-cash-stack" aria-hidden="true"></i>
+      </span>
+      <span>Branch Services</span>
+    </a>
+
+    <a class="quick-action" href="{% url 'apply_loan' %}">
+      <span class="icon-circle blue">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      </span>
+      <span>Apply Loan</span>
+    </a>
+
+    <a class="quick-action" href="{% url 'loan_detail' %}">
+      <span class="icon-circle red">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+      </span>
+      <span>Loan Payments</span>
+    </a>
+
+    <a class="quick-action" href="{% url 'savings_history' %}">
+      <span class="icon-circle yellow">
+        <i class="bi bi-wallet2" aria-hidden="true"></i>
+      </span>
+      <span>Savings History</span>
+    </a>
+
+    <a class="quick-action" href="{% url 'client_profile' %}">
+      <span class="icon-circle blue">
+        <i class="bi bi-person" aria-hidden="true"></i>
+      </span>
+      <span>Profile</span>
+    </a>
+  </div>
+</section>
+
+<!-- Recent transactions -->
+<section class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Recent Transactions</h5>
+
+      <a href="{% url 'savings_history' %}"
+         class="small fw-bold text-decoration-none">
+        See all
+      </a>
+    </div>
+
+    {% for transaction in recent_transactions %}
+      <div class="transaction-row">
+        {% if transaction.entry_type == "transfer_in" or transaction.entry_type == "deposit" or transaction.entry_type == "interest_credit" or transaction.entry_type == "loan_disbursement" %}
+          <span class="icon-circle green">
+            <i class="bi bi-arrow-down-left" aria-hidden="true"></i>
+          </span>
+        {% else %}
+          <span class="icon-circle red">
+            <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+          </span>
+        {% endif %}
+
+        <span class="flex-grow-1">
+          <span class="transaction-title d-block">
+            {{ transaction.get_entry_type_display }}
+          </span>
+
+          <span class="transaction-date">
+            {{ transaction.created_at|date:"M d, Y · h:i A" }}
+          </span>
+
+          <span class="transaction-date d-block">
+            {% if transaction.bank_account %}
+              Bank Account
+            {% elif transaction.savings_account %}
+              Savings Account
+            {% elif transaction.loan %}
+              Loan #{{ transaction.loan.pk }}
+            {% else %}
+              Account transaction
+            {% endif %}
+          </span>
+        </span>
+
+        {% if transaction.entry_type == "transfer_out" or transaction.entry_type == "withdrawal" or transaction.entry_type == "loan_payment" %}
+          <span class="transaction-amount text-danger">
+            - &#8369; {{ transaction.amount|floatformat:2 }}
+          </span>
+        {% else %}
+          <span class="transaction-amount text-success">
+            + &#8369; {{ transaction.amount|floatformat:2 }}
+          </span>
+        {% endif %}
       </div>
 
     {% empty %}
+      <div class="text-center py-4">
+        <span class="icon-circle blue mx-auto mb-3">
+          <i class="bi bi-receipt" aria-hidden="true"></i>
+        </span>
 
-      <p class="text-muted mb-0">
-        No regular bank accounts available.
-      </p>
-
+        <h6>No transactions yet</h6>
+        <p class="small text-muted mb-0">
+          Your account transactions will appear here once you start
+          using your Bayan Bank accounts.
+        </p>
+      </div>
     {% endfor %}
 
   </div>
-</div>
+</section>
 
-
-<!-- ===================================== -->
-<!-- REGULAR BANK TRANSACTION HISTORY -->
-<!-- ===================================== -->
-
-<div class="card shadow-sm mb-4">
-  <div class="card-header">
-    Recent Bank Transactions
-  </div>
-
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Account</th>
-          <th>Transaction</th>
-          <th>Reference</th>
-          <th class="text-end">Amount</th>
-          <th class="text-end">Balance After</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        {% for entry in bank_transactions %}
-
-          <tr>
-            <td>
-              {{ entry.created_at|date:"M d, Y h:i A" }}
-            </td>
-
-            <td>
-              {{ entry.bank_account.account_number }}
-            </td>
-
-            <td>
-              {{ entry.get_entry_type_display }}
-            </td>
-
-            <td>
-              {% if entry.loan_id %}
-                Loan #{{ entry.loan_id }}
-              {% elif entry.reference %}
-                {{ entry.reference }}
-              {% else %}
-                -
-              {% endif %}
-            </td>
-
-            <td class="text-end">
-              {% if entry.entry_type == "withdrawal" or entry.entry_type == "transfer_out" %}
-                <span class="text-danger">
-                  - ₱ {{ entry.amount|floatformat:2|intcomma }}
-                </span>
-              {% else %}
-                <span class="text-success">
-                  + ₱ {{ entry.amount|floatformat:2|intcomma }}
-                </span>
-              {% endif %}
-            </td>
-
-            <td class="text-end">
-              {% if entry.balance_after != None %}
-                ₱ {{ entry.balance_after|floatformat:2|intcomma }}
-              {% else %}
-                -
-              {% endif %}
-            </td>
-          </tr>
-
-        {% empty %}
-
-          <tr>
-            <td colspan="6" class="text-center text-muted py-4">
-              No regular bank transactions yet.
-            </td>
-          </tr>
-
-        {% endfor %}
-
-      </tbody>
-    </table>
-  </div>
-</div>
-
-
-<!-- ===================================== -->
-<!-- SAVINGS ACCOUNTS -->
-<!-- ===================================== -->
-
-<div class="card shadow-sm mb-4">
-  <div class="card-header">
-    My Savings Accounts
-  </div>
-
+<!-- Loan summary -->
+<section class="card fintech-card--yellow mb-4">
   <div class="card-body">
-
-    {% for account in accounts %}
-
-      <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-        <div>
-          <strong>{{ account.account_number }}</strong>
-
-          <div class="text-muted small">
-            {{ account.status }}
-          </div>
-        </div>
-
-        <div class="fw-bold">
-          ₱ {{ account.balance|floatformat:2|intcomma }}
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h5 class="mb-1">My Loans</h5>
+        <div class="small opacity-75">
+          Your loan applications and account status
         </div>
       </div>
 
-    {% empty %}
+      <i class="bi bi-bar-chart-line fs-4" aria-hidden="true"></i>
+    </div>
 
-      <p class="text-muted mb-0">
-        No savings accounts available.
-      </p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="small">Total loan applications</span>
+      <strong>{{ loans|length }}</strong>
+    </div>
 
-    {% endfor %}
+    {% if loans %}
+      {% for loan in loans|slice:":3" %}
+        <div class="d-flex justify-content-between align-items-center py-2 border-top">
+          <div>
+            <div class="fw-semibold">
+              {{ loan.product.name }}
+            </div>
+            <div class="small text-muted">
+              Applied {{ loan.applied_at|date:"M d, Y" }}
+            </div>
+          </div>
 
-  </div>
-</div>
-
-
-<!-- ===================================== -->
-<!-- LOAN RECORDS -->
-<!-- ===================================== -->
-
-<div class="card shadow-sm mb-4">
-  <div class="card-header">
-    My Loan Applications
-  </div>
-
-  <div class="card-body">
-
-    {% for loan in loans %}
-
-      <div class="border-bottom py-3">
-
-        <div class="d-flex justify-content-between">
-          <strong>{{ loan.product.name }}</strong>
-
-          <span class="badge bg-secondary">
+          <span class="badge text-bg-secondary">
             {{ loan.get_status_display }}
           </span>
         </div>
-
-        <div class="text-muted small mt-2">
-          Loan Amount:
-          ₱ {{ loan.principal|floatformat:2|intcomma }}
-        </div>
-
-        <div class="text-muted small">
-          Term: {{ loan.term_months }} months
-        </div>
-
-        <div class="text-muted small">
-          Applied:
-          {{ loan.applied_at|date:"M d, Y" }}
-        </div>
-
+      {% endfor %}
+    {% else %}
+      <div class="small opacity-75">
+        You do not have any loan applications yet.
       </div>
+    {% endif %}
 
-    {% empty %}
-
-      <p class="text-muted mb-0">
-        You have no loan applications yet.
-      </p>
-
-    {% endfor %}
-
+    <a class="btn btn-sm mt-3" href="{% url 'my_loans' %}">
+      View My Loans
+      <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+    </a>
   </div>
+</section>
+
+<!-- Other account links -->
+<div class="d-flex flex-wrap gap-2">
+  <a href="{% url 'my_loans' %}" class="btn btn-outline-primary btn-sm">
+    <i class="bi bi-credit-card me-1" aria-hidden="true"></i>
+    My Loans
+  </a>
+
+  {% if client.verification_status == "pending" or client.verification_status == "rejected" %}
+    <a href="{% url 'upload_id' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-person-vcard me-1" aria-hidden="true"></i>
+      Upload ID
+    </a>
+  {% endif %}
+
+  <a href="{% url 'accept_agreement' %}" class="btn btn-outline-primary btn-sm">
+    <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>
+    Review Agreement
+  </a>
+
+  <a href="{% url 'change_password' %}" class="btn btn-outline-dark btn-sm">
+    <i class="bi bi-key me-1" aria-hidden="true"></i>
+    Change Password
+  </a>
 </div>
-
-
-<!-- ===================================== -->
-<!-- AI CHATBOT -->
-<!-- ===================================== -->
-
-{% include "includes/ai_chatbot.html" %}
-
 {% endblock %}

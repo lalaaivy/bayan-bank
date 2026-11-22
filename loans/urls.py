@@ -1,20 +1,12 @@
 
 from django.urls import path
 
-from . import views, exports, payments_views
+from . import exports, views
 
 urlpatterns = [
     # Client portal
-    path(
-        "portal/loans/",
-        views.portal_loans,
-        name="portal_loans",
-    ),
-    path(
-        "portal/loans/apply/",
-        views.portal_apply,
-        name="portal_apply",
-    ),
+    path("portal/loans/", views.portal_loans, name="portal_loans"),
+    path("portal/loans/apply/", views.portal_apply, name="portal_apply"),
     path(
         "portal/loans/<int:loan_id>/agreement/",
         views.portal_loan_agreement,
@@ -25,18 +17,15 @@ urlpatterns = [
         views.portal_accept_agreement,
         name="portal_accept_agreement",
     ),
+    path(
+        "portal/loans/<int:loan_id>/repay/",
+        views.portal_loan_repay,
+        name="portal_loan_repay",
+    ),
 
     # Staff loan management
-    path(
-        "staff/loans/",
-        views.staff_loans,
-        name="staff_loans",
-    ),
-    path(
-        "staff/loans/<int:loan_id>/",
-        views.staff_loan,
-        name="staff_loan",
-    ),
+    path("staff/loans/", views.staff_loans, name="staff_loans"),
+    path("staff/loans/<int:loan_id>/", views.staff_loan, name="staff_loan"),
     path(
         "staff/loans/<int:loan_id>/approve/",
         views.staff_loan_approve,
@@ -63,19 +52,11 @@ urlpatterns = [
         name="staff_loan_pay",
     ),
 
-    # Staff payments management
-    path(
-        "staff/payments/",
-        payments_views.staff_payments,
-        name="staff_payments",
-    ),
-    path(
-        "staff/payments/record/",
-        payments_views.staff_record_payment,
-        name="staff_record_payment",
-    ),
+    # Calendar
+    path("calendar/", views.calendar_page, name="loan_calendar"),
+    path("calendar/events/", views.calendar_events, name="loan_calendar_events"),
 
-    # Loan agreement and exports
+    # Exports and document downloads
     path(
         "loans/<int:loan_id>/agreement/pdf/",
         views.loan_agreement_pdf,
@@ -90,5 +71,10 @@ urlpatterns = [
         "loans/<int:loan_id>/export/excel/",
         exports.export_loan_excel,
         name="export_loan_excel",
+    ),
+    path(
+        "loans/documents/<int:document_id>/download/",
+        views.loan_document_download,
+        name="loan_document_download",
     ),
 ]

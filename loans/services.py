@@ -2,15 +2,17 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
+from accounts.models import Role, User
 from accounting.models import BankAccount, LedgerEntry
 from accounting.money import BankError, to_money
 from audit.services import log
 from notifications.models import Notification
 from savings.models import SavingsAccount
 
-from .calculations import build_schedule, monthly_installment
+from .calculations import build_schedule
 from .models import (
     Disbursement,
     EligibilityCheck,
@@ -21,13 +23,23 @@ from .models import (
     LoanRule,
 )
 
-
 DECIDERS = ("admin", "loan_officer")
+DISBURSERS = ("admin", "staff")
 PAYMENT_TAKERS = ("admin", "staff")
+
+INTERNAL_NOTIFICATION_ROLES = (
+    Role.ADMIN,
+    Role.STAFF,
+    Role.LOAN_OFFICER,
+)
+
+DEFAULT_MAX_INSTALLMENT_RATIO = Decimal("0.40")
+DEFAULT_MIN_SAVINGS_RATIO = Decimal("0.10")
+DEFAULT_MINIMUM_AGE = 18
 
 
 def _require_role(user, allowed, message):
-    if user.role.name not in allowed:
+    if getattr(getattr(user, "role", None), "name", None) not in allowed:
         raise BankError(message)
 
 
@@ -38,10 +50,271 @@ def _get_loan_locked(loan_id):
         raise BankError("Loan not found.")
 
 
-def _age_on_date(birthdate, today):
-    return (
-        today.year - birthdate.year
-        - ((today.month, today.day) < (birthdate.month, birthdate.day))
+def _notify_loan_parties(
+    loan,
+    kind,
+    client_message,
+    staff_message=None,
+    exclude_user=None,
+):
+    """
+    Notify the borrower and active internal users.
+
+    Internal recipients:
+    - Admin
+    - Staff
+    - Loan Officer
+
+    The borrower receives the client-specific message.
+    Internal users receive the staff-specific message.
+    The user performing the action is excluded from internal
+    notifications to avoid notifying them about their own action.
+
+    Notifications are created inside the current database transaction.
+    If the banking operation rolls back, its notifications roll back too.
+    """
+
+    recipients = {
+        loan.client.user_id: (
+            loan.client.user,
+            client_message[:255],
+        )
+    }
+
+    internal_users = User.objects.filter(
+        is_active=True,
+        role__name__in=INTERNAL_NOTIFICATION_ROLES,
+    ).exclude(
+        pk=loan.client.user_id,
+    )
+
+    if exclude_user is not None:
+        internal_users = internal_users.exclude(
+            pk=exclude_user.pk,
+        )
+
+    internal_message = (
+        staff_message or client_message
+    )[:255]
+
+    for user in internal_users:
+        recipients[user.pk] = (
+            user,
+            internal_message,
+        )
+
+    Notification.objects.bulk_create([
+        Notification(
+            user=user,
+            kind=kind,
+            message=message,
+        )
+        for user, message in recipients.values()
+    ])
+
+
+def _calculate_age(date_of_birth, today=None):
+    """Calculate age using the client's date of birth."""
+    if not date_of_birth:
+        return None
+
+    today = today or timezone.localdate()
+
+    age = today.year - date_of_birth.year
+
+    if (today.month, today.day) < (
+        date_of_birth.month,
+        date_of_birth.day,
+    ):
+        age -= 1
+
+    return age
+
+
+def _save_eligibility_result(loan, checked_by, result, remarks):
+    """Save an eligibility result and its audit event."""
+    record = EligibilityCheck.objects.create(
+        loan=loan,
+        result=result,
+        remarks=remarks,
+        checked_by=checked_by,
+    )
+
+    log(
+        checked_by,
+        "loan_eligibility_check",
+        loan,
+        result=result,
+    )
+
+    return record
+
+
+def _evaluate(loan, checked_by):
+    """
+    Evaluate a loan application using its product's eligibility rules.
+
+    Results:
+    - ELIGIBLE: All applicable criteria are satisfied.
+    - REVIEW: There is one failed criterion or missing information.
+    - INELIGIBLE: Two or more criteria fail.
+
+    An inactive rule is never silently treated as an approved assessment.
+    """
+
+    rule = LoanRule.objects.filter(
+        product=loan.product,
+    ).first()
+
+    if rule and not rule.is_active:
+        return _save_eligibility_result(
+            loan,
+            checked_by,
+            EligibilityCheck.Result.REVIEW,
+            "The eligibility rules for this loan product are inactive. "
+            "Manual review is required before a decision can be made.",
+        )
+
+    max_ratio = (
+        rule.max_installment_ratio
+        if rule else DEFAULT_MAX_INSTALLMENT_RATIO
+    )
+
+    min_savings_ratio = (
+        rule.min_savings_ratio
+        if rule else DEFAULT_MIN_SAVINGS_RATIO
+    )
+
+    minimum_income = (
+        rule.minimum_monthly_income
+        if rule else Decimal("0.00")
+    )
+
+    minimum_age = (
+        rule.minimum_age
+        if rule else DEFAULT_MINIMUM_AGE
+    )
+
+    minimum_score = (
+        rule.minimum_credit_score
+        if rule else 0
+    )
+
+    client = loan.client
+    today = timezone.localdate()
+
+    rows = build_schedule(
+        loan.principal,
+        loan.annual_rate,
+        loan.term_months,
+        today,
+    )
+
+    if not rows:
+        raise BankError(
+            "Unable to calculate the loan repayment schedule."
+        )
+
+    installment = max(
+        row["principal_due"] + row["interest_due"]
+        for row in rows
+    )
+
+    income = client.monthly_income or Decimal("0.00")
+
+    savings = (
+        SavingsAccount.objects.filter(
+            client=client,
+            status=SavingsAccount.Status.ACTIVE,
+        ).aggregate(total=Sum("balance"))["total"]
+        or Decimal("0.00")
+    )
+
+    score = client.credit_score or 0
+    age = _calculate_age(client.date_of_birth, today)
+
+    failed = []
+    needs_review = []
+
+    # 1. Minimum age
+    if age is None:
+        needs_review.append(
+            "Age: date of birth is missing. Verify the client's age."
+        )
+    elif age < minimum_age:
+        failed.append(
+            f"Age: client is {age} years old, below the required "
+            f"minimum age of {minimum_age}."
+        )
+
+    # 2. Minimum monthly income
+    if income < minimum_income:
+        failed.append(
+            f"Minimum income: monthly income of P{income:,.2f} "
+            f"is below the required P{minimum_income:,.2f}."
+        )
+
+    # 3. Monthly installment affordability
+    if income <= Decimal("0.00"):
+        if not any("Minimum income:" in item for item in failed):
+            needs_review.append(
+                "Income: monthly income is zero or unavailable. "
+                "Verify the client's income."
+            )
+    elif installment > income * max_ratio:
+        failed.append(
+            f"Income affordability: monthly installment P{installment:,.2f} "
+            f"exceeds {max_ratio:.0%} of monthly income P{income:,.2f}."
+        )
+
+    # 4. Savings requirement
+    required_savings = loan.principal * min_savings_ratio
+
+    if savings < required_savings:
+        failed.append(
+            f"Savings: balance P{savings:,.2f} is below the required "
+            f"P{required_savings:,.2f} ({min_savings_ratio:.0%} "
+            "of the loan amount)."
+        )
+
+    # 5. Minimum credit score
+    if minimum_score > 0 and score <= 0:
+        needs_review.append(
+            "Credit score: no usable credit score is recorded. "
+            "Verify the client's credit information."
+        )
+    elif score < minimum_score:
+        failed.append(
+            f"Credit score: {score} is below the required minimum "
+            f"of {minimum_score}."
+        )
+
+    if len(failed) >= 2:
+        result = EligibilityCheck.Result.INELIGIBLE
+        remarks = "Multiple eligibility criteria failed. " + " ".join(failed)
+
+    elif failed:
+        result = EligibilityCheck.Result.REVIEW
+        remarks = "One eligibility criterion failed. " + " ".join(failed)
+
+        if needs_review:
+            remarks += " " + " ".join(needs_review)
+
+    elif needs_review:
+        result = EligibilityCheck.Result.REVIEW
+        remarks = "Additional verification is required. " + " ".join(
+            needs_review
+        )
+
+    else:
+        result = EligibilityCheck.Result.ELIGIBLE
+        remarks = "All eligibility criteria were satisfied."
+
+    return _save_eligibility_result(
+        loan,
+        checked_by,
+        result,
+        remarks,
     )
 
 
@@ -75,124 +348,21 @@ def check_overdue_loans(client):
 
 @transaction.atomic
 def check_eligibility(loan_id, by):
-    loan = _get_loan_locked(loan_id)
-
+    """Allow a loan officer or admin to reassess eligibility."""
     _require_role(
         by,
         DECIDERS,
         "You are not allowed to check loan eligibility.",
     )
 
-    rule = LoanRule.objects.filter(
-        product=loan.product,
-        is_active=True,
-    ).first()
+    loan = _get_loan_locked(loan_id)
 
-    if rule is None:
-        result = EligibilityCheck.Result.REVIEW
-        remarks = "No active eligibility rule is configured."
-
-    else:
-        client = loan.client
-        reasons = []
-        missing = []
-
-        if not client.date_of_birth:
-            missing.append("Date of birth is missing.")
-
-        elif _age_on_date(
-            client.date_of_birth,
-            timezone.localdate(),
-        ) < rule.minimum_age:
-            reasons.append(
-                "Client does not meet the minimum age."
-            )
-
-        if client.monthly_income is None:
-            missing.append("Monthly income is missing.")
-
-        elif client.monthly_income < rule.minimum_monthly_income:
-            reasons.append(
-                "Monthly income is below the requirement."
-            )
-
-        if client.credit_score is None:
-            missing.append("Credit score is missing.")
-
-        elif client.credit_score < rule.minimum_credit_score:
-            reasons.append(
-                "Credit score is below the requirement."
-            )
-
-        if client.monthly_income is not None:
-            installment = monthly_installment(
-                loan.principal,
-                loan.annual_rate,
-                loan.term_months,
-            )
-
-            income_limit = (
-                client.monthly_income * Decimal("0.40")
-            )
-
-            if installment > income_limit:
-                reasons.append(
-                    "Monthly loan installment exceeds "
-                    "40% of the client's monthly income."
-                )
-
-        required_savings = (
-            loan.principal * Decimal("0.10")
+    if loan.status != Loan.Status.PENDING:
+        raise BankError(
+            "Eligibility can only be reassessed for pending loans."
         )
 
-        total_savings = sum(
-            (
-                account.balance
-                for account in SavingsAccount.objects.filter(
-                    client=client,
-                    status=SavingsAccount.Status.ACTIVE,
-                )
-            ),
-            Decimal("0.00"),
-        )
-
-        if total_savings < required_savings:
-            reasons.append(
-                "Client does not have enough savings. "
-                "Savings must be at least 10% "
-                "of the requested loan amount."
-            )
-
-        if reasons:
-            result = EligibilityCheck.Result.INELIGIBLE
-            remarks = " ".join(reasons + missing)
-
-        elif missing:
-            result = EligibilityCheck.Result.REVIEW
-            remarks = " ".join(missing)
-
-        else:
-            result = EligibilityCheck.Result.ELIGIBLE
-            remarks = (
-                "Client meets all configured "
-                "eligibility requirements."
-            )
-
-    record = EligibilityCheck.objects.create(
-        loan=loan,
-        result=result,
-        remarks=remarks,
-        checked_by=by,
-    )
-
-    log(
-        by,
-        "loan_eligibility_check",
-        loan,
-        result=result,
-    )
-
-    return record
+    return _evaluate(loan, by)
 
 
 # --------------------------------------------------
@@ -200,31 +370,38 @@ def check_eligibility(loan_id, by):
 # --------------------------------------------------
 
 @transaction.atomic
-def apply_for_loan(client, product, principal, term_months, by):
+def apply_for_loan(client, product, principal, term_months, by, purpose=""):
     principal = to_money(principal)
+
+    if principal <= 0:
+        raise BankError("Loan amount must be greater than zero.")
 
     try:
         term_months = int(term_months)
     except (TypeError, ValueError):
         raise BankError("Enter a valid number of months.")
 
+    purpose = (purpose or "").strip()
+
+    if not purpose:
+        raise BankError("Please provide the purpose of your loan application.")
+
+    if len(purpose) > 1000:
+        raise BankError("Loan purpose cannot exceed 1,000 characters.")
+
     if not product.is_active:
         raise BankError("This loan product is not available.")
 
-    if not (
-        product.min_amount <= principal <= product.max_amount
-    ):
+    if not (product.min_amount <= principal <= product.max_amount):
         raise BankError(
-            f"Amount must be between "
-            f"{product.min_amount} and {product.max_amount}."
+            f"Amount must be between {product.min_amount} and "
+            f"{product.max_amount}."
         )
 
-    if not (
-        product.min_months <= term_months <= product.max_months
-    ):
+    if not (product.min_months <= term_months <= product.max_months):
         raise BankError(
-            f"Term must be between "
-            f"{product.min_months} and {product.max_months} months."
+            f"Term must be between {product.min_months} and "
+            f"{product.max_months} months."
         )
 
     check_overdue_loans(client)
@@ -235,6 +412,7 @@ def apply_for_loan(client, product, principal, term_months, by):
         principal=principal,
         annual_rate=product.annual_rate,
         term_months=term_months,
+        purpose=purpose,
     )
 
     log(
@@ -243,6 +421,24 @@ def apply_for_loan(client, product, principal, term_months, by):
         loan,
         principal=principal,
         term_months=term_months,
+        purpose=purpose,
+    )
+
+    _evaluate(loan, None)
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.LOAN_APPLICATION_SUBMITTED,
+        (
+            f"Your loan application for P{loan.principal:,.2f} "
+            "has been submitted successfully."
+        ),
+        (
+            f"New loan application from "
+            f"{loan.client.user.get_username()} for "
+            f"P{loan.principal:,.2f}. Application ID: {loan.pk}."
+        ),
+        exclude_user=by,
     )
 
     Notification.objects.create(
@@ -278,35 +474,22 @@ def approve_loan(loan_id, by):
         )
 
     if loan.client.user_id == by.pk:
-        raise BankError(
-            "You cannot approve your own loan."
-        )
+        raise BankError("You cannot approve your own loan.")
 
-    latest_check = (
-        EligibilityCheck.objects.filter(loan=loan)
-        .order_by("-pk")
-        .first()
-    )
-
-    if latest_check is None:
-        raise BankError(
-            "Loan eligibility must be checked before approval."
-        )
+    # Always perform a fresh assessment before approval.
+    latest_check = _evaluate(loan, by)
 
     if latest_check.result == EligibilityCheck.Result.INELIGIBLE:
         raise BankError(
-            "This loan cannot be approved because "
-            "the client is not eligible."
+            "This loan cannot be approved because the client "
+            "failed multiple eligibility criteria."
         )
 
     if latest_check.result == EligibilityCheck.Result.REVIEW:
         raise BankError(
-            "This loan needs further review before approval."
-        )
-
-    if latest_check.result != EligibilityCheck.Result.ELIGIBLE:
-        raise BankError(
-            "Loan eligibility result is not valid for approval."
+            "This loan requires additional verification. "
+            "Resolve the eligibility concerns and reassess it "
+            "before approval."
         )
 
     loan.status = Loan.Status.APPROVED
@@ -314,11 +497,22 @@ def approve_loan(loan_id, by):
     loan.decided_at = timezone.now()
 
     loan.save(
-        update_fields=[
-            "status",
-            "decided_by",
-            "decided_at",
-        ]
+        update_fields=["status", "decided_by", "decided_at"]
+    )
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.LOAN_APPROVED,
+        (
+            f"Your loan application for P{loan.principal:,.2f} "
+            "has been approved. Please review your loan agreement."
+        ),
+        (
+            f"Loan application #{loan.pk} for "
+            f"{loan.client.user.get_username()} "
+            f"(P{loan.principal:,.2f}) has been approved."
+        ),
+        exclude_user=by,
     )
 
     log(by, "loan_approve", loan)
@@ -350,9 +544,7 @@ def reject_loan(loan_id, by, reason):
     reason = (reason or "").strip()
 
     if not reason:
-        raise BankError(
-            "A reason is required to reject a loan."
-        )
+        raise BankError("A reason is required to reject a loan.")
 
     loan = _get_loan_locked(loan_id)
 
@@ -376,27 +568,28 @@ def reject_loan(loan_id, by, reason):
         ]
     )
 
-    log(
-        by,
-        "loan_reject",
+    _notify_loan_parties(
         loan,
-        reason=reason,
+        Notification.Kind.LOAN_REJECTED,
+        (
+            f"Your loan application for P{loan.principal:,.2f} "
+            f"was rejected. Reason: {reason}"
+        ),
+        (
+            f"Loan application #{loan.pk} for "
+            f"{loan.client.user.get_username()} "
+            f"(P{loan.principal:,.2f}) was rejected."
+        ),
+        exclude_user=by,
     )
 
-    Notification.objects.create(
-        user=loan.client.user,
-        kind="loan_rejected",
-        message=(
-            f"Loan application #{loan.pk} was rejected. "
-            f"Reason: {loan.reject_reason}"
-        )[:255],
-    )
+    log(by, "loan_reject", loan, reason=reason)
 
     return loan
 
 
 # --------------------------------------------------
-# CREATE LOAN AGREEMENT
+# LOAN AGREEMENT
 # --------------------------------------------------
 
 @transaction.atomic
@@ -408,35 +601,85 @@ def create_loan_agreement(
 ):
     loan = _get_loan_locked(loan_id)
 
-    if loan.status not in (
-        Loan.Status.APPROVED,
-        Loan.Status.ACTIVE,
-    ):
+    if loan.status not in (Loan.Status.APPROVED, Loan.Status.ACTIVE):
         raise BankError(
             "Only approved or active loans can have agreements."
         )
 
     if not agreement_number or not agreement_number.strip():
-        raise BankError(
-            "Agreement number is required."
-        )
+        raise BankError("Agreement number is required.")
 
     if not agreement_date:
-        raise BankError(
-            "Agreement date is required."
-        )
+        raise BankError("Agreement date is required.")
 
-    if hasattr(loan, "agreement"):
-        raise BankError(
-            "This loan already has an agreement."
-        )
+    if LoanAgreement.objects.filter(loan=loan).exists():
+        raise BankError("This loan already has an agreement.")
 
-    return LoanAgreement.objects.create(
+    agreement = LoanAgreement.objects.create(
         loan=loan,
         agreement_number=agreement_number.strip(),
         agreement_date=agreement_date,
         terms_and_conditions=terms_and_conditions,
     )
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.AGREEMENT_READY,
+        (
+            f"Your loan agreement {agreement.agreement_number} is ready. "
+            "Please sign in to review and accept it."
+        ),
+        (
+            f"Agreement {agreement.agreement_number} was created "
+            f"for loan #{loan.pk} belonging to "
+            f"{loan.client.user.get_username()}."
+        ),
+    )
+
+    return agreement
+
+
+@transaction.atomic
+def accept_loan_agreement(loan_id, by):
+    """The borrower accepts the agreement."""
+    loan = _get_loan_locked(loan_id)
+
+    if loan.client.user_id != by.pk:
+        raise BankError("Only the borrower can accept this agreement.")
+
+    if loan.status != Loan.Status.APPROVED:
+        raise BankError(
+            "Only approved loans have an agreement to accept."
+        )
+
+    agreement = (
+        LoanAgreement.objects.select_for_update()
+        .filter(loan=loan)
+        .first()
+    )
+
+    if agreement is None:
+        raise BankError("This loan has no agreement yet.")
+
+    if agreement.signed_at:
+        raise BankError("This agreement was already accepted.")
+
+    agreement.signed_at = timezone.now()
+    agreement.save(update_fields=["signed_at"])
+
+    log(by, "loan_agreement_accept", loan)
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.AGREEMENT_ACCEPTED,
+        "Your acceptance of the loan agreement has been recorded.",
+        (
+            f"{loan.client.user.get_username()} accepted "
+            f"the agreement for loan #{loan.pk}."
+        ),
+    )
+
+    return agreement
 
 
 # --------------------------------------------------
@@ -499,9 +742,15 @@ def accept_loan_agreement(loan_id, by):
 
 @transaction.atomic
 def disburse_loan(loan_id, by, bank_account_id):
+    """
+    Disburse an approved loan into the borrower's regular bank account.
+
+    The borrower must accept the loan agreement first.
+    Loan proceeds never go directly into the savings account.
+    """
     _require_role(
         by,
-        DECIDERS,
+        DISBURSERS,
         "You are not allowed to disburse loans.",
     )
 
@@ -514,52 +763,42 @@ def disburse_loan(loan_id, by, bank_account_id):
             f"(this one is {loan.status})."
         )
 
-    # Prevent duplicate disbursement records.
     if Disbursement.objects.filter(loan=loan).exists():
-        raise BankError(
-            "This loan has already been disbursed."
-        )
+        raise BankError("This loan already has a disbursement record.")
 
-    # The client must accept the agreement first.
-    try:
-        agreement = LoanAgreement.objects.select_for_update().get(
-            loan=loan
-        )
-    except LoanAgreement.DoesNotExist:
+    agreement = (
+        LoanAgreement.objects.select_for_update()
+        .filter(loan=loan)
+        .first()
+    )
+
+    if agreement is None:
         raise BankError(
-            "Generate a loan agreement before disbursement."
+            "A loan agreement must be created before disbursement."
         )
 
     if agreement.signed_at is None:
         raise BankError(
-            "The client must accept the loan agreement "
-            "before disbursement."
+            "The borrower must accept the loan agreement before disbursement."
         )
 
-    # Find and lock the regular bank account.
     try:
         account = (
-            BankAccount.objects
-            .select_for_update()
+            BankAccount.objects.select_for_update()
             .get(pk=bank_account_id)
         )
-    except (BankAccount.DoesNotExist, ValueError, TypeError):
-        raise BankError(
-            "Regular bank account not found."
-        )
+    except BankAccount.DoesNotExist:
+        raise BankError("Bank account not found.")
 
     # Verify that the account belongs to the borrower.
     if account.client_id != loan.client_id:
         raise BankError(
-            "That bank account does not belong to "
-            "the loan's client."
+            "That bank account does not belong to the loan's client."
         )
 
-    # Frozen and closed accounts cannot receive disbursements.
     if account.status != BankAccount.Status.ACTIVE:
         raise BankError(
-            f"Bank account {account.account_number} "
-            f"is {account.status}."
+            f"Bank account {account.account_number} is {account.status}."
         )
 
     today = timezone.localdate()
@@ -571,6 +810,11 @@ def disburse_loan(loan_id, by, bank_account_id):
         loan.term_months,
         today,
     )
+
+    if not rows:
+        raise BankError(
+            "Unable to generate the loan repayment schedule."
+        )
 
     Installment.objects.bulk_create([
         Installment(
@@ -612,11 +856,22 @@ def disburse_loan(loan_id, by, bank_account_id):
     loan.start_date = today
 
     loan.save(
-        update_fields=[
-            "status",
-            "disbursed_at",
-            "start_date",
-        ]
+        update_fields=["status", "disbursed_at", "start_date"]
+    )
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.LOAN_DISBURSED,
+        (
+            f"Your loan of P{loan.principal:,.2f} has been disbursed "
+            f"to your bank account {account.account_number}."
+        ),
+        (
+            f"Loan #{loan.pk} for "
+            f"{loan.client.user.get_username()} has been disbursed. "
+            f"Amount: P{loan.principal:,.2f}."
+        ),
+        exclude_user=by,
     )
 
     log(
@@ -625,6 +880,7 @@ def disburse_loan(loan_id, by, bank_account_id):
         loan,
         account=account.account_number,
         amount=loan.principal,
+        destination="bank_account",
     )
 
     Notification.objects.create(
@@ -645,13 +901,27 @@ def disburse_loan(loan_id, by, bank_account_id):
 
 @transaction.atomic
 def record_payment(loan_id, amount, by):
+    """
+    Record a loan repayment and allocate it to the oldest
+    unpaid installments first.
+
+    Payments are recorded against the loan ledger. This function
+    does not directly debit the borrower's bank account.
+    """
     _require_role(
         by,
         PAYMENT_TAKERS,
         "You are not allowed to record loan payments.",
     )
 
-    amount = to_money(amount)
+    try:
+        amount = to_money(amount)
+    except (TypeError, ValueError):
+        raise BankError("Enter a valid payment amount.")
+
+    if amount <= Decimal("0.00"):
+        raise BankError("Payment amount must be greater than zero.")
+
     loan = _get_loan_locked(loan_id)
 
     if loan.status != Loan.Status.ACTIVE:
@@ -666,47 +936,58 @@ def record_payment(loan_id, amount, by):
         .order_by("number")
     )
 
+    if not unpaid:
+        raise BankError("This loan has no outstanding installments.")
+
     remaining = sum(
         (
-            inst.total_due - inst.amount_paid
-            for inst in unpaid
+            installment.total_due - installment.amount_paid
+            for installment in unpaid
         ),
         start=Decimal("0.00"),
     )
 
+    if remaining <= Decimal("0.00"):
+        raise BankError(
+            "This loan has no remaining balance to collect."
+        )
+
     if amount > remaining:
         raise BankError(
-            f"Payment is more than the remaining balance "
-            f"({remaining})."
+            f"Payment exceeds the remaining balance of P{remaining:,.2f}."
         )
 
     now = timezone.now()
     left = amount
 
-    for inst in unpaid:
-        pay = min(
-            inst.total_due - inst.amount_paid,
-            left,
+    for installment in unpaid:
+        outstanding = installment.total_due - installment.amount_paid
+
+        if outstanding <= Decimal("0.00"):
+            continue
+
+        payment_amount = min(outstanding, left)
+
+        installment.amount_paid += payment_amount
+
+        if installment.amount_paid >= installment.total_due:
+            installment.amount_paid = installment.total_due
+            installment.status = Installment.Status.PAID
+            installment.paid_at = now
+
+        installment.save(
+            update_fields=["amount_paid", "status", "paid_at"]
         )
 
-        inst.amount_paid += pay
+        left -= payment_amount
 
-        if inst.amount_paid >= inst.total_due:
-            inst.status = Installment.Status.PAID
-            inst.paid_at = now
-
-        inst.save(
-            update_fields=[
-                "amount_paid",
-                "status",
-                "paid_at",
-            ]
-        )
-
-        left -= pay
-
-        if left == 0:
+        if left == Decimal("0.00"):
             break
+
+    if left != Decimal("0.00"):
+        raise BankError(
+            "The payment could not be fully allocated to the installments."
+        )
 
     entry = LedgerEntry.objects.create(
         entry_type=LedgerEntry.EntryType.LOAN_PAYMENT,
@@ -722,15 +1003,245 @@ def record_payment(loan_id, amount, by):
         recorded_by=by,
     )
 
-    if amount == remaining:
+    remaining_after_payment = remaining - amount
+    loan_fully_paid = remaining_after_payment == Decimal("0.00")
+
+    if loan_fully_paid:
         loan.status = Loan.Status.PAID
         loan.save(update_fields=["status"])
+
+    if loan_fully_paid:
+        payment_message = (
+            f"Your final loan payment of P{amount:,.2f} has been recorded. "
+            "Your loan is now fully paid."
+        )
+    else:
+        payment_message = (
+            f"Your loan payment of P{amount:,.2f} has been recorded. "
+            f"Remaining balance: P{remaining_after_payment:,.2f}."
+        )
+
+    if loan_fully_paid:
+        staff_payment_message = (
+            f"Loan #{loan.pk} for "
+            f"{loan.client.user.get_username()} is now fully paid. "
+            f"Final payment: P{amount:,.2f}."
+        )
+    else:
+        staff_payment_message = (
+            f"Payment of P{amount:,.2f} recorded for loan #{loan.pk} "
+            f"belonging to {loan.client.user.get_username()}. "
+            f"Remaining balance: P{remaining_after_payment:,.2f}."
+        )
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.LOAN_PAYMENT_RECORDED,
+        payment_message,
+        staff_payment_message,
+        exclude_user=by,
+    )
 
     log(
         by,
         "loan_payment",
         loan,
         amount=amount,
+        remaining_balance=remaining_after_payment,
+    )
+
+    return entry
+
+
+# --------------------------------------------------
+# CLIENT ONLINE LOAN PAYMENT
+# --------------------------------------------------
+
+@transaction.atomic
+def make_online_payment(loan_id, amount, by):
+    """
+    Allow a borrower to repay an active loan online.
+
+    The payment is deducted from the borrower's regular bank account,
+    then allocated to the oldest unpaid installments first.
+
+    The bank debit, ledger entry, loan payment, and installment updates
+    are committed together or rolled back together.
+    """
+
+    if not getattr(by, "is_authenticated", False):
+        raise BankError("Please log in to make a loan payment.")
+
+    try:
+        amount = to_money(amount)
+    except (TypeError, ValueError):
+        raise BankError("Enter a valid payment amount.")
+
+    if amount <= Decimal("0.00"):
+        raise BankError("Payment amount must be greater than zero.")
+
+    # Lock the loan first, matching the existing disbursement workflow.
+    loan = _get_loan_locked(loan_id)
+
+    # Only the borrower may make an online payment.
+    if loan.client.user_id != by.pk:
+        raise BankError("You are not authorized to pay this loan.")
+
+    if loan.status != Loan.Status.ACTIVE:
+        raise BankError(
+            "Online payments are only allowed for active loans."
+        )
+
+    # Lock the borrower's regular bank account.
+    try:
+        account = (
+            BankAccount.objects.select_for_update()
+            .get(client_id=loan.client_id)
+        )
+    except BankAccount.DoesNotExist:
+        raise BankError(
+            "You do not have a regular bank account for this payment."
+        )
+
+    if account.status != BankAccount.Status.ACTIVE:
+        raise BankError(
+            "Your bank account is not active. Please contact the bank."
+        )
+
+    if account.balance < amount:
+        raise BankError(
+            f"Insufficient funds. Your available balance is "
+            f"P{account.balance:,.2f}."
+        )
+
+    # Lock and retrieve unpaid installments in payment order.
+    unpaid = list(
+        loan.installments.select_for_update()
+        .exclude(status=Installment.Status.PAID)
+        .order_by("number")
+    )
+
+    if not unpaid:
+        raise BankError("This loan has no outstanding installments.")
+
+    remaining = sum(
+        (
+            installment.total_due - installment.amount_paid
+            for installment in unpaid
+        ),
+        start=Decimal("0.00"),
+    )
+
+    if remaining <= Decimal("0.00"):
+        raise BankError("This loan has no remaining balance to pay.")
+
+    if amount > remaining:
+        raise BankError(
+            f"Payment exceeds the remaining loan balance of "
+            f"P{remaining:,.2f}."
+        )
+
+    now = timezone.now()
+    left = amount
+
+    # Allocate payment to the oldest unpaid installment first.
+    for installment in unpaid:
+        outstanding = (
+            installment.total_due - installment.amount_paid
+        )
+
+        if outstanding <= Decimal("0.00"):
+            continue
+
+        payment_amount = min(outstanding, left)
+
+        installment.amount_paid += payment_amount
+
+        if installment.amount_paid >= installment.total_due:
+            installment.amount_paid = installment.total_due
+            installment.status = Installment.Status.PAID
+            installment.paid_at = now
+
+        installment.save(
+            update_fields=["amount_paid", "status", "paid_at"]
+        )
+
+        left -= payment_amount
+
+        if left == Decimal("0.00"):
+            break
+
+    if left != Decimal("0.00"):
+        raise BankError(
+            "The payment could not be fully allocated to the installments."
+        )
+
+    # Debit the regular bank account.
+    account.balance -= amount
+    account.save(update_fields=["balance"])
+
+    # Record the debit in the bank ledger and associate it with the loan.
+    entry = LedgerEntry.objects.create(
+        entry_type=LedgerEntry.EntryType.LOAN_PAYMENT,
+        amount=amount,
+        balance_after=account.balance,
+        bank_account=account,
+        loan=loan,
+        created_by=by,
+    )
+
+    # Record the loan payment.
+    LoanPayment.objects.create(
+        loan=loan,
+        ledger_entry=entry,
+        amount=amount,
+        recorded_by=by,
+    )
+
+    remaining_after_payment = remaining - amount
+    loan_fully_paid = remaining_after_payment == Decimal("0.00")
+
+    if loan_fully_paid:
+        loan.status = Loan.Status.PAID
+        loan.save(update_fields=["status"])
+
+        payment_message = (
+            f"Your online loan payment of P{amount:,.2f} was successful. "
+            "Your loan is now fully paid."
+        )
+        staff_payment_message = (
+            f"Loan #{loan.pk} for "
+            f"{loan.client.user.get_username()} is now fully paid "
+            f"through an online payment of P{amount:,.2f}."
+        )
+    else:
+        payment_message = (
+            f"Your online loan payment of P{amount:,.2f} was successful. "
+            f"Remaining loan balance: P{remaining_after_payment:,.2f}."
+        )
+        staff_payment_message = (
+            f"Online loan payment of P{amount:,.2f} received for "
+            f"loan #{loan.pk}, belonging to "
+            f"{loan.client.user.get_username()}. "
+            f"Remaining balance: P{remaining_after_payment:,.2f}."
+        )
+
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.LOAN_PAYMENT_RECORDED,
+        payment_message,
+        staff_payment_message,
+        exclude_user=by,
+    )
+
+    log(
+        by,
+        "loan_online_payment",
+        loan,
+        amount=amount,
+        bank_account=account.account_number,
+        remaining_balance=remaining_after_payment,
+        balance_after=account.balance,
     )
 
     Notification.objects.create(

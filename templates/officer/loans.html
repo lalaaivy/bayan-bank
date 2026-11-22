@@ -1,0 +1,159 @@
+```django
+{% extends "base.html" %}
+
+{% block title %}Loan Portfolio - Bayan Bank{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Loan Portfolio</h3>
+            <p class="text-muted mb-0">
+                View and manage actual client loan records.
+            </p>
+        </div>
+
+        <a href="{% url 'officer_home' %}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- LOAN COUNT -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <small class="text-muted">Total Loans</small>
+                    <h3 class="fw-bold mb-0">{{ loans|length }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOAN TABLE -->
+    <div class="card border-0 shadow-sm rounded-3">
+
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">All Loan Applications and Loans</h5>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Reference</th>
+                        <th>Client</th>
+                        <th>Product</th>
+                        <th class="text-end">Principal</th>
+                        <th class="text-end">Balance</th>
+                        <th>Next Due</th>
+                        <th>Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <!-- REFERENCE -->
+                        <td class="fw-semibold text-nowrap">
+                            APP-{{ loan.applied_at|date:"Y" }}-{{ loan.pk|stringformat:"04d" }}
+                        </td>
+
+                        <!-- CLIENT -->
+                        <td>
+                            <div class="fw-semibold">
+                                {{ loan.client.user.get_full_name|default:loan.client.user.username }}
+                            </div>
+                            <small class="text-muted">
+                                {{ loan.client.client_code }}
+                            </small>
+                        </td>
+
+                        <!-- PRODUCT -->
+                        <td>{{ loan.product.name }}</td>
+
+                        <!-- PRINCIPAL -->
+                        <td class="text-end text-nowrap">
+                            ₱{{ loan.principal|floatformat:2 }}
+                        </td>
+
+                        <!-- BALANCE -->
+                        <td class="text-end text-nowrap">
+                            <span class="text-muted">—</span>
+                        </td>
+
+                        <!-- NEXT DUE -->
+                        <td class="text-nowrap">
+                            <span class="text-muted">—</span>
+                        </td>
+
+                        <!-- STATUS -->
+                        <td>
+                            {% if loan.status == "active" %}
+                                <span class="badge bg-success">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "approved" %}
+                                <span class="badge bg-primary">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "pending" %}
+                                <span class="badge bg-warning text-dark">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "paid" %}
+                                <span class="badge bg-info text-dark">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "rejected" or loan.status == "defaulted" %}
+                                <span class="badge bg-danger">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- ACTION -->
+                        <td class="text-center">
+                            <a href="{% url 'staff_loan' loan.pk %}"
+                               class="btn btn-sm btn-outline-primary text-nowrap">
+                                <i class="bi bi-eye me-1"></i>
+                                View
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="bi bi-folder2-open fs-1 text-muted"></i>
+
+                            <h6 class="fw-bold mt-3">
+                                No Loan Records Found
+                            </h6>
+
+                            <p class="text-muted mb-0">
+                                Loan applications will appear here
+                                when clients submit them.
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+```

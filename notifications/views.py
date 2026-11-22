@@ -1,61 +1,45 @@
 
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import Notification
 
 
-def notification_destination(notification):
-    """
-    Choose an existing page based on the notification type.
-    """
-    role = getattr(
-        getattr(notification.user, "role", None),
-        "name",
-        "",
-    )
-
-    kind = notification.kind.lower()
-
-    if role == "client":
-        if any(word in kind for word in ("loan", "payment", "repayment", "installment", "agreement")):
-            return "portal_loans"
-
-        if any(word in kind for word in ("saving", "deposit", "withdraw", "transfer", "interest")):
-            return "portal_savings"
-
-        return "portal_home"
-
-    if role in ("staff", "loan_officer", "admin"):
-        if any(word in kind for word in ("loan", "payment", "repayment", "installment", "agreement")):
-            return "staff_loans"
-
-        return "staff_home"
-
-    return "home"
-
-
 @login_required
 def notification_list(request):
     notifications = Notification.objects.filter(
-        user=request.user
+        user=request.user,
+    ).order_by("-created_at", "-id")
+
+    unread_count = notifications.filter(
+        is_read=False,
+    ).count()
+
+    role = getattr(
+        getattr(request.user, "role", None),
+        "name",
+        None,
     )
+
+    if role == "client":
+        template_name = "notifications/list.html"
+    else:
+        template_name = "notifications/list_staff.html"
 
     return render(
         request,
-        "notifications/list.html",
+        template_name,
         {
             "notifications": notifications,
-            "unread_count": notifications.filter(is_read=False).count(),
+            "unread_count": unread_count,
         },
     )
 
 
 @login_required
 @require_POST
-def notification_open(request, notification_id):
+def mark_notification_read(request, notification_id):
     notification = get_object_or_404(
         Notification,
         pk=notification_id,
@@ -66,12 +50,12 @@ def notification_open(request, notification_id):
         notification.is_read = True
         notification.save(update_fields=["is_read"])
 
-    return redirect(notification_destination(notification))
+    return redirect("notification_list")
 
 
 @login_required
 @require_POST
-def notification_mark_all_read(request):
+def mark_all_notifications_read(request):
     Notification.objects.filter(
         user=request.user,
         is_read=False,

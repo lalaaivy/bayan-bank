@@ -1,7 +1,18 @@
 
+import os
+from decimal import Decimal
+
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import F, Q
+
+
+def loan_document_storage():
+    """Store loan documents outside publicly accessible media folders."""
+    return FileSystemStorage(
+        location=os.path.join(settings.BASE_DIR, "private_uploads")
+    )
 
 
 # ==========================================
@@ -10,9 +21,11 @@ from django.db.models import F, Q
 
 class LoanProduct(models.Model):
     name = models.CharField(max_length=100, unique=True)
+
     annual_rate = models.DecimalField(max_digits=5, decimal_places=2)
     min_amount = models.DecimalField(max_digits=14, decimal_places=2)
     max_amount = models.DecimalField(max_digits=14, decimal_places=2)
+
     min_months = models.PositiveSmallIntegerField()
     max_months = models.PositiveSmallIntegerField()
     is_active = models.BooleanField(default=True)
@@ -74,6 +87,8 @@ class Loan(models.Model):
     annual_rate = models.DecimalField(max_digits=5, decimal_places=2)
     term_months = models.PositiveSmallIntegerField()
 
+    purpose = models.TextField(blank=True, default="")
+
     status = models.CharField(
         max_length=10,
         choices=Status.choices,
@@ -116,7 +131,47 @@ class Loan(models.Model):
 
 
 # ==========================================
-# 3. INSTALLMENTS / AMORTIZATION
+# 3. LOAN SUPPORTING DOCUMENTS
+# ==========================================
+
+class LoanDocument(models.Model):
+
+    class DocumentType(models.TextChoices):
+        PROOF_OF_INCOME = "proof_of_income", "Proof of Income"
+        EMPLOYMENT_CERTIFICATE = "employment_certificate", "Certificate of Employment"
+        BANK_STATEMENT = "bank_statement", "Bank Statement"
+        OTHER = "other", "Other Supporting Document"
+
+    loan = models.ForeignKey(
+        Loan,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+
+    document_type = models.CharField(
+        max_length=30,
+        choices=DocumentType.choices,
+    )
+
+    file = models.FileField(
+        storage=loan_document_storage(),
+        upload_to="loan_documents/%Y/%m/",
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_loan_documents",
+    )
+
+    def __str__(self):
+        return f"{self.get_document_type_display()} - Loan #{self.loan_id}"
+
+
+# ==========================================
+# 4. INSTALLMENTS / AMORTIZATION
 # ==========================================
 
 class Installment(models.Model):
@@ -137,16 +192,9 @@ class Installment(models.Model):
 
     principal_due = models.DecimalField(max_digits=14, decimal_places=2)
     interest_due = models.DecimalField(max_digits=14, decimal_places=2)
-    amount_paid = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-        default=0,
-    )
-    penalty_amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-        default=0,
-    )
+    amount_paid = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    penalty_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+
     paid_at = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(
@@ -186,15 +234,11 @@ class Installment(models.Model):
 
     @property
     def total_due(self):
-        return (
-            self.principal_due
-            + self.interest_due
-            + self.penalty_amount
-        )
+        return self.principal_due + self.interest_due + self.penalty_amount
 
 
 # ==========================================
-# 4. LOAN ELIGIBILITY RULES
+# 5. LOAN ELIGIBILITY RULES
 # ==========================================
 
 class LoanRule(models.Model):
@@ -212,6 +256,19 @@ class LoanRule(models.Model):
 
     minimum_credit_score = models.PositiveIntegerField(default=0)
     minimum_age = models.PositiveSmallIntegerField(default=18)
+
+    max_installment_ratio = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal("0.40"),
+    )
+
+    min_savings_ratio = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal("0.10"),
+    )
+
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -231,7 +288,7 @@ class LoanRule(models.Model):
 
 
 # ==========================================
-# 5. ELIGIBILITY CHECK RESULTS
+# 6. ELIGIBILITY CHECK RESULTS
 # ==========================================
 
 class EligibilityCheck(models.Model):
@@ -270,7 +327,7 @@ class EligibilityCheck(models.Model):
 
 
 # ==========================================
-# 6. LOAN AGREEMENTS
+# 7. LOAN AGREEMENTS
 # ==========================================
 
 class LoanAgreement(models.Model):
@@ -280,16 +337,9 @@ class LoanAgreement(models.Model):
         related_name="agreement",
     )
 
-    agreement_number = models.CharField(
-        max_length=40,
-        unique=True,
-    )
-
+    agreement_number = models.CharField(max_length=40, unique=True)
     agreement_date = models.DateField()
-
-    # NULL means the client has not accepted the agreement.
     signed_at = models.DateTimeField(null=True, blank=True)
-
     terms_and_conditions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -298,7 +348,7 @@ class LoanAgreement(models.Model):
 
 
 # ==========================================
-# 7. LOAN PAYMENT RECORDS
+# 8. LOAN PAYMENT RECORDS
 # ==========================================
 
 class LoanPayment(models.Model):
@@ -336,7 +386,7 @@ class LoanPayment(models.Model):
 
 
 # ==========================================
-# 8. LOAN DISBURSEMENT RECORDS
+# 9. LOAN DISBURSEMENT RECORDS
 # ==========================================
 
 class Disbursement(models.Model):
@@ -346,10 +396,21 @@ class Disbursement(models.Model):
         related_name="disbursement_record",
     )
 
-    # Preserved for compatibility with historical disbursements.
+    # New destination for future loan disbursements.
+    bank_account = models.ForeignKey(
+        "accounting.BankAccount",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="loan_disbursement_records",
+    )
+
+    # Retained for historical disbursement records.
     savings_account = models.ForeignKey(
         "savings.SavingsAccount",
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="loan_disbursement_records",
         null=True,
         blank=True,
@@ -396,7 +457,7 @@ class Disbursement(models.Model):
                         savings_account__isnull=False,
                     )
                 ),
-                name="disbursement_one_destination",
+                name="disbursement_exactly_one_destination",
             ),
         ]
 
