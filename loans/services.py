@@ -441,6 +441,15 @@ def apply_for_loan(client, product, principal, term_months, by, purpose=""):
         exclude_user=by,
     )
 
+    Notification.objects.create(
+        user=client.user,
+        kind="loan_application",
+        message=(
+            f"Loan application #{loan.pk} "
+            f"was submitted successfully."
+        ),
+    )
+
     return loan
 
 
@@ -507,6 +516,15 @@ def approve_loan(loan_id, by):
     )
 
     log(by, "loan_approve", loan)
+
+    Notification.objects.create(
+        user=loan.client.user,
+        kind="loan_approved",
+        message=(
+            f"Loan application #{loan.pk} "
+            f"has been approved."
+        ),
+    )
 
     return loan
 
@@ -665,7 +683,61 @@ def accept_loan_agreement(loan_id, by):
 
 
 # --------------------------------------------------
-# DISBURSE LOAN
+# ACCEPT LOAN AGREEMENT
+# --------------------------------------------------
+
+@transaction.atomic
+def accept_loan_agreement(loan_id, by):
+    loan = _get_loan_locked(loan_id)
+
+    if loan.client.user_id != by.pk:
+        raise BankError(
+            "You cannot accept another client's loan agreement."
+        )
+
+    if loan.status != Loan.Status.APPROVED:
+        raise BankError(
+            "Only approved loans can have their agreements accepted."
+        )
+
+    try:
+        agreement = LoanAgreement.objects.select_for_update().get(
+            loan=loan
+        )
+    except LoanAgreement.DoesNotExist:
+        raise BankError(
+            "No loan agreement has been generated for this loan."
+        )
+
+    if agreement.signed_at is not None:
+        raise BankError(
+            "This loan agreement has already been accepted."
+        )
+
+    agreement.signed_at = timezone.now()
+    agreement.save(update_fields=["signed_at"])
+
+    log(
+        by,
+        "loan_agreement_accept",
+        loan,
+        agreement_number=agreement.agreement_number,
+    )
+
+    Notification.objects.create(
+        user=loan.client.user,
+        kind="loan_agreement_accepted",
+        message=(
+            f"Loan agreement {agreement.agreement_number} "
+            f"for loan #{loan.pk} has been accepted."
+        ),
+    )
+
+    return agreement
+
+
+# --------------------------------------------------
+# DISBURSE LOAN TO REGULAR BANK ACCOUNT
 # --------------------------------------------------
 
 @transaction.atomic
@@ -684,6 +756,7 @@ def disburse_loan(loan_id, by, bank_account_id):
 
     loan = _get_loan_locked(loan_id)
 
+    # Only approved loans can be disbursed.
     if loan.status != Loan.Status.APPROVED:
         raise BankError(
             f"Only approved loans can be disbursed "
@@ -717,6 +790,7 @@ def disburse_loan(loan_id, by, bank_account_id):
     except BankAccount.DoesNotExist:
         raise BankError("Bank account not found.")
 
+    # Verify that the account belongs to the borrower.
     if account.client_id != loan.client_id:
         raise BankError(
             "That bank account does not belong to the loan's client."
@@ -729,6 +803,7 @@ def disburse_loan(loan_id, by, bank_account_id):
 
     today = timezone.localdate()
 
+    # Create the repayment schedule.
     rows = build_schedule(
         loan.principal,
         loan.annual_rate,
@@ -752,9 +827,11 @@ def disburse_loan(loan_id, by, bank_account_id):
         for row in rows
     ])
 
+    # Credit the REGULAR BANK ACCOUNT, not savings.
     account.balance += loan.principal
     account.save(update_fields=["balance"])
 
+    # Record the disbursement in the accounting ledger.
     entry = LedgerEntry.objects.create(
         entry_type=LedgerEntry.EntryType.LOAN_DISBURSEMENT,
         amount=loan.principal,
@@ -764,6 +841,7 @@ def disburse_loan(loan_id, by, bank_account_id):
         created_by=by,
     )
 
+    # Link the loan to the destination bank account.
     Disbursement.objects.create(
         loan=loan,
         bank_account=account,
@@ -772,6 +850,7 @@ def disburse_loan(loan_id, by, bank_account_id):
         disbursed_by=by,
     )
 
+    # Activate the loan.
     loan.status = Loan.Status.ACTIVE
     loan.disbursed_at = timezone.now()
     loan.start_date = today
@@ -802,6 +881,15 @@ def disburse_loan(loan_id, by, bank_account_id):
         account=account.account_number,
         amount=loan.principal,
         destination="bank_account",
+    )
+
+    Notification.objects.create(
+        user=loan.client.user,
+        kind="loan_disbursed",
+        message=(
+            f"Loan #{loan.pk} was disbursed successfully "
+            f"to bank account {account.account_number}."
+        ),
     )
 
     return loan
@@ -1154,6 +1242,15 @@ def make_online_payment(loan_id, amount, by):
         bank_account=account.account_number,
         remaining_balance=remaining_after_payment,
         balance_after=account.balance,
+    )
+
+    Notification.objects.create(
+        user=loan.client.user,
+        kind="loan_payment",
+        message=(
+            f"Payment of PHP {amount:,.2f} "
+            f"was recorded for loan #{loan.pk}."
+        ),
     )
 
     return entry

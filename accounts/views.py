@@ -30,6 +30,7 @@ from loans.models import (
 from notifications.models import Notification
 from savings.models import SavingsAccount, SavingsDeposit
 
+from accounting.models import BankAccount, LedgerEntry
 from .decorators import client_required, role_required
 from .forms import (
     ClientCreditScoreForm,

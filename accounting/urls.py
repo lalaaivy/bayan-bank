@@ -1,6 +1,10 @@
 
 from django.urls import path
+
 from . import views
+from . import bank_views
+from . import client_views
+
 
 urlpatterns = [
     # Savings account statements

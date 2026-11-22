@@ -46,7 +46,10 @@ class Command(BaseCommand):
             )
 
             for installment in installments:
-                unpaid = installment.total_due - installment.amount_paid
+                unpaid = (
+                    installment.total_due
+                    - installment.amount_paid
+                )
 
                 if unpaid <= 0:
                     installment.status = Installment.Status.PAID
@@ -57,6 +60,7 @@ class Command(BaseCommand):
                     continue
 
                 fields = []
+                newly_overdue = False
 
                 newly_overdue = (
                     installment.status != Installment.Status.OVERDUE
@@ -66,6 +70,7 @@ class Command(BaseCommand):
                     installment.status = Installment.Status.OVERDUE
                     fields.append("status")
                     overdue_count += 1
+                    newly_overdue = True
 
                     loan = installment.loan
 
@@ -82,7 +87,9 @@ class Command(BaseCommand):
                     notification_count += 1
 
                 if installment.penalty_amount == 0:
-                    penalty = (unpaid * PENALTY_RATE).quantize(
+                    penalty = (
+                        unpaid * PENALTY_RATE
+                    ).quantize(
                         CENT,
                         rounding=ROUND_HALF_UP,
                     )
@@ -95,6 +102,25 @@ class Command(BaseCommand):
                 if fields:
                     installment.save(update_fields=fields)
 
+                if newly_overdue:
+                    outstanding = (
+                        installment.total_due
+                        - installment.amount_paid
+                    )
+
+                    Notification.objects.create(
+                        user=installment.loan.client.user,
+                        kind="loan_overdue",
+                        message=(
+                            f"Loan #{installment.loan_id}, "
+                            f"installment #{installment.number} "
+                            f"is overdue. Outstanding amount: "
+                            f"PHP {outstanding:,.2f}."
+                        )[:255],
+                    )
+
+                    notification_count += 1
+
             active_loans = (
                 Loan.objects.select_for_update()
                 .filter(status=Loan.Status.ACTIVE)
@@ -102,7 +128,9 @@ class Command(BaseCommand):
             )
 
             for loan in active_loans:
-                loan_installments = list(loan.installments.all())
+                loan_installments = list(
+                    loan.installments.all()
+                )
 
                 if not loan_installments:
                     continue

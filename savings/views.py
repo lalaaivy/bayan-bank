@@ -31,7 +31,7 @@ def _is_cashier(user):
     return role_name.lower() in CASHIERS
 
 
-# ---------- client portal ----------
+# ---------- Client portal ----------
 
 @client_required
 def portal_savings(request):

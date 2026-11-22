@@ -548,6 +548,7 @@ def staff_loan_disburse(request, loan_id):
         BankAccount,
         pk=_int(request.POST.get("account")),
         client=loan.client,
+        status=BankAccount.Status.ACTIVE,
     )
 
     _run(

@@ -1,13 +1,128 @@
+
 {% extends "base.html" %}
-{% block title %}Savings - Bayan Bank{% endblock %}
+
+{% block title %}Savings Management - Bayan Bank{% endblock %}
+
 {% block content %}
-<h3 class="mb-4">Savings Transactions</h3>
-<a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
-<div class="card shadow-sm mb-4"><div class="card-body"><form method="post">{% csrf_token %}<div class="row g-3">
-<div class="col-md-4"><label class="form-label">Client</label><select class="form-select"><option>Maria Santos</option><option>Juan Dela Cruz</option><option>Anna Reyes</option></select></div>
-<div class="col-md-3"><label class="form-label">Transaction</label><select class="form-select"><option>Deposit</option><option>Withdrawal</option></select></div>
-<div class="col-md-3"><label class="form-label">Amount (&#8369;)</label><input type="number" class="form-control" value="1000"></div>
-<div class="col-md-2"><label class="form-label">Date</label><input type="date" class="form-control" value="2026-11-18"></div>
-</div><button class="btn btn-dark mt-3">Save Transaction</button></form></div></div>
-<div class="card shadow-sm"><div class="card-header">Recent Transactions</div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Amount</th><th>Reference</th></tr></thead><tbody><tr><td>Nov 18, 2026</td><td>Maria Santos</td><td><span class="badge text-bg-success">Deposit</span></td><td>&#8369; 1,000.00</td><td>SAV-9821</td></tr><tr><td>Nov 17, 2026</td><td>Anna Reyes</td><td><span class="badge text-bg-danger">Withdrawal</span></td><td>&#8369; 500.00</td><td>SAV-9818</td></tr></tbody></table></div></div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h2 class="mb-1">Savings Management</h2>
+    <p class="text-muted mb-0">
+      View savings accounts, balances, and transaction details.
+    </p>
+  </div>
+
+  <a href="{% url 'staff_home' %}" class="btn btn-outline-secondary">
+    Back to Dashboard
+  </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+
+    <form method="get" class="row g-2">
+      <div class="col-md-9">
+        <input
+          type="search"
+          name="q"
+          value="{{ search }}"
+          class="form-control"
+          placeholder="Search account number or client name"
+          aria-label="Search savings accounts"
+        >
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-dark flex-fill">
+          Search
+        </button>
+        <a href="{% url 'staff_savings' %}" class="btn btn-outline-secondary">
+          Clear
+        </a>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<div class="card shadow-sm">
+
+  <div class="card-header">
+    <h5 class="mb-0">Savings Accounts</h5>
+  </div>
+
+  <div class="card-body">
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+
+        <thead>
+          <tr>
+            <th>Account Number</th>
+            <th>Account Holder</th>
+            <th>Balance</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for account in accounts %}
+            <tr>
+              <td>{{ account.account_number }}</td>
+
+              <td>
+                {{ account.client.user.get_full_name|default:account.client.user.username }}
+              </td>
+
+              <td>
+                ₱ {{ account.balance|floatformat:"2g" }}
+              </td>
+
+              <td>
+                {% if account.status == "active" %}
+                  <span class="badge bg-success">Active</span>
+                {% elif account.status == "frozen" %}
+                  <span class="badge bg-warning text-dark">Frozen</span>
+                {% else %}
+                  <span class="badge bg-secondary">Closed</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <a
+                  href="{% url 'staff_account' account.pk %}"
+                  class="btn btn-outline-primary btn-sm"
+                >
+                  View Account
+                </a>
+              </td>
+            </tr>
+
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                No savings accounts found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+
+    {% if can_cash %}
+      <p class="small text-muted mb-0">
+        To record a deposit or withdrawal, select View Account.
+      </p>
+    {% else %}
+      <p class="small text-muted mb-0">
+        You have read-only access to savings accounts.
+      </p>
+    {% endif %}
+
+  </div>
+</div>
+
 {% endblock %}

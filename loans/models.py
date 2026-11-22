@@ -28,7 +28,6 @@ class LoanProduct(models.Model):
 
     min_months = models.PositiveSmallIntegerField()
     max_months = models.PositiveSmallIntegerField()
-
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -206,7 +205,6 @@ class Installment(models.Model):
 
     class Meta:
         ordering = ["loan", "number"]
-
         constraints = [
             models.UniqueConstraint(
                 fields=["loan", "number"],
@@ -244,7 +242,6 @@ class Installment(models.Model):
 # ==========================================
 
 class LoanRule(models.Model):
-
     product = models.OneToOneField(
         LoanProduct,
         on_delete=models.CASCADE,
@@ -334,7 +331,6 @@ class EligibilityCheck(models.Model):
 # ==========================================
 
 class LoanAgreement(models.Model):
-
     loan = models.OneToOneField(
         Loan,
         on_delete=models.PROTECT,
@@ -356,7 +352,6 @@ class LoanAgreement(models.Model):
 # ==========================================
 
 class LoanPayment(models.Model):
-
     loan = models.ForeignKey(
         Loan,
         on_delete=models.PROTECT,
@@ -395,7 +390,6 @@ class LoanPayment(models.Model):
 # ==========================================
 
 class Disbursement(models.Model):
-
     loan = models.OneToOneField(
         Loan,
         on_delete=models.PROTECT,
@@ -418,6 +412,17 @@ class Disbursement(models.Model):
         null=True,
         blank=True,
         related_name="loan_disbursement_records",
+        null=True,
+        blank=True,
+    )
+
+    # New destination for regular bank account disbursements.
+    bank_account = models.ForeignKey(
+        "accounting.BankAccount",
+        on_delete=models.PROTECT,
+        related_name="loan_disbursement_records",
+        null=True,
+        blank=True,
     )
 
     ledger_entry = models.OneToOneField(

@@ -161,6 +161,10 @@ class LedgerEntry(models.Model):
         )
 
 
+# --------------------------------------------------
+# REPORT EXPORT
+# --------------------------------------------------
+
 class ReportExport(models.Model):
 
     class ReportType(models.TextChoices):
