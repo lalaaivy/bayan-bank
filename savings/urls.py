@@ -3,6 +3,7 @@ from django.urls import path
 
 from . import views
 
+
 urlpatterns = [
     path(
         "portal/savings/",
@@ -13,6 +14,11 @@ urlpatterns = [
         "portal/savings/transfer/",
         views.portal_transfer,
         name="portal_transfer",
+    ),
+    path(
+        "portal/savings/add-money/",
+        views.portal_add_money,
+        name="portal_savings_add_money",
     ),
     path(
         "staff/savings/",

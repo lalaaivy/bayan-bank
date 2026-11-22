@@ -11,15 +11,19 @@ from accounting.money import BankError
 
 @client_required
 def client_bank_page(request):
-    accounts = (
-        BankAccount.objects
-        .filter(client__user=request.user)
-        .order_by("account_number")
+    account = (
+        BankAccount.objects.filter(
+            client=request.client,
+            status=BankAccount.Status.ACTIVE,
+        )
+        .order_by("pk")
+        .first()
     )
 
     transactions = (
-        LedgerEntry.objects
-        .filter(bank_account__client__user=request.user)
+        LedgerEntry.objects.filter(
+            bank_account__client=request.client
+        )
         .select_related("bank_account")
         .order_by("-created_at", "-id")[:30]
     )
@@ -28,7 +32,7 @@ def client_bank_page(request):
         request,
         "portal/bank_transactions.html",
         {
-            "accounts": accounts,
+            "account": account,
             "transactions": transactions,
         },
     )
@@ -38,10 +42,15 @@ def client_bank_page(request):
 @require_POST
 def client_bank_transfer_view(request):
     try:
+        account = BankAccount.objects.get(
+            client=request.client,
+            status=BankAccount.Status.ACTIVE,
+        )
+
         client_bank_transfer(
-            source_account_id=request.POST.get("source"),
+            source_account_id=account.pk,
             destination_account_number=request.POST.get(
-                "destination"
+                "destination", ""
             ),
             amount=request.POST.get("amount"),
             by=request.user,
@@ -52,6 +61,16 @@ def client_bank_transfer_view(request):
             "Bank transfer completed successfully.",
         )
 
+    except BankAccount.DoesNotExist:
+        messages.error(
+            request,
+            "You do not have an active regular bank account.",
+        )
+    except BankAccount.MultipleObjectsReturned:
+        messages.error(
+            request,
+            "Multiple active accounts detected. Contact bank staff.",
+        )
     except BankError as error:
         messages.error(request, str(error))
 

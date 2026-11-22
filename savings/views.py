@@ -4,12 +4,14 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from accounting.models import LedgerEntry
+from accounting.models import BankAccount, LedgerEntry
 from accounting.money import BankError
 from accounts.decorators import client_required, role_required
 
 from . import services
+from .bank_to_savings import transfer_bank_to_savings
 from .models import SavingsAccount
+
 
 STAFF_VIEWERS = ("admin", "staff", "loan_officer")
 CASHIERS = ("admin", "staff")
@@ -29,6 +31,12 @@ def portal_savings(request):
     accounts = request.client.savings_accounts.order_by(
         "account_number"
     )
+
+    bank_accounts = BankAccount.objects.filter(
+        client=request.client,
+        status=BankAccount.Status.ACTIVE,
+    ).order_by("account_number")
+
     entries = (
         LedgerEntry.objects.filter(
             savings_account__client=request.client
@@ -41,6 +49,7 @@ def portal_savings(request):
         "portal/savings.html",
         {
             "accounts": accounts,
+            "bank_accounts": bank_accounts,
             "recent_entries": entries,
         },
     )
@@ -63,8 +72,40 @@ def portal_transfer(request):
             request.user,
         )
         messages.success(request, "Transfer completed.")
-    except BankError as e:
-        messages.error(request, str(e))
+    except BankError as error:
+        messages.error(request, str(error))
+
+    return redirect("portal_savings")
+
+
+@client_required
+@require_POST
+def portal_add_money(request):
+    savings = get_object_or_404(
+        SavingsAccount,
+        pk=_to_int(request.POST.get("savings_account")),
+        client=request.client,
+    )
+
+    bank = get_object_or_404(
+        BankAccount,
+        pk=_to_int(request.POST.get("bank_account")),
+        client=request.client,
+    )
+
+    try:
+        transfer_bank_to_savings(
+            bank.pk,
+            savings.pk,
+            request.POST.get("amount"),
+            request.user,
+        )
+        messages.success(
+            request,
+            "Money transferred to savings successfully.",
+        )
+    except BankError as error:
+        messages.error(request, str(error))
 
     return redirect("portal_savings")
 
@@ -133,8 +174,8 @@ def _cash_action(request, account_id, action, success_message):
             request.user,
         )
         messages.success(request, success_message)
-    except BankError as e:
-        messages.error(request, str(e))
+    except BankError as error:
+        messages.error(request, str(error))
 
     return redirect(
         "staff_account",
