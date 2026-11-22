@@ -13,10 +13,11 @@ from accounting.services import (
 )
 
 
-ALLOWED_ROLES = ("admin", "staff")
+VIEW_ROLES = ("admin", "staff")
+CASHIER_ROLES = ("staff",)
 
 
-@role_required(*ALLOWED_ROLES)
+@role_required(*VIEW_ROLES)
 def bank_transactions(request):
     accounts = (
         BankAccount.objects
@@ -37,11 +38,12 @@ def bank_transactions(request):
         {
             "accounts": accounts,
             "transactions": transactions,
+            "can_cash": request.user.role.name in CASHIER_ROLES,
         },
     )
 
 
-@role_required(*ALLOWED_ROLES)
+@role_required(*CASHIER_ROLES)
 @require_POST
 def bank_deposit(request):
     try:
@@ -60,7 +62,7 @@ def bank_deposit(request):
     return redirect("bank_transactions")
 
 
-@role_required(*ALLOWED_ROLES)
+@role_required(*CASHIER_ROLES)
 @require_POST
 def bank_withdraw(request):
     try:
@@ -79,7 +81,7 @@ def bank_withdraw(request):
     return redirect("bank_transactions")
 
 
-@role_required(*ALLOWED_ROLES)
+@role_required(*CASHIER_ROLES)
 @require_POST
 def bank_transfer(request):
     try:

@@ -12,7 +12,7 @@ from .services import record_payment
 
 
 VIEWERS = ("admin", "staff", "loan_officer")
-CASHIERS = ("admin", "staff")
+CASHIERS = ("staff",)
 
 
 @role_required(*VIEWERS)
