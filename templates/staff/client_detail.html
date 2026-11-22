@@ -1,0 +1,127 @@
+
+{% extends "base.html" %}
+
+{% block title %}Client Details - Bayan Bank{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h2 class="mb-1">
+      {{ client.user.get_full_name|default:client.user.username }}
+    </h2>
+    <p class="text-muted mb-0">Client Information</p>
+  </div>
+  <a href="{% url 'staff_clients' %}" class="btn btn-outline-secondary">
+    Back to Clients
+  </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Personal Information</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <strong>Username</strong>
+        <div>{{ client.user.username }}</div>
+      </div>
+      <div class="col-md-6">
+        <strong>Phone</strong>
+        <div>{{ client.phone|default:"—" }}</div>
+      </div>
+      <div class="col-md-6">
+        <strong>Email</strong>
+        <div>{{ client.user.email|default:"—" }}</div>
+      </div>
+      <div class="col-md-6">
+        <strong>Date of Birth</strong>
+        <div>{{ client.date_of_birth|default:"—" }}</div>
+      </div>
+      <div class="col-md-6">
+        <strong>Verification Status</strong>
+        <div>{{ client.get_verification_status_display }}</div>
+      </div>
+      <div class="col-md-6">
+        <strong>Verified By</strong>
+        <div>{{ client.verified_by|default:"—" }}</div>
+      </div>
+      <div class="col-12">
+        <strong>Address</strong>
+        <div>{{ client.address|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Savings Accounts</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Account Number</th>
+            <th>Balance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for account in savings_accounts %}
+            <tr>
+              <td>{{ account.account_number }}</td>
+              <td>₱ {{ account.balance|floatformat:"2g" }}</td>
+              <td>{{ account.get_status_display }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3">No savings accounts.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">
+    <h5 class="mb-0">Loan Applications</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Loan ID</th>
+            <th>Product</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for loan in loans %}
+            <tr>
+              <td>#{{ loan.pk }}</td>
+              <td>{{ loan.product }}</td>
+              <td>₱ {{ loan.principal|floatformat:"2g" }}</td>
+              <td>{{ loan.get_status_display }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4">No loan applications.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

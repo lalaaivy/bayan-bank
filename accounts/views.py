@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import redirect, render
 
+from accounting.models import BankAccount, LedgerEntry
 from .decorators import client_required, role_required
 from loans.models import Loan
 from savings.models import SavingsAccount
@@ -20,6 +21,7 @@ def home(request):
 
 @client_required
 def portal_home(request):
+    # Existing savings accounts
     accounts = SavingsAccount.objects.filter(
         client=request.client
     )
@@ -28,6 +30,23 @@ def portal_home(request):
         total=Sum("balance")
     )["total"] or Decimal("0.00")
 
+    # Regular bank accounts (separate from savings)
+    bank_accounts = BankAccount.objects.filter(
+        client=request.client
+    ).order_by("account_number")
+
+    bank_balance = bank_accounts.aggregate(
+        total=Sum("balance")
+    )["total"] or Decimal("0.00")
+
+    # Recent transactions involving regular bank accounts
+    bank_transactions = (
+        LedgerEntry.objects
+        .filter(bank_account__client=request.client)
+        .select_related("bank_account", "loan")
+        .order_by("-created_at", "-id")[:20]
+    )
+
     loans = Loan.objects.filter(
         client=request.client
     ).select_related("product").order_by("-applied_at")
@@ -35,6 +54,9 @@ def portal_home(request):
     context = {
         "balance": balance,
         "accounts": accounts,
+        "bank_accounts": bank_accounts,
+        "bank_balance": bank_balance,
+        "bank_transactions": bank_transactions,
         "loans": loans,
     }
 

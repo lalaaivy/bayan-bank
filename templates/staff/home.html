@@ -58,7 +58,7 @@ Staff Dashboard - Bayan Bank
   </div>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4" id="savings">
 
   <div class="card-header">
     <h5 class="mb-0">
@@ -75,73 +75,74 @@ Staff Dashboard - Bayan Bank
 
     {% if savings_accounts %}
 
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
+      <div class="table-responsive" id="clients">
 
-        <thead>
-          <tr>
-            <th>Account Number</th>
-            <th>Account Holder</th>
-            <th>Balance</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+        <table class="table table-hover align-middle">
 
-        <tbody>
-          {% for account in savings_accounts %}
+          <thead>
+            <tr>
+              <th>Account Number</th>
+              <th>Account Holder</th>
+              <th>Balance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
 
-          <tr>
-            <td>
-              {{ account.account_number }}
-            </td>
+          <tbody>
+            {% for account in savings_accounts %}
 
-            <td>
-              {{ account.client }}
-            </td>
+              <tr>
+                <td>
+                  {{ account.account_number }}
+                </td>
 
-            <td>
-              ₱ {{ account.balance|floatformat:"2g" }}
-            </td>
+                <td>
+                  {{ account.client }}
+                </td>
 
-            <td>
-              <div class="d-flex flex-wrap gap-2">
+                <td>
+                  ₱ {{ account.balance|floatformat:"2g" }}
+                </td>
 
-                <a
-                  href="{% url 'staff_account' account.pk %}"
-                  class="btn btn-outline-dark btn-sm"
-                >
-                  View
-                </a>
+                <td>
+                  <div class="d-flex flex-wrap gap-2">
 
-                <a
-                  href="{% url 'export_transactions_pdf' account.pk %}"
-                  class="btn btn-outline-danger btn-sm"
-                >
-                  PDF
-                </a>
+                    <a
+                      href="{% url 'staff_account' account.pk %}"
+                      class="btn btn-outline-dark btn-sm"
+                    >
+                      View
+                    </a>
 
-                <a
-                  href="{% url 'export_transactions_excel' account.pk %}"
-                  class="btn btn-outline-success btn-sm"
-                >
-                  Excel
-                </a>
+                    <a
+                      href="{% url 'export_transactions_pdf' account.pk %}"
+                      class="btn btn-outline-danger btn-sm"
+                    >
+                      PDF
+                    </a>
 
-              </div>
-            </td>
-          </tr>
+                    <a
+                      href="{% url 'export_transactions_excel' account.pk %}"
+                      class="btn btn-outline-success btn-sm"
+                    >
+                      Excel
+                    </a>
 
-          {% endfor %}
-        </tbody>
+                  </div>
+                </td>
+              </tr>
 
-      </table>
-    </div>
+            {% endfor %}
+          </tbody>
+
+        </table>
+      </div>
 
     {% else %}
 
-    <div class="alert alert-info mb-0">
-      No savings accounts available.
-    </div>
+      <div class="alert alert-info mb-0">
+        No savings accounts available.
+      </div>
 
     {% endif %}
 

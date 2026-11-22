@@ -1,0 +1,120 @@
+
+{% extends "base.html" %}
+
+{% block title %}Clients Management - Bayan Bank{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h2 class="mb-1">Clients Management</h2>
+    <p class="text-muted mb-0">
+      View registered clients and their verification status.
+    </p>
+  </div>
+  <a href="{% url 'staff_home' %}" class="btn btn-outline-secondary">
+    Back to Dashboard
+  </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+
+      <div class="col-md-6">
+        <input
+          type="search"
+          name="q"
+          value="{{ search }}"
+          class="form-control"
+          placeholder="Search name, username, or phone"
+        >
+      </div>
+
+      <div class="col-md-3">
+        <select name="status" class="form-select">
+          <option value="">All statuses</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}"
+              {% if selected_status == value %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-dark flex-fill" type="submit">
+          Search
+        </button>
+        <a href="{% url 'staff_clients' %}" class="btn btn-outline-secondary">
+          Clear
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">
+    <h5 class="mb-0">Registered Clients</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Username</th>
+            <th>Phone</th>
+            <th>Verification</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for client in clients %}
+            <tr>
+              <td>
+                {{ client.user.get_full_name|default:client.user.username }}
+              </td>
+              <td>{{ client.user.username }}</td>
+              <td>{{ client.phone|default:"—" }}</td>
+              <td>
+                {% if client.verification_status == "active" %}
+                  <span class="badge bg-success">Active</span>
+                {% elif client.verification_status == "pending" %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% elif client.verification_status == "rejected" %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                  <span class="badge bg-secondary">
+                    {{ client.get_verification_status_display }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <a
+                  href="{% url 'staff_client_detail' client.pk %}"
+                  class="btn btn-outline-primary btn-sm"
+                >
+                  View Details
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                No clients found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

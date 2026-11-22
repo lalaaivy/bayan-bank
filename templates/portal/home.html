@@ -10,11 +10,13 @@
   Welcome, {{ request.user.get_full_name|default:request.user.username }}
 </h3>
 
-<!-- Dashboard Summary -->
+<!-- ===================================== -->
+<!-- DASHBOARD SUMMARY -->
+<!-- ===================================== -->
+
 <div class="row g-3 mb-4">
 
-  <!-- Savings Balance -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Savings Balance</div>
@@ -25,8 +27,18 @@
     </div>
   </div>
 
-  <!-- Total Loans -->
-  <div class="col-md-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Regular Bank Balance</div>
+        <div class="fs-3 fw-bold">
+          ₱ {{ bank_balance|floatformat:2|intcomma }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">My Loans</div>
@@ -37,8 +49,7 @@
     </div>
   </div>
 
-  <!-- Savings Accounts -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Savings Accounts</div>
@@ -51,17 +62,150 @@
 
 </div>
 
-<!-- Savings Accounts -->
+
+<!-- ===================================== -->
+<!-- REGULAR BANK ACCOUNTS -->
+<!-- ===================================== -->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    My Regular Bank Accounts
+  </div>
+
+  <div class="card-body">
+
+    {% for account in bank_accounts %}
+
+      <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+        <div>
+          <strong>{{ account.account_number }}</strong>
+
+          <div class="text-muted small">
+            {{ account.get_status_display }}
+          </div>
+        </div>
+
+        <div class="fw-bold">
+          ₱ {{ account.balance|floatformat:2|intcomma }}
+        </div>
+      </div>
+
+    {% empty %}
+
+      <p class="text-muted mb-0">
+        No regular bank accounts available.
+      </p>
+
+    {% endfor %}
+
+  </div>
+</div>
+
+
+<!-- ===================================== -->
+<!-- REGULAR BANK TRANSACTION HISTORY -->
+<!-- ===================================== -->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    Recent Bank Transactions
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Account</th>
+          <th>Transaction</th>
+          <th>Reference</th>
+          <th class="text-end">Amount</th>
+          <th class="text-end">Balance After</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        {% for entry in bank_transactions %}
+
+          <tr>
+            <td>
+              {{ entry.created_at|date:"M d, Y h:i A" }}
+            </td>
+
+            <td>
+              {{ entry.bank_account.account_number }}
+            </td>
+
+            <td>
+              {{ entry.get_entry_type_display }}
+            </td>
+
+            <td>
+              {% if entry.loan_id %}
+                Loan #{{ entry.loan_id }}
+              {% elif entry.reference %}
+                {{ entry.reference }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+
+            <td class="text-end">
+              {% if entry.entry_type == "withdrawal" or entry.entry_type == "transfer_out" %}
+                <span class="text-danger">
+                  - ₱ {{ entry.amount|floatformat:2|intcomma }}
+                </span>
+              {% else %}
+                <span class="text-success">
+                  + ₱ {{ entry.amount|floatformat:2|intcomma }}
+                </span>
+              {% endif %}
+            </td>
+
+            <td class="text-end">
+              {% if entry.balance_after != None %}
+                ₱ {{ entry.balance_after|floatformat:2|intcomma }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+
+        {% empty %}
+
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              No regular bank transactions yet.
+            </td>
+          </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ===================================== -->
+<!-- SAVINGS ACCOUNTS -->
+<!-- ===================================== -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     My Savings Accounts
   </div>
 
   <div class="card-body">
+
     {% for account in accounts %}
+
       <div class="d-flex justify-content-between align-items-center border-bottom py-2">
         <div>
           <strong>{{ account.account_number }}</strong>
+
           <div class="text-muted small">
             {{ account.status }}
           </div>
@@ -71,26 +215,37 @@
           ₱ {{ account.balance|floatformat:2|intcomma }}
         </div>
       </div>
+
     {% empty %}
+
       <p class="text-muted mb-0">
         No savings accounts available.
       </p>
+
     {% endfor %}
+
   </div>
 </div>
 
-<!-- Loan Records -->
+
+<!-- ===================================== -->
+<!-- LOAN RECORDS -->
+<!-- ===================================== -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     My Loan Applications
   </div>
 
   <div class="card-body">
+
     {% for loan in loans %}
+
       <div class="border-bottom py-3">
 
         <div class="d-flex justify-content-between">
           <strong>{{ loan.product.name }}</strong>
+
           <span class="badge bg-secondary">
             {{ loan.get_status_display }}
           </span>
@@ -111,13 +266,23 @@
         </div>
 
       </div>
+
     {% empty %}
+
       <p class="text-muted mb-0">
         You have no loan applications yet.
       </p>
+
     {% endfor %}
+
   </div>
 </div>
 
-  {% include "includes/ai_chatbot.html" %}
+
+<!-- ===================================== -->
+<!-- AI CHATBOT -->
+<!-- ===================================== -->
+
+{% include "includes/ai_chatbot.html" %}
+
 {% endblock %}
