@@ -1,4 +1,3 @@
-
 from decimal import Decimal
 
 from django.db.models import Sum
@@ -9,6 +8,66 @@ from accounts.decorators import role_required
 from clients.models import Client
 from loans.models import Loan
 from savings.models import SavingsAccount
+
+
+def mask_account_number(account_number):
+    """Show only the last four digits of an account number."""
+    if not account_number:
+        return "Account number unavailable"
+
+    return f"••••{account_number[-4:]}"
+
+
+def get_activity_details(entry):
+    """Identify the customer and account affected by a ledger entry."""
+    bank_account = entry.bank_account
+    savings_account = entry.savings_account
+    loan = entry.loan
+
+    client = None
+    account_label = "Unlinked transaction"
+
+    if bank_account:
+        client = bank_account.client
+        account_label = (
+            f"Regular Account • "
+            f"{mask_account_number(bank_account.account_number)}"
+        )
+
+    elif savings_account:
+        client = savings_account.client
+        account_label = (
+            f"Savings Account • "
+            f"{mask_account_number(savings_account.account_number)}"
+        )
+
+    elif loan:
+        client = loan.client
+        account_label = f"Loan #{loan.pk}"
+
+    if client:
+        customer_name = (
+            client.user.get_full_name() or client.user.username
+        )
+    else:
+        customer_name = "Customer not linked"
+
+    if entry.created_by:
+        processed_by = (
+            entry.created_by.get_full_name()
+            or entry.created_by.username
+        )
+    else:
+        processed_by = "System"
+
+    return {
+        "created_at": entry.created_at,
+        "customer": customer_name,
+        "account": account_label,
+        "activity": entry.get_entry_type_display(),
+        "processed_by": processed_by,
+        "amount": entry.amount,
+    }
 
 
 @role_required("admin", "loan_officer", "staff")
@@ -26,6 +85,17 @@ def role_dashboard(request):
     }
 
     if role == "admin":
+        recent_entries = (
+            LedgerEntry.objects
+            .select_related(
+                "created_by",
+                "bank_account__client__user",
+                "savings_account__client__user",
+                "loan__client__user",
+            )
+            .order_by("-created_at", "-pk")[:8]
+        )
+
         context.update({
             "total_clients": Client.objects.count(),
             "active_clients": Client.objects.filter(
@@ -52,11 +122,10 @@ def role_dashboard(request):
                 ).aggregate(total=Sum("principal"))["total"]
                 or Decimal("0.00")
             ),
-            "recent_activity": (
-                LedgerEntry.objects
-                .select_related("created_by")
-                .order_by("-created_at", "-pk")[:8]
-            ),
+            "recent_activity": [
+                get_activity_details(entry)
+                for entry in recent_entries
+            ],
         })
 
     elif role == "loan_officer":

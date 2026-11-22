@@ -1,6 +1,5 @@
 
 from django.urls import path
-
 from . import exports, views
 
 urlpatterns = [
@@ -21,6 +20,18 @@ urlpatterns = [
         "portal/loans/<int:loan_id>/repay/",
         views.portal_loan_repay,
         name="portal_loan_repay",
+    ),
+
+    # Loan officer application review
+    path(
+        "officer/applications/",
+        views.loan_applications,
+        name="loan_applications",
+    ),
+    path(
+        "officer/applications/<int:loan_id>/",
+        views.loan_application_detail,
+        name="loan_application_detail",
     ),
 
     # Staff loan management
@@ -54,9 +65,13 @@ urlpatterns = [
 
     # Calendar
     path("calendar/", views.calendar_page, name="loan_calendar"),
-    path("calendar/events/", views.calendar_events, name="loan_calendar_events"),
+    path(
+        "calendar/events/",
+        views.calendar_events,
+        name="loan_calendar_events",
+    ),
 
-    # Exports and document downloads
+    # Documents and agreements
     path(
         "loans/<int:loan_id>/agreement/pdf/",
         views.loan_agreement_pdf,

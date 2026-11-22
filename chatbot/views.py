@@ -1,14 +1,17 @@
+
 import json
 import logging
+import os
 from functools import lru_cache
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 
 logger = logging.getLogger(__name__)
@@ -83,17 +86,16 @@ def is_client(user):
 
 
 @lru_cache(maxsize=1)
-def get_openai_client():
-    api_key = getattr(settings, "OPENAI_API_KEY", "")
+def get_gemini_client():
+    api_key = (
+        getattr(settings, "GEMINI_API_KEY", "")
+        or os.environ.get("GEMINI_API_KEY", "")
+    )
 
     if not api_key:
         return None
 
-    return OpenAI(
-        api_key=api_key,
-        timeout=20.0,
-        max_retries=0,
-    )
+    return genai.Client(api_key=api_key)
 
 
 @login_required
@@ -104,10 +106,7 @@ def chat_page(request):
             status=403,
         )
 
-    return render(
-        request,
-        "chatbot/chat.html",
-    )
+    return render(request, "chatbot/chat.html")
 
 
 @login_required
@@ -160,63 +159,79 @@ def chat_message(request):
             status=400,
         )
 
-    client = get_openai_client()
+    client = get_gemini_client()
 
     if client is None:
-        logger.error("OPENAI_API_KEY is not configured.")
+        logger.error("GEMINI_API_KEY is not configured.")
 
         return JsonResponse(
             {"error": "Kabayan is not configured yet."},
             status=503,
         )
 
-    model = getattr(
-        settings,
-        "OPENAI_MODEL",
-        "gpt-4.1-mini",
+    model = (
+        getattr(settings, "GEMINI_MODEL", "")
+        or os.environ.get(
+            "GEMINI_MODEL",
+            "gemini-3.5-flash",
+        )
     )
 
-    try:
-        response = client.responses.create(
-            model=model,
-            instructions=BANKING_INSTRUCTIONS,
-            input=message,
-            temperature=0.3,
-            max_output_tokens=250,
-        )
-
-        answer = response.output_text
-
-        if not answer:
-            logger.warning(
-                "OpenAI returned an empty response."
+    def generate_stream():
+        try:
+            stream = client.models.generate_content_stream(
+                model=model,
+                contents=message,
+                config=types.GenerateContentConfig(
+                    system_instruction=BANKING_INSTRUCTIONS,
+                    temperature=0.3,
+                    max_output_tokens=150,
+                    thinking_config=types.ThinkingConfig(
+                    thinking_level="MINIMAL"
+),
+                ),
             )
 
-            return JsonResponse(
-                {
+            received_text = False
+
+            for chunk in stream:
+                text = chunk.text
+
+                if text:
+                    received_text = True
+
+                    yield json.dumps({
+                        "chunk": text,
+                    }) + "\n"
+
+            if not received_text:
+                yield json.dumps({
                     "error": (
                         "Kabayan could not generate an answer. "
                         "Please try again."
                     )
-                },
-                status=502,
+                }) + "\n"
+            else:
+                yield json.dumps({"done": True}) + "\n"
+
+        except Exception:
+            logger.exception(
+                "Kabayan Gemini streaming request failed."
             )
 
-        return JsonResponse({
-            "reply": answer,
-        })
-
-    except Exception:
-        logger.exception(
-            "Kabayan OpenAI request failed."
-        )
-
-        return JsonResponse(
-            {
+            yield json.dumps({
                 "error": (
-                    "Kabayan is temporarily unavailable. "
+                    "Kabayan encountered a problem. "
                     "Please try again later."
                 )
-            },
-            status=503,
-        )
+            }) + "\n"
+
+    response = StreamingHttpResponse(
+        generate_stream(),
+        content_type="application/x-ndjson; charset=utf-8",
+    )
+
+    response["Cache-Control"] = "no-cache, no-transform"
+    response["X-Accel-Buffering"] = "no"
+
+    return response

@@ -1,8 +1,10 @@
+
 import os
 from decimal import Decimal
-
+from .calculations import build_schedule
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.db import transaction
 from django.db.models import Sum
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,17 +17,20 @@ from accounting.models import BankAccount
 from accounting.money import BankError
 from accounts.decorators import client_required, role_required
 from clients.models import Client
+from savings.models import SavingsAccount
 
 from . import services
 from .agreement_pdf import generate_agreement_pdf
 from .models import (
     Disbursement,
+    EligibilityCheck,
     Installment,
     Loan,
     LoanAgreement,
     LoanDocument,
     LoanPayment,
     LoanProduct,
+    LoanRule,
 )
 
 
@@ -34,7 +39,6 @@ from .models import (
 # --------------------------------------------------
 
 STAFF = ("admin", "staff", "loan_officer")
-
 DECIDERS = ("admin", "loan_officer")
 DISBURSERS = ("admin", "staff")
 PAYMENT_TAKERS = ("admin", "staff")
@@ -94,8 +98,32 @@ def _run(request, success_message, func, *args):
         )
 
 
+def _calculate_age(date_of_birth):
+    """Calculate age from a date of birth."""
+
+    if not date_of_birth:
+        return None
+
+    today = timezone.localdate()
+
+    return (
+        today.year
+        - date_of_birth.year
+        - (
+            (today.month, today.day)
+            < (date_of_birth.month, date_of_birth.day)
+        )
+    )
+
+
 def _validate_loan_documents(files):
     """Validate uploaded loan supporting documents."""
+
+    if not files:
+        raise BankError(
+            "Please upload at least one supporting document "
+            "before submitting your loan application."
+        )
 
     if len(files) > MAX_DOCUMENTS:
         raise BankError(
@@ -205,7 +233,7 @@ def portal_loans(request):
 @client_required
 @require_POST
 def portal_apply(request):
-    """Submit a client's loan application."""
+    """Submit a client's loan application with supporting documents."""
 
     if (
         request.client.verification_status
@@ -216,7 +244,6 @@ def portal_apply(request):
             "Your account must be verified (Active) "
             "before you can apply for a loan.",
         )
-
         return redirect("portal_loans")
 
     product = get_object_or_404(
@@ -234,7 +261,6 @@ def portal_apply(request):
             request,
             "Enter the term in whole months.",
         )
-
         return redirect("portal_loans")
 
     purpose = (
@@ -248,14 +274,6 @@ def portal_apply(request):
         LoanDocument.DocumentType.OTHER,
     )
 
-    if document_type not in LoanDocument.DocumentType.values:
-        messages.error(
-            request,
-            "Select a valid supporting document type.",
-        )
-
-        return redirect("portal_loans")
-
     try:
         if not purpose:
             raise BankError(
@@ -267,34 +285,49 @@ def portal_apply(request):
                 "Loan purpose cannot exceed 1,000 characters."
             )
 
+        if document_type not in LoanDocument.DocumentType.values:
+            raise BankError(
+                "Select a valid supporting document type."
+            )
+
         _validate_loan_documents(documents)
 
-        loan = services.apply_for_loan(
-            request.client,
-            product,
-            request.POST.get("principal"),
-            term,
-            request.user,
-            purpose,
-        )
-
-        for uploaded_file in documents:
-            LoanDocument.objects.create(
-                loan=loan,
-                document_type=document_type,
-                file=uploaded_file,
-                uploaded_by=request.user,
+        # Keep the application and its document records together.
+        # If document record creation fails, the loan creation rolls back.
+        with transaction.atomic():
+            loan = services.apply_for_loan(
+                request.client,
+                product,
+                request.POST.get("principal"),
+                term,
+                request.user,
+                purpose,
             )
+
+            for uploaded_file in documents:
+                LoanDocument.objects.create(
+                    loan=loan,
+                    document_type=document_type,
+                    file=uploaded_file,
+                    uploaded_by=request.user,
+                )
 
         messages.success(
             request,
-            "Loan application submitted successfully.",
+            "Loan application and supporting documents submitted "
+            "successfully. Your application is now awaiting review.",
         )
 
     except BankError as error:
         messages.error(
             request,
             str(error) or "Unable to submit loan application.",
+        )
+
+    except PermissionDenied:
+        messages.error(
+            request,
+            "You are not allowed to submit this loan application.",
         )
 
     return redirect("portal_loans")
@@ -326,6 +359,429 @@ def portal_loan_repay(request, loan_id):
     return redirect("portal_loans")
 
 
+# ==========================================
+# LOAN OFFICER APPLICATION QUEUE
+# ==========================================
+
+@role_required(*DECIDERS)
+def loan_applications(request):
+    """Display actual loan applications for loan officers and admins."""
+
+    status_filter = (
+        request.GET.get("status") or ""
+    ).strip().lower()
+
+    valid_statuses = {
+        Loan.Status.PENDING,
+        Loan.Status.APPROVED,
+        Loan.Status.REJECTED,
+    }
+
+    applications = (
+        Loan.objects.select_related(
+            "client__user",
+            "product",
+            "decided_by",
+        )
+        .prefetch_related("documents")
+        .order_by("-applied_at")
+    )
+
+    if status_filter in valid_statuses:
+        applications = applications.filter(
+            status=status_filter
+        )
+    else:
+        status_filter = ""
+
+    return render(
+        request,
+        "officer/applications.html",
+        {
+            "applications": applications,
+            "status_filter": status_filter,
+        },
+    )
+
+
+# ==========================================
+# LOAN OFFICER APPLICATION REVIEW
+# ==========================================
+
+@role_required(*DECIDERS)
+def loan_application_detail(request, loan_id):
+    """Allow loan officers and admins to review and decide applications."""
+
+    loan = get_object_or_404(
+        Loan.objects.select_related(
+            "client__user",
+            "product",
+            "decided_by",
+        ),
+        pk=loan_id,
+    )
+
+    client = loan.client
+    today = timezone.localdate()
+
+    # --------------------------------------------------
+    # APPROVE OR REJECT APPLICATION
+    # --------------------------------------------------
+
+    if request.method == "POST":
+        if loan.status != Loan.Status.PENDING:
+            messages.error(
+                request,
+                "Only pending applications can be approved or rejected.",
+            )
+            return redirect(
+                "loan_application_detail",
+                loan_id=loan.pk,
+            )
+
+        decision = (
+            request.POST.get("decision") or ""
+        ).strip().lower()
+
+        remarks = (
+            request.POST.get("remarks")
+            or request.POST.get("reason")
+            or ""
+        ).strip()
+
+        if decision == "approved":
+            _run(
+                request,
+                "Loan application approved successfully.",
+                services.approve_loan,
+                loan.pk,
+                request.user,
+            )
+
+        elif decision == "rejected":
+            _run(
+                request,
+                "Loan application rejected.",
+                services.reject_loan,
+                loan.pk,
+                request.user,
+                remarks,
+            )
+
+        else:
+            messages.error(
+                request,
+                "Select a valid application decision.",
+            )
+
+        return redirect(
+            "loan_application_detail",
+            loan_id=loan.pk,
+        )
+
+    # --------------------------------------------------
+    # LATEST SAVED ELIGIBILITY ASSESSMENT
+    # --------------------------------------------------
+
+    eligibility = (
+        loan.eligibility_checks
+        .order_by("-checked_at")
+        .first()
+    )
+
+    # --------------------------------------------------
+    # LOAN SUPPORTING DOCUMENTS
+    # --------------------------------------------------
+
+    documents = (
+        loan.documents
+        .select_related("uploaded_by")
+        .order_by("-uploaded_at")
+    )
+
+    # --------------------------------------------------
+    # CLIENT FINANCIAL INFORMATION
+    # --------------------------------------------------
+
+    savings_balance = (
+        SavingsAccount.objects.filter(
+            client=client,
+            status=SavingsAccount.Status.ACTIVE,
+        )
+        .aggregate(total=Sum("balance"))["total"]
+        or Decimal("0.00")
+    )
+
+    monthly_income = (
+        client.monthly_income
+        or Decimal("0.00")
+    )
+
+    credit_score = client.credit_score or 0
+    age = _calculate_age(client.date_of_birth)
+
+    # --------------------------------------------------
+    # LOAN PRODUCT ELIGIBILITY RULES
+    # --------------------------------------------------
+
+    rule = LoanRule.objects.filter(
+        product=loan.product,
+    ).first()
+
+    if rule:
+        minimum_income = rule.minimum_monthly_income
+        minimum_age = rule.minimum_age
+        minimum_score = rule.minimum_credit_score
+        max_ratio = rule.max_installment_ratio
+        min_savings_ratio = rule.min_savings_ratio
+        rules_active = rule.is_active
+
+    else:
+        minimum_income = Decimal("0.00")
+        minimum_age = services.DEFAULT_MINIMUM_AGE
+        minimum_score = 0
+        max_ratio = services.DEFAULT_MAX_INSTALLMENT_RATIO
+        min_savings_ratio = services.DEFAULT_MIN_SAVINGS_RATIO
+        rules_active = True
+
+    # --------------------------------------------------
+    # PROPOSED MONTHLY INSTALLMENT
+    # Use the same calculation as the loan eligibility service.
+    # --------------------------------------------------
+
+    schedule_rows = build_schedule(
+        loan.principal,
+        loan.annual_rate,
+        loan.term_months,
+        today,
+    )
+
+    if schedule_rows:
+        proposed_installment = max(
+            (
+                row["principal_due"] + row["interest_due"]
+                for row in schedule_rows
+            ),
+            default=Decimal("0.00"),
+        )
+    else:
+        proposed_installment = None
+
+    # --------------------------------------------------
+    # DETAILED ELIGIBILITY CRITERIA
+    # These checks mirror services._evaluate().
+    # --------------------------------------------------
+
+    criteria = []
+
+    def add_criterion(label, detail, passed=None, review=False):
+        criteria.append({
+            "label": label,
+            "detail": detail,
+            "passed": passed,
+            "review": review,
+        })
+
+    if not rules_active:
+        add_criterion(
+            "Loan product eligibility rules",
+            "The configured eligibility rules are inactive. "
+            "Manual review is required.",
+            passed=None,
+            review=True,
+        )
+
+    else:
+        # 1. Minimum age
+        if age is None:
+            add_criterion(
+                "Minimum age",
+                "The client's date of birth is missing. "
+                "Verify the client's age.",
+                passed=None,
+                review=True,
+            )
+
+        elif age < minimum_age:
+            add_criterion(
+                "Minimum age",
+                f"Client is {age} years old. "
+                f"Minimum required age is {minimum_age}.",
+                passed=False,
+            )
+
+        else:
+            add_criterion(
+                "Minimum age",
+                f"Client is {age} years old. "
+                f"Minimum required age is {minimum_age}.",
+                passed=True,
+            )
+
+        # 2. Minimum monthly income
+        if monthly_income < minimum_income:
+            add_criterion(
+                "Minimum monthly income",
+                f"Monthly income is ₱{monthly_income:,.2f}. "
+                f"Minimum required income is ₱{minimum_income:,.2f}.",
+                passed=False,
+            )
+
+        else:
+            add_criterion(
+                "Minimum monthly income",
+                f"Monthly income is ₱{monthly_income:,.2f}. "
+                f"Minimum required income is ₱{minimum_income:,.2f}.",
+                passed=True,
+            )
+
+        # 3. Monthly installment affordability
+        if proposed_installment is None:
+            add_criterion(
+                "Installment affordability",
+                "Unable to calculate the proposed repayment schedule. "
+                "Manual review is required.",
+                passed=None,
+                review=True,
+            )
+
+        elif monthly_income <= Decimal("0.00"):
+            if monthly_income >= minimum_income:
+                add_criterion(
+                    "Installment affordability",
+                    "Monthly income is zero or unavailable. "
+                    "Verify the client's income.",
+                    passed=None,
+                    review=True,
+                )
+
+        elif proposed_installment > monthly_income * max_ratio:
+            add_criterion(
+                "Installment affordability",
+                (
+                    f"Proposed installment is "
+                    f"₱{proposed_installment:,.2f}. "
+                    f"This exceeds {max_ratio:.0%} of monthly income "
+                    f"(₱{monthly_income * max_ratio:,.2f})."
+                ),
+                passed=False,
+            )
+
+        else:
+            add_criterion(
+                "Installment affordability",
+                (
+                    f"Proposed installment is "
+                    f"₱{proposed_installment:,.2f}. "
+                    f"Maximum allowed is {max_ratio:.0%} of monthly "
+                    f"income (₱{monthly_income * max_ratio:,.2f})."
+                ),
+                passed=True,
+            )
+
+        # 4. Savings requirement
+        required_savings = (
+            loan.principal * min_savings_ratio
+        )
+
+        if savings_balance < required_savings:
+            add_criterion(
+                "Savings requirement",
+                (
+                    f"Available savings: ₱{savings_balance:,.2f}. "
+                    f"Required savings: ₱{required_savings:,.2f} "
+                    f"({min_savings_ratio:.0%} of the requested loan)."
+                ),
+                passed=False,
+            )
+
+        else:
+            add_criterion(
+                "Savings requirement",
+                (
+                    f"Available savings: ₱{savings_balance:,.2f}. "
+                    f"Required savings: ₱{required_savings:,.2f} "
+                    f"({min_savings_ratio:.0%} of the requested loan)."
+                ),
+                passed=True,
+            )
+
+        # 5. Minimum credit score
+        if minimum_score > 0 and credit_score <= 0:
+            add_criterion(
+                "Minimum credit score",
+                "No usable credit score is recorded. "
+                "Verify the client's credit information.",
+                passed=None,
+                review=True,
+            )
+
+        elif credit_score < minimum_score:
+            add_criterion(
+                "Minimum credit score",
+                f"Credit score is {credit_score}. "
+                f"Minimum required score is {minimum_score}.",
+                passed=False,
+            )
+
+        else:
+            add_criterion(
+                "Minimum credit score",
+                f"Credit score is {credit_score}. "
+                f"Minimum required score is {minimum_score}.",
+                passed=True,
+            )
+
+    # --------------------------------------------------
+    # APPLICANT PROFILE
+    # --------------------------------------------------
+
+    applicant_name = (
+        client.user.get_full_name()
+        or client.user.username
+    )
+
+    applicant_email = client.user.email
+    applicant_phone = client.phone
+    applicant_address = client.address
+    employment_status = client.employment_status
+    source_of_income = client.source_of_income
+
+    # --------------------------------------------------
+    # RENDER APPLICATION DETAILS
+    # --------------------------------------------------
+
+    return render(
+        request,
+        "officer/application_detail.html",
+        {
+            "loan": loan,
+            "client": client,
+
+            "applicant_name": applicant_name,
+            "applicant_email": applicant_email,
+            "applicant_phone": applicant_phone,
+            "applicant_address": applicant_address,
+
+            "employment_status": employment_status,
+            "source_of_income": source_of_income,
+
+            "monthly_income": monthly_income,
+            "credit_score": credit_score,
+            "age": age,
+            "savings_balance": savings_balance,
+
+            "proposed_installment": proposed_installment,
+
+            "eligibility": eligibility,
+            "criteria": criteria,
+            "documents": documents,
+
+            "can_decide": (
+                loan.status == Loan.Status.PENDING
+            ),
+        },
+    )
 # ==========================================
 # LOAN DOCUMENT DOWNLOAD
 # ==========================================

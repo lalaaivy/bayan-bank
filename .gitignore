@@ -5,9 +5,13 @@ venv/
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
-# Local database
+# Local databases and database backups
 db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+*.db
 
 # Environment variables and API keys
 .env
@@ -26,4 +30,9 @@ staticfiles/
 
 # Local backups and archives
 db_backup.sqlite3
-accounting.zip
+db_before_migration_repair.sqlite3
+migration_backup/
+*.zip
+
+# Local design references
+design_reference/

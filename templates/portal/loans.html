@@ -88,7 +88,7 @@
         <div class="card-header bg-white border-bottom py-3">
             <h5 class="fw-bold mb-1">Apply for a Loan</h5>
             <small class="text-muted">
-                Complete the application form below.
+                Complete the application form and attach at least one supporting document.
             </small>
         </div>
 
@@ -100,6 +100,7 @@
                     action="{% url 'portal_apply' %}"
                     enctype="multipart/form-data"
                     class="row g-3"
+                    id="loanApplicationForm"
                 >
                     {% csrf_token %}
 
@@ -194,34 +195,47 @@
                             Supporting Document Type
                         </label>
 
-                        <select name="document_type" class="form-select">
+                        <select
+                            name="document_type"
+                            id="documentType"
+                            class="form-select"
+                            required
+                        >
+                            <option value="">Select document type</option>
                             <option value="proof_of_income">Proof of Income</option>
                             <option value="employment_certificate">
                                 Certificate of Employment
                             </option>
                             <option value="bank_statement">Bank Statement</option>
-                            <option value="other">Other</option>
+                            <option value="other">Other Supporting Document</option>
                         </select>
                     </div>
 
                     <div class="col-md-8">
                         <label class="form-label fw-semibold">
-                            Supporting Documents
+                            Supporting Documents <span class="text-danger">*</span>
                         </label>
 
                         <input
                             type="file"
                             name="documents"
+                            id="loanDocuments"
                             class="form-control"
-                            accept=".pdf,.jpg,.jpeg,.png"
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                             multiple
+                            required
                         >
 
-                        <small class="text-muted">
-                            PDF, JPG, JPEG, or PNG. Maximum 5 files,
-                            5 MB each. Documents may be submitted later
-                            if unavailable.
+                        <small class="text-muted d-block mt-1">
+                            At least one document is required. PDF, JPG, JPEG, or PNG.
+                            Maximum 5 files, 5 MB each.
                         </small>
+
+                        <small class="text-muted d-block">
+                            All files selected together will use the document category selected above.
+                        </small>
+
+                        <div id="documentFeedback" class="small mt-2"></div>
                     </div>
 
                     <div class="col-12 pt-2">
@@ -301,29 +315,17 @@
                                 <!-- STATUS -->
                                 <td>
                                     {% if l.status == "pending" %}
-                                        <span class="badge bg-warning text-dark">
-                                            Pending
-                                        </span>
+                                        <span class="badge bg-warning text-dark">Pending</span>
                                     {% elif l.status == "approved" %}
-                                        <span class="badge bg-success">
-                                            Approved
-                                        </span>
+                                        <span class="badge bg-success">Approved</span>
                                     {% elif l.status == "rejected" %}
-                                        <span class="badge bg-danger">
-                                            Rejected
-                                        </span>
+                                        <span class="badge bg-danger">Rejected</span>
                                     {% elif l.status == "active" %}
-                                        <span class="badge bg-primary">
-                                            Active
-                                        </span>
+                                        <span class="badge bg-primary">Active</span>
                                     {% elif l.status == "paid" %}
-                                        <span class="badge bg-secondary">
-                                            Fully Paid
-                                        </span>
+                                        <span class="badge bg-secondary">Fully Paid</span>
                                     {% elif l.status == "defaulted" %}
-                                        <span class="badge bg-danger">
-                                            Defaulted
-                                        </span>
+                                        <span class="badge bg-danger">Defaulted</span>
                                     {% else %}
                                         <span class="badge bg-secondary">
                                             {{ l.get_status_display }}
@@ -350,14 +352,11 @@
                                             </a>
 
                                             {% if l.agreement.signed_at %}
-                                                <span class="badge bg-success">
-                                                    Accepted
-                                                </span>
+                                                <span class="badge bg-success">Accepted</span>
                                             {% elif l.status == "approved" %}
                                                 <span class="badge bg-warning text-dark">
                                                     Awaiting Acceptance
                                                 </span>
-
                                                 <small class="text-muted">
                                                     Required before disbursement.
                                                 </small>
@@ -369,17 +368,13 @@
                                         </div>
 
                                     {% elif l.status == "pending" %}
-                                        <small class="text-muted">
-                                            Awaiting approval
-                                        </small>
+                                        <small class="text-muted">Awaiting approval</small>
                                     {% elif l.status == "approved" %}
                                         <small class="text-muted">
                                             Waiting for staff to create agreement
                                         </small>
                                     {% else %}
-                                        <small class="text-muted">
-                                            Not available
-                                        </small>
+                                        <small class="text-muted">Not available</small>
                                     {% endif %}
                                 </td>
 
@@ -400,9 +395,7 @@
                                                 {% endfor %}
                                             </div>
                                         {% else %}
-                                            <small class="text-muted">
-                                                No documents
-                                            </small>
+                                            <small class="text-muted">No documents</small>
                                         {% endif %}
                                     {% endwith %}
                                 </td>
@@ -556,27 +549,16 @@
                                                                             </td>
 
                                                                             <td class="text-end text-nowrap fw-semibold">
-                                                                                {% widthratio installment.total_due 1 1 as installment_total %}
-                                                                                ₱{{ installment.total_due|floatformat:2 }}
+                                                                                ₱{{ installment.remaining_balance|floatformat:2 }}
                                                                             </td>
 
                                                                             <td>
                                                                                 {% if installment.status == "paid" %}
-                                                                                    <span class="badge bg-success">
-                                                                                        Paid
-                                                                                    </span>
-                                                                                {% elif installment.status == "overdue" %}
-                                                                                    <span class="badge bg-danger">
-                                                                                        Overdue
-                                                                                    </span>
-                                                                                {% elif installment.due_date < today %}
-                                                                                    <span class="badge bg-danger">
-                                                                                        Overdue
-                                                                                    </span>
+                                                                                    <span class="badge bg-success">Paid</span>
+                                                                                {% elif installment.status == "overdue" or installment.due_date < today %}
+                                                                                    <span class="badge bg-danger">Overdue</span>
                                                                                 {% else %}
-                                                                                    <span class="badge bg-warning text-dark">
-                                                                                        Due
-                                                                                    </span>
+                                                                                    <span class="badge bg-warning text-dark">Due</span>
                                                                                 {% endif %}
                                                                             </td>
 
@@ -752,6 +734,83 @@ document.addEventListener("DOMContentLoaded", function () {
 
             amountInput.value = "";
             termInput.value = "";
+        });
+    }
+
+    const documentInput = document.getElementById("loanDocuments");
+    const documentFeedback = document.getElementById("documentFeedback");
+    const applicationForm = document.getElementById("loanApplicationForm");
+
+    if (documentInput && documentFeedback) {
+        documentInput.addEventListener("change", function () {
+            const files = Array.from(documentInput.files);
+            const allowedExtensions = ["pdf", "jpg", "jpeg", "png"];
+            const maxSize = 5 * 1024 * 1024;
+
+            documentFeedback.textContent = "";
+            documentFeedback.className = "small mt-2";
+
+            if (files.length === 0) {
+                documentFeedback.textContent =
+                    "At least one supporting document is required.";
+                documentFeedback.classList.add("text-danger");
+                return;
+            }
+
+            if (files.length > 5) {
+                documentFeedback.textContent =
+                    "You can upload a maximum of 5 files.";
+                documentFeedback.classList.add("text-danger");
+                documentInput.value = "";
+                return;
+            }
+
+            for (const file of files) {
+                const extension = file.name.split(".").pop().toLowerCase();
+
+                if (!allowedExtensions.includes(extension)) {
+                    documentFeedback.textContent =
+                        file.name + ": Unsupported file type.";
+                    documentFeedback.classList.add("text-danger");
+                    documentInput.value = "";
+                    return;
+                }
+
+                if (file.size === 0 || file.size > maxSize) {
+                    documentFeedback.textContent =
+                        file.name + ": File must be greater than 0 bytes and no larger than 5 MB.";
+                    documentFeedback.classList.add("text-danger");
+                    documentInput.value = "";
+                    return;
+                }
+            }
+
+            documentFeedback.textContent =
+                files.length + " supporting document(s) selected.";
+            documentFeedback.classList.add("text-success");
+        });
+    }
+
+    if (applicationForm) {
+        applicationForm.addEventListener("submit", function (event) {
+            const selectedFiles = documentInput
+                ? documentInput.files.length
+                : 0;
+
+            const selectedType = document.getElementById("documentType");
+
+            if (selectedFiles < 1) {
+                event.preventDefault();
+                alert("Please upload at least one supporting document.");
+                if (documentInput) documentInput.focus();
+                return;
+            }
+
+            if (selectedType && !selectedType.value) {
+                event.preventDefault();
+                alert("Please select a supporting document type.");
+                selectedType.focus();
+            }
         });
     }
 });
