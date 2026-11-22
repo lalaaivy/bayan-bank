@@ -1,6 +1,26 @@
-
 import csv
 import secrets
+import calendar
+import json
+from collections import defaultdict
+from datetime import date, datetime
+from io import BytesIO
+
+from django.db.models import Count
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import (
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 from decimal import Decimal
 
 from django.contrib import messages
@@ -22,15 +42,16 @@ from loans.calculations import build_schedule
 from loans.models import (
     Disbursement,
     EligibilityCheck,
+    Installment,
     Loan,
     LoanAgreement,
+    LoanPayment,
     LoanProduct,
     LoanRule,
 )
 from notifications.models import Notification
 from savings.models import SavingsAccount, SavingsDeposit
 
-from accounting.models import BankAccount, LedgerEntry
 from .decorators import client_required, role_required
 from .forms import (
     ClientCreditScoreForm,
@@ -71,6 +92,10 @@ def portal_home(request):
         else Decimal("0.00")
     )
 
+    savings_account = SavingsAccount.objects.filter(
+        client=client
+    ).first()
+
     accounts = SavingsAccount.objects.filter(
         client=client
     )
@@ -109,7 +134,7 @@ def portal_home(request):
         .order_by("-applied_at")
     )
 
-    recent_transactions = (
+    bank_transactions = (
         LedgerEntry.objects.filter(
             Q(bank_account__client=client)
             | Q(savings_account__client=client)
@@ -131,10 +156,12 @@ def portal_home(request):
         "client": client,
         "bank_account": bank_account,
         "bank_balance": bank_balance,
+        "savings_account": savings_account,
         "accounts": accounts,
         "balance": balance,
         "loans": loans,
-        "recent_transactions": recent_transactions,
+        "recent_transactions": bank_transactions,
+        "bank_transactions": bank_transactions,
         "latest_document": latest_document,
         "total_interest": total_interest,
         "latest_interest": latest_interest,
@@ -143,12 +170,7 @@ def portal_home(request):
     return render(
         request,
         "portal/home.html",
-        {
-            "bank_account": bank_account,
-            "savings_account": savings_account,
-            "bank_transactions": bank_transactions,
-            "loans": loans,
-        },
+        context,
     )
 
 
@@ -173,7 +195,102 @@ def officer_home(request):
 
 @role_required("admin")
 def admin_home(request):
-    return render(request, "adminpanel/home.html")
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+
+    # Actual client and loan statistics
+    active_clients = Client.objects.filter(
+        verification_status=Client.VerificationStatus.ACTIVE
+    ).count()
+
+    active_loans = Loan.objects.filter(
+        status=Loan.Status.ACTIVE
+    ).count()
+
+    pending_applications = Loan.objects.filter(
+        status=Loan.Status.PENDING
+    ).count()
+
+    # Total loan payments collected during the current month
+    monthly_collections = (
+        LedgerEntry.objects.filter(
+            entry_type=LedgerEntry.EntryType.LOAN_PAYMENT,
+            created_at__date__gte=month_start,
+            created_at__date__lte=today,
+        ).aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
+    )
+
+    # Latest actual banking transactions
+    recent_activity = list(
+        LedgerEntry.objects.select_related(
+            "bank_account__client__user",
+            "savings_account__client__user",
+            "loan__client__user",
+            "created_by",
+        ).order_by("-created_at", "-id")[:8]
+    )
+
+    for entry in recent_activity:
+        # Identify the customer affected by the transaction.
+        if entry.bank_account_id:
+            customer = entry.bank_account.client
+            account_number = entry.bank_account.account_number
+            account_type = "Regular Account"
+
+        elif entry.savings_account_id:
+            customer = entry.savings_account.client
+            account_number = entry.savings_account.account_number
+            account_type = "Savings Account"
+
+        elif entry.loan_id:
+            customer = entry.loan.client
+            account_number = None
+            account_type = f"Loan #{entry.loan_id}"
+
+        else:
+            customer = None
+            account_number = None
+            account_type = "N/A"
+
+        if customer:
+            entry.customer_name = (
+                customer.user.get_full_name()
+                or customer.user.username
+            )
+        else:
+            entry.customer_name = "Unknown"
+
+        if account_number:
+            entry.account_display = (
+                f"{account_type} •••• {account_number[-4:]}"
+            )
+        else:
+            entry.account_display = account_type
+
+        entry.processor_name = (
+            entry.created_by.get_full_name()
+            or entry.created_by.username
+            if entry.created_by
+            else "System"
+        )
+
+        entry.activity_label = entry.get_entry_type_display()
+
+    context = {
+        "active_clients": active_clients,
+        "active_loans": active_loans,
+        "monthly_collections": monthly_collections,
+        "pending_applications": pending_applications,
+        "recent_activity": recent_activity,
+        "dashboard_date": today,
+    }
+
+    return render(
+        request,
+        "adminpanel/home.html",
+        context,
+    )
 
 
 def _demo_form(request, template, destination):
@@ -1494,13 +1611,690 @@ def admin_product_form(request):
 
 
 @role_required("admin")
+def _parse_report_dates(request):
+    today = timezone.localdate()
+    default_from = today.replace(day=1)
+
+    date_from_raw = request.GET.get("date_from", "").strip()
+    date_to_raw = request.GET.get("date_to", "").strip()
+
+    try:
+        date_from = (
+            date.fromisoformat(date_from_raw)
+            if date_from_raw
+            else default_from
+        )
+        date_to = (
+            date.fromisoformat(date_to_raw)
+            if date_to_raw
+            else today
+        )
+    except ValueError:
+        date_from = default_from
+        date_to = today
+        messages.error(
+            request,
+            "Invalid date filter. The current month's date range was used.",
+        )
+
+    if date_from > date_to:
+        date_from = default_from
+        date_to = today
+        messages.error(
+            request,
+            "The starting date cannot be later than the ending date.",
+        )
+
+    return date_from, date_to
+
+
+def _month_range(date_from, date_to):
+    current = date(date_from.year, date_from.month, 1)
+    last = date(date_to.year, date_to.month, 1)
+
+    months = []
+
+    while current <= last:
+        months.append(current)
+
+        if current.month == 12:
+            current = date(current.year + 1, 1, 1)
+        else:
+            current = date(current.year, current.month + 1, 1)
+
+    return months
+
+
+def _add_monthly_amount(target, transaction_date, amount):
+    if not transaction_date:
+        return
+
+    month_key = date(
+        transaction_date.year,
+        transaction_date.month,
+        1,
+    )
+
+    target[month_key] += amount or Decimal("0.00")
+
+
+def _build_management_report(date_from, date_to):
+    zero = Decimal("0.00")
+    months = _month_range(date_from, date_to)
+
+    # -------------------------------------------------
+    # Actual transaction records within the date range
+    # -------------------------------------------------
+
+    interest_entries = LedgerEntry.objects.filter(
+        entry_type=LedgerEntry.EntryType.INTEREST_CREDIT,
+        savings_account__isnull=False,
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to,
+    )
+
+    loan_payments = LoanPayment.objects.filter(
+        payment_date__date__gte=date_from,
+        payment_date__date__lte=date_to,
+    )
+
+    disbursements = Disbursement.objects.filter(
+        disbursed_at__date__gte=date_from,
+        disbursed_at__date__lte=date_to,
+    )
+
+    savings_entries = LedgerEntry.objects.filter(
+        savings_account__isnull=False,
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to,
+        entry_type__in=[
+            LedgerEntry.EntryType.DEPOSIT,
+            LedgerEntry.EntryType.WITHDRAWAL,
+        ],
+    )
+
+    total_interest = (
+        interest_entries.aggregate(total=Sum("amount"))["total"]
+        or zero
+    )
+
+    total_repayments = (
+        loan_payments.aggregate(total=Sum("amount"))["total"]
+        or zero
+    )
+
+    total_disbursements = (
+        disbursements.aggregate(total=Sum("amount"))["total"]
+        or zero
+    )
+
+    total_savings_deposits = (
+        savings_entries.filter(
+            entry_type=LedgerEntry.EntryType.DEPOSIT,
+        ).aggregate(total=Sum("amount"))["total"]
+        or zero
+    )
+
+    total_savings_withdrawals = (
+        savings_entries.filter(
+            entry_type=LedgerEntry.EntryType.WITHDRAWAL,
+        ).aggregate(total=Sum("amount"))["total"]
+        or zero
+    )
+
+    # -------------------------------------------------
+    # Loan portfolio snapshot
+    # -------------------------------------------------
+
+    active_loans = Loan.objects.filter(
+        status=Loan.Status.ACTIVE,
+    )
+
+    active_loan_count = active_loans.count()
+
+    active_installments = Installment.objects.filter(
+        loan__status=Loan.Status.ACTIVE,
+    ).exclude(
+        status=Installment.Status.PAID,
+    ).select_related("loan")
+
+    outstanding_scheduled_balance = zero
+
+    for installment in active_installments:
+        remaining = installment.total_due - installment.amount_paid
+
+        if remaining > zero:
+            outstanding_scheduled_balance += remaining
+
+    # -------------------------------------------------
+    # Delinquent loan snapshot
+    # An installment is overdue if its due date is
+    # earlier than the selected ending date and it
+    # has not been fully paid.
+    # -------------------------------------------------
+
+    overdue_installments = (
+        Installment.objects.filter(
+            due_date__lt=date_to,
+        )
+        .exclude(status=Installment.Status.PAID)
+        .select_related("loan")
+    )
+
+    delinquent_loan_ids = set()
+    overdue_amount = zero
+
+    for installment in overdue_installments:
+        remaining = installment.total_due - installment.amount_paid
+
+        if remaining > zero:
+            delinquent_loan_ids.add(installment.loan_id)
+            overdue_amount += remaining
+
+    delinquent_loan_count = len(delinquent_loan_ids)
+
+    # -------------------------------------------------
+    # Loan status distribution
+    # -------------------------------------------------
+
+    loan_status_counts = {
+        status: 0
+        for status, label in Loan.Status.choices
+    }
+
+    status_rows = (
+        Loan.objects.values("status")
+        .annotate(total=Count("id"))
+    )
+
+    for row in status_rows:
+        loan_status_counts[row["status"]] = row["total"]
+
+    loan_status_labels = [
+        label
+        for status, label in Loan.Status.choices
+    ]
+
+    loan_status_values = [
+        loan_status_counts[status]
+        for status, label in Loan.Status.choices
+    ]
+
+    # -------------------------------------------------
+    # Monthly activity
+    # -------------------------------------------------
+
+    monthly_interest = defaultdict(lambda: zero)
+    monthly_repayments = defaultdict(lambda: zero)
+    monthly_disbursements = defaultdict(lambda: zero)
+    monthly_savings_deposits = defaultdict(lambda: zero)
+    monthly_savings_withdrawals = defaultdict(lambda: zero)
+
+    for entry in interest_entries:
+        _add_monthly_amount(
+            monthly_interest,
+            entry.created_at,
+            entry.amount,
+        )
+
+    for payment in loan_payments:
+        _add_monthly_amount(
+            monthly_repayments,
+            payment.payment_date,
+            payment.amount,
+        )
+
+    for disbursement in disbursements:
+        _add_monthly_amount(
+            monthly_disbursements,
+            disbursement.disbursed_at,
+            disbursement.amount,
+        )
+
+    for entry in savings_entries:
+        if entry.entry_type == LedgerEntry.EntryType.DEPOSIT:
+            _add_monthly_amount(
+                monthly_savings_deposits,
+                entry.created_at,
+                entry.amount,
+            )
+
+        elif entry.entry_type == LedgerEntry.EntryType.WITHDRAWAL:
+            _add_monthly_amount(
+                monthly_savings_withdrawals,
+                entry.created_at,
+                entry.amount,
+            )
+
+    month_labels = [
+        month.strftime("%b %Y")
+        for month in months
+    ]
+
+    monthly_rows = []
+
+    for month in months:
+        monthly_rows.append({
+            "month": month.strftime("%b %Y"),
+            "interest": monthly_interest[month],
+            "repayments": monthly_repayments[month],
+            "disbursements": monthly_disbursements[month],
+            "savings_deposits": monthly_savings_deposits[month],
+            "savings_withdrawals": monthly_savings_withdrawals[month],
+        })
+
+    # Chart.js receives numeric values.
+    chart_data = {
+        "loan_status": {
+            "labels": loan_status_labels,
+            "values": loan_status_values,
+        },
+        "loan_activity": {
+            "labels": month_labels,
+            "disbursements": [
+                float(monthly_disbursements[month])
+                for month in months
+            ],
+            "repayments": [
+                float(monthly_repayments[month])
+                for month in months
+            ],
+        },
+        "savings_activity": {
+            "labels": month_labels,
+            "deposits": [
+                float(monthly_savings_deposits[month])
+                for month in months
+            ],
+            "withdrawals": [
+                float(monthly_savings_withdrawals[month])
+                for month in months
+            ],
+        },
+        "interest_activity": {
+            "labels": month_labels,
+            "interest": [
+                float(monthly_interest[month])
+                for month in months
+            ],
+        },
+    }
+
+    return {
+        "date_from": date_from,
+        "date_to": date_to,
+        "total_interest": total_interest,
+        "total_repayments": total_repayments,
+        "total_disbursements": total_disbursements,
+        "total_savings_deposits": total_savings_deposits,
+        "total_savings_withdrawals": total_savings_withdrawals,
+        "active_loan_count": active_loan_count,
+        "outstanding_scheduled_balance": outstanding_scheduled_balance,
+        "delinquent_loan_count": delinquent_loan_count,
+        "overdue_amount": overdue_amount,
+        "loan_status_counts": loan_status_counts,
+        "loan_status_labels": loan_status_labels,
+        "loan_status_values": loan_status_values,
+        "monthly_rows": monthly_rows,
+        "chart_data": chart_data,
+    }
+
+
+def _export_management_report_excel(report):
+    workbook = Workbook()
+
+    summary = workbook.active
+    summary.title = "Management Summary"
+
+    summary.append(["BAYAN BANK - MANAGEMENT REPORT"])
+    summary.append([
+        "Reporting period",
+        f"{report['date_from']} to {report['date_to']}",
+    ])
+    summary.append([])
+    summary.append(["Metric", "Actual Amount / Count"])
+
+    summary_data = [
+        ("Savings interest credited", report["total_interest"]),
+        ("Loan repayments collected", report["total_repayments"]),
+        ("Loan disbursements", report["total_disbursements"]),
+        ("Savings deposits", report["total_savings_deposits"]),
+        ("Savings withdrawals", report["total_savings_withdrawals"]),
+        ("Active loans", report["active_loan_count"]),
+        (
+            "Remaining scheduled balance of active loans",
+            report["outstanding_scheduled_balance"],
+        ),
+        ("Delinquent loans", report["delinquent_loan_count"]),
+        ("Overdue installment balance", report["overdue_amount"]),
+    ]
+
+    for row in summary_data:
+        summary.append(list(row))
+
+    summary["A1"].font = Font(
+        bold=True,
+        size=16,
+        color="FFFFFF",
+    )
+    summary["A1"].fill = PatternFill(
+        "solid",
+        fgColor="17365D",
+    )
+
+    for cell in summary[4]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(
+            "solid",
+            fgColor="1F4E78",
+        )
+
+    for row in summary.iter_rows(min_row=5, min_col=2, max_col=2):
+        if isinstance(row[0].value, Decimal):
+            row[0].number_format = '"₱"#,##0.00'
+
+    summary.column_dimensions["A"].width = 48
+    summary.column_dimensions["B"].width = 28
+
+    status_sheet = workbook.create_sheet("Loan Status")
+
+    status_sheet.append(["Loan Status", "Number of Loans"])
+
+    for status, label in Loan.Status.choices:
+        status_sheet.append([
+            label,
+            report["loan_status_counts"].get(status, 0),
+        ])
+
+    for cell in status_sheet[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(
+            "solid",
+            fgColor="1F4E78",
+        )
+
+    status_sheet.column_dimensions["A"].width = 25
+    status_sheet.column_dimensions["B"].width = 20
+
+    activity = workbook.create_sheet("Monthly Activity")
+
+    activity.append([
+        "Month",
+        "Interest Credited",
+        "Loan Repayments",
+        "Loan Disbursements",
+        "Savings Deposits",
+        "Savings Withdrawals",
+    ])
+
+    for row in report["monthly_rows"]:
+        activity.append([
+            row["month"],
+            float(row["interest"]),
+            float(row["repayments"]),
+            float(row["disbursements"]),
+            float(row["savings_deposits"]),
+            float(row["savings_withdrawals"]),
+        ])
+
+    for cell in activity[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(
+            "solid",
+            fgColor="1F4E78",
+        )
+        cell.alignment = Alignment(
+            horizontal="center",
+        )
+
+    for column in activity.columns:
+        activity.column_dimensions[
+            column[0].column_letter
+        ].width = 24
+
+    for row in activity.iter_rows(
+        min_row=2,
+        min_col=2,
+    ):
+        for cell in row:
+            cell.number_format = '"₱"#,##0.00'
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+    )
+
+    response["Content-Disposition"] = (
+        'attachment; filename="bayan_bank_management_report.xlsx"'
+    )
+
+    return response
+
+
+def _export_management_report_pdf(report):
+    output = BytesIO()
+
+    document = SimpleDocTemplate(
+        output,
+        pagesize=letter,
+        rightMargin=0.55 * inch,
+        leftMargin=0.55 * inch,
+        topMargin=0.55 * inch,
+        bottomMargin=0.55 * inch,
+    )
+
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "ReportTitle",
+        parent=styles["Title"],
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#17365D"),
+    )
+
+    elements = [
+        Paragraph(
+            "BAYAN BANK",
+            title_style,
+        ),
+        Paragraph(
+            "Management Reports",
+            styles["Heading2"],
+        ),
+        Paragraph(
+            (
+                f"Reporting period: {report['date_from']} "
+                f"to {report['date_to']}"
+            ),
+            styles["Normal"],
+        ),
+        Spacer(1, 16),
+        Paragraph(
+            "Financial and Transaction Activity",
+            styles["Heading2"],
+        ),
+    ]
+
+    summary_rows = [
+        ["Metric", "Actual Amount / Count"],
+        ["Savings interest credited", f"PHP {report['total_interest']:,.2f}"],
+        ["Loan repayments collected", f"PHP {report['total_repayments']:,.2f}"],
+        ["Loan disbursements", f"PHP {report['total_disbursements']:,.2f}"],
+        ["Savings deposits", f"PHP {report['total_savings_deposits']:,.2f}"],
+        ["Savings withdrawals", f"PHP {report['total_savings_withdrawals']:,.2f}"],
+        ["Active loans", str(report["active_loan_count"])],
+        [
+            "Remaining scheduled balance of active loans",
+            f"PHP {report['outstanding_scheduled_balance']:,.2f}",
+        ],
+        ["Delinquent loans", str(report["delinquent_loan_count"])],
+        [
+            "Overdue installment balance",
+            f"PHP {report['overdue_amount']:,.2f}",
+        ],
+    ]
+
+    summary_table = Table(
+        summary_rows,
+        colWidths=[3.8 * inch, 2.5 * inch],
+        repeatRows=1,
+    )
+
+    summary_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#17365D")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [
+            colors.white,
+            colors.HexColor("#F2F5F9"),
+        ]),
+        ("PADDING", (0, 0), (-1, -1), 7),
+    ]))
+
+    elements.extend([
+        summary_table,
+        Spacer(1, 18),
+        Paragraph(
+            "Loan Status Distribution",
+            styles["Heading2"],
+        ),
+    ])
+
+    status_rows = [["Loan Status", "Number of Loans"]]
+
+    for status, label in Loan.Status.choices:
+        status_rows.append([
+            label,
+            str(report["loan_status_counts"].get(status, 0)),
+        ])
+
+    status_table = Table(
+        status_rows,
+        colWidths=[3.8 * inch, 2.5 * inch],
+        repeatRows=1,
+    )
+
+    status_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#17365D")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+        ("PADDING", (0, 0), (-1, -1), 7),
+    ]))
+
+    elements.extend([
+        status_table,
+        Spacer(1, 18),
+        Paragraph(
+            "Monthly Activity",
+            styles["Heading2"],
+        ),
+    ])
+
+    monthly_rows = [[
+        "Month",
+        "Interest",
+        "Repayments",
+        "Disbursements",
+        "Savings Deposits",
+        "Savings Withdrawals",
+    ]]
+
+    for row in report["monthly_rows"]:
+        monthly_rows.append([
+            row["month"],
+            f"{row['interest']:,.2f}",
+            f"{row['repayments']:,.2f}",
+            f"{row['disbursements']:,.2f}",
+            f"{row['savings_deposits']:,.2f}",
+            f"{row['savings_withdrawals']:,.2f}",
+        ])
+
+    monthly_table = Table(
+        monthly_rows,
+        repeatRows=1,
+    )
+
+    monthly_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#17365D")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 7),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("PADDING", (0, 0), (-1, -1), 5),
+    ]))
+
+    elements.extend([
+        monthly_table,
+        Spacer(1, 14),
+        Paragraph(
+            (
+                "Note: Loan repayments and savings deposits are "
+                "transaction activity, not automatically accounting "
+                "income. Loan disbursements and savings withdrawals "
+                "are not automatically accounting expenses. "
+                "The remaining scheduled loan balance includes "
+                "unpaid scheduled principal, interest, and penalties; "
+                "it is not a principal-only balance."
+            ),
+            styles["Italic"],
+        ),
+    ])
+
+    document.build(elements)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/pdf",
+    )
+
+    response["Content-Disposition"] = (
+        'attachment; filename="bayan_bank_management_report.pdf"'
+    )
+
+    return response
+
+
+@role_required("admin")
 def admin_reports(request):
-    if request.GET.get("export") in {"pdf", "excel"}:
-        messages.info(request, "Export coming soon")
-        return redirect("admin_reports")
+    date_from, date_to = _parse_report_dates(request)
 
-    return render(request, "adminpanel/reports.html")
+    report = _build_management_report(
+        date_from,
+        date_to,
+    )
 
+    export_type = request.GET.get("export", "").lower()
+
+    if export_type == "pdf":
+        return _export_management_report_pdf(report)
+
+    if export_type == "excel":
+        return _export_management_report_excel(report)
+
+    context = {
+        **report,
+        "date_from_value": date_from.isoformat(),
+        "date_to_value": date_to.isoformat(),
+        "chart_data_json": report["chart_data"],
+    }
+
+    return render(
+        request,
+        "adminpanel/reports.html",
+        context,
+    )
 
 @role_required("admin")
 def admin_audit_log(request):

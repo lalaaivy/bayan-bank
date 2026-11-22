@@ -412,17 +412,6 @@ class Disbursement(models.Model):
         null=True,
         blank=True,
         related_name="loan_disbursement_records",
-        null=True,
-        blank=True,
-    )
-
-    # New destination for regular bank account disbursements.
-    bank_account = models.ForeignKey(
-        "accounting.BankAccount",
-        on_delete=models.PROTECT,
-        related_name="loan_disbursement_records",
-        null=True,
-        blank=True,
     )
 
     ledger_entry = models.OneToOneField(

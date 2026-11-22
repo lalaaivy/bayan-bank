@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="kabayan-page">
-
     <div class="kabayan-card">
 
         <div class="kabayan-header">
@@ -25,30 +24,20 @@
         </div>
 
         <div class="kabayan-messages" id="kabayanMessages" aria-live="polite">
-
             <div class="kabayan-message assistant">
                 <div class="kabayan-message-avatar">
                     <i class="bi bi-robot"></i>
                 </div>
 
                 <div class="kabayan-message-content">
-                    <div class="kabayan-bubble">
-                        Hello! I'm Kabayan, your Bayan Bank AI Assistant.
+                    <div class="kabayan-bubble">Hello! I'm Kabayan, your Bayan Bank AI Assistant.
 
-                        <br><br>
+I can help you understand our banking services, savings accounts, loan applications, and repayments.
 
-                        I can help you understand our banking services,
-                        savings accounts, loan applications, and repayments.
-
-                        <br><br>
-
-                        How can I help you today?
-                    </div>
-
+How can I help you today?</div>
                     <small>Just now</small>
                 </div>
             </div>
-
         </div>
 
         <div class="kabayan-suggestions" id="kabayanSuggestions">
@@ -74,7 +63,6 @@
         </div>
 
         <form id="kabayanForm" class="kabayan-input-area">
-
             {% csrf_token %}
 
             <div class="kabayan-input-wrapper">
@@ -88,11 +76,7 @@
                     required
                 ></textarea>
 
-                <button
-                    type="submit"
-                    id="kabayanSend"
-                    aria-label="Send message"
-                >
+                <button type="submit" id="kabayanSend" aria-label="Send message">
                     <i class="bi bi-send-fill"></i>
                 </button>
             </div>
@@ -101,18 +85,16 @@
                 <span>Press Enter to send · Shift + Enter for a new line</span>
                 <span id="kabayanCharCount">0 / 1000</span>
             </div>
-
         </form>
 
     </div>
 
     <p class="kabayan-disclaimer">
         <i class="bi bi-shield-check"></i>
-        Kabayan is an AI assistant. Do not share passwords, PINs,
-        OTPs, or other confidential information.
+        Kabayan is an AI assistant. Do not share passwords, PINs, OTPs,
+        or other confidential information.
         Always verify important financial information through your account.
     </p>
-
 </div>
 
 <style>
@@ -458,7 +440,7 @@
         messages.scrollTop = messages.scrollHeight;
     }
 
-    function addMessage(text, sender) {
+    function createMessage(sender) {
         const wrapper = document.createElement("div");
         wrapper.className = "kabayan-message " + sender;
 
@@ -478,9 +460,6 @@
         const bubble = document.createElement("div");
         bubble.className = "kabayan-bubble";
 
-        // Use textContent to prevent HTML/script injection.
-        bubble.textContent = text;
-
         const timestamp = document.createElement("small");
         timestamp.textContent = "Just now";
 
@@ -492,26 +471,13 @@
 
         messages.appendChild(wrapper);
         scrollToBottom();
+
+        return { wrapper, bubble };
     }
 
     function showTyping() {
-        const wrapper = document.createElement("div");
-        wrapper.className = "kabayan-message assistant";
-        wrapper.id = "kabayanTyping";
-
-        const avatar = document.createElement("div");
-        avatar.className = "kabayan-message-avatar";
-
-        const icon = document.createElement("i");
-        icon.className = "bi bi-robot";
-
-        avatar.appendChild(icon);
-
-        const content = document.createElement("div");
-        content.className = "kabayan-message-content";
-
-        const bubble = document.createElement("div");
-        bubble.className = "kabayan-bubble";
+        const message = createMessage("assistant");
+        message.wrapper.id = "kabayanTyping";
 
         const typing = document.createElement("div");
         typing.className = "kabayan-typing";
@@ -520,14 +486,7 @@
             typing.appendChild(document.createElement("span"));
         }
 
-        bubble.appendChild(typing);
-        content.appendChild(bubble);
-
-        wrapper.appendChild(avatar);
-        wrapper.appendChild(content);
-
-        messages.appendChild(wrapper);
-        scrollToBottom();
+        message.bubble.appendChild(typing);
     }
 
     function removeTyping() {
@@ -543,15 +502,20 @@
             return;
         }
 
-        addMessage(message, "user");
+        createMessage("user").bubble.textContent = message;
 
         input.value = "";
         charCount.textContent = "0 / 1000";
         input.style.height = "auto";
 
-        suggestions.style.display = "none";
+        if (suggestions) {
+            suggestions.style.display = "none";
+        }
+
         sendButton.disabled = true;
         showTyping();
+
+        let assistantMessage = null;
 
         try {
             const response = await fetch(endpoint, {
@@ -560,39 +524,100 @@
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrfToken
                 },
-                body: JSON.stringify({
-                    message: message
-                })
+                body: JSON.stringify({ message })
             });
 
-            const data = await response.json();
+            if (!response.ok) {
+                let errorMessage = "Something went wrong.";
+
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (_) {}
+
+                throw new Error(errorMessage);
+            }
+
+            if (!response.body) {
+                throw new Error("Your browser does not support streaming.");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            let buffer = "";
+            let receivedText = false;
+
+            function processLine(line) {
+                if (!line.trim()) {
+                    return;
+                }
+
+                const data = JSON.parse(line);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                if (data.chunk) {
+                    if (!assistantMessage) {
+                        removeTyping();
+                        assistantMessage = createMessage("assistant");
+                    }
+
+                    receivedText = true;
+                    assistantMessage.bubble.textContent += data.chunk;
+                    scrollToBottom();
+                }
+            }
+
+            while (true) {
+                const result = await reader.read();
+
+                if (result.done) {
+                    break;
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+
+                for (const line of lines) {
+                    processLine(line);
+                }
+            }
+
+            buffer += decoder.decode();
+
+            if (buffer.trim()) {
+                processLine(buffer);
+            }
 
             removeTyping();
 
-            if (!response.ok) {
+            if (!receivedText) {
                 throw new Error(
-                    data.error || "Something went wrong."
+                    "Kabayan could not generate an answer. Please try again."
                 );
             }
-
-            addMessage(
-                data.reply || "I couldn't generate a response.",
-                "assistant"
-            );
 
         } catch (error) {
             removeTyping();
 
-            addMessage(
-                error.message || (
-                    "Kabayan is temporarily unavailable. Please try again."
-                ),
-                "assistant"
-            );
+            if (assistantMessage) {
+                assistantMessage.bubble.textContent +=
+                    "\n\n" + (error.message || "An unexpected error occurred.");
+            } else {
+                createMessage("assistant").bubble.textContent =
+                    error.message ||
+                    "Kabayan is temporarily unavailable. Please try again.";
+            }
 
         } finally {
             sendButton.disabled = false;
             input.focus();
+            scrollToBottom();
         }
     }
 
@@ -601,21 +626,16 @@
 
         const message = input.value.trim();
 
-        if (!message) {
-            return;
+        if (message) {
+            sendMessage(message);
         }
-
-        sendMessage(message);
     });
 
     input.addEventListener("input", function () {
         charCount.textContent = input.value.length + " / 1000";
 
         input.style.height = "auto";
-        input.style.height = Math.min(
-            input.scrollHeight,
-            100
-        ) + "px";
+        input.style.height = Math.min(input.scrollHeight, 100) + "px";
     });
 
     input.addEventListener("keydown", function (event) {
@@ -633,9 +653,7 @@
         ".kabayan-suggestion-list button"
     ).forEach(function (button) {
         button.addEventListener("click", function () {
-            sendMessage(
-                button.dataset.question || ""
-            );
+            sendMessage(button.dataset.question || "");
         });
     });
 })();

@@ -1,55 +1,16 @@
-
 from django.contrib import admin
 
 from .models import BankAccount, LedgerEntry, ReportExport
 
 
+# --------------------------------------------------
+# REGULAR BANK ACCOUNTS (READ-ONLY)
+# --------------------------------------------------
+
 @admin.register(BankAccount)
 class BankAccountAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "account_number",
-        "client",
-        "balance",
-        "status",
-        "opened_at",
-    )
-
-    list_filter = ("status",)
-    search_fields = (
-        "account_number",
-        "client__user__username",
-        "client__user__first_name",
-        "client__user__last_name",
-    )
-
-    readonly_fields = (
-        "client",
-        "account_number",
-        "balance",
-        "status",
-        "opened_at",
-    )
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-from .models import BankAccount, LedgerEntry
-
-
-# --------------------------------------------------
-# REGULAR BANK ACCOUNTS
-# --------------------------------------------------
-
-@admin.register(BankAccount)
-class BankAccountAdmin(admin.ModelAdmin):
-    list_display = (
         "account_number",
         "client",
         "balance",
@@ -65,14 +26,25 @@ class BankAccountAdmin(admin.ModelAdmin):
     search_fields = (
         "account_number",
         "client__user__username",
+        "client__user__first_name",
+        "client__user__last_name",
     )
 
     readonly_fields = (
+        "client",
+        "account_number",
         "balance",
+        "status",
         "opened_at",
     )
 
     ordering = ("-opened_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -131,6 +103,10 @@ class LedgerEntryAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+
+# --------------------------------------------------
+# REPORT EXPORTS (READ-ONLY)
+# --------------------------------------------------
 
 @admin.register(ReportExport)
 class ReportExportAdmin(admin.ModelAdmin):

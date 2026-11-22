@@ -1,4 +1,3 @@
-
 from django.urls import path
 
 from . import views
@@ -29,5 +28,39 @@ urlpatterns = [
         "bank-accounts/<int:account_id>/transactions/excel/",
         views.export_bank_transactions_excel,
         name="export_bank_transactions_excel",
+    ),
+
+    # Staff banking transactions
+    path(
+        "staff/bank-transactions/",
+        bank_views.bank_transactions,
+        name="bank_transactions",
+    ),
+    path(
+        "staff/bank-transactions/deposit/",
+        bank_views.bank_deposit,
+        name="bank_deposit",
+    ),
+    path(
+        "staff/bank-transactions/withdraw/",
+        bank_views.bank_withdraw,
+        name="bank_withdraw",
+    ),
+    path(
+        "staff/bank-transactions/transfer/",
+        bank_views.bank_transfer,
+        name="bank_transfer",
+    ),
+
+    # Client banking transactions
+    path(
+        "my-bank/",
+        client_views.client_bank_page,
+        name="client_bank_page",
+    ),
+    path(
+        "my-bank/transfer/",
+        client_views.client_bank_transfer_view,
+        name="client_bank_transfer",
     ),
 ]

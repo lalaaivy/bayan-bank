@@ -1,22 +1,35 @@
-
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .models import Role, User
 
 
+# --------------------------------------------------
+# ROLES
+# --------------------------------------------------
+
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ("id", "name")
-    search_fields = ("name",)
+    list_display = (
+        "id",
+        "name",
+    )
+
+    search_fields = (
+        "name",
+    )
+
     ordering = ("name",)
 
 
-@admin.register(User)
-class BankUserAdmin(UserAdmin):
-    model = User
+# --------------------------------------------------
+# USERS
+# --------------------------------------------------
 
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
     list_display = (
+        "id",
         "username",
         "email",
         "first_name",
@@ -24,6 +37,7 @@ class BankUserAdmin(UserAdmin):
         "role",
         "is_active",
         "is_staff",
+        "is_superuser",
     )
 
     list_filter = (
@@ -42,10 +56,20 @@ class BankUserAdmin(UserAdmin):
 
     ordering = ("username",)
 
-    fieldsets = UserAdmin.fieldsets + (
-        ("Bank Information", {"fields": ("role",)}),
+    fieldsets = BaseUserAdmin.fieldsets + (
+        (
+            "Banking Role",
+            {
+                "fields": ("role",),
+            },
+        ),
     )
 
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        ("Bank Information", {"fields": ("role",)}),
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        (
+            "Banking Role",
+            {
+                "fields": ("role",),
+            },
+        ),
     )

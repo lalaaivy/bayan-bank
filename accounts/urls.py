@@ -1,20 +1,22 @@
-
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from loans import views as loan_views
 from savings import views as savings_views
+
 from . import views
+from .role_dashboard import role_dashboard
 
 
 urlpatterns = [
+    # Main pages
     path("", views.home, name="home"),
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 
     # Main dashboards
     path("portal/", views.portal_home, name="portal_home"),
-    path("staff/", views.staff_home, name="staff_home"),
+    path("staff/", role_dashboard, name="staff_home"),
     path("officer/", views.officer_home, name="officer_home"),
     path("admin-panel/", views.admin_home, name="admin_home"),
 
@@ -50,7 +52,6 @@ urlpatterns = [
         views.verify_client_detail,
         name="verify_client_detail",
     ),
-    # Backward-compatible name for existing templates
     path(
         "staff/clients/verify/<int:client_id>/",
         views.verify_client_detail,
@@ -64,15 +65,23 @@ urlpatterns = [
 
     # Staff - Payments and Savings
     path("staff/payments/", views.staff_payments, name="staff_payments"),
-    path("staff/payments/history/", views.staff_payment_history, name="staff_payment_history"),
+    path(
+        "staff/payments/history/",
+        views.staff_payment_history,
+        name="staff_payment_history",
+    ),
     path("staff/payments/receipt/", views.staff_receipt, name="staff_receipt"),
     path("staff/savings/", views.staff_savings, name="staff_savings"),
 
     # Staff - Loan Release
     path("staff/loans/release/", views.release_loans, name="release_loans"),
-    path("staff/loans/release/confirm/", views.confirm_loan_release, name="confirm_loan_release"),
+    path(
+        "staff/loans/release/confirm/",
+        views.confirm_loan_release,
+        name="confirm_loan_release",
+    ),
 
-    # Loan officer
+    # Loan Officer
     path("officer/applications/", views.loan_applications, name="loan_applications"),
     path(
         "officer/applications/<int:loan_id>/",
@@ -82,7 +91,7 @@ urlpatterns = [
     path("officer/loans/", views.officer_loans, name="officer_loans"),
     path("officer/loans/detail/", views.officer_loan_detail, name="officer_loan_detail"),
 
-    # Admin panel
+    # Admin Panel
     path("admin-panel/users/", views.admin_users, name="admin_users"),
     path("admin-panel/clients/", views.admin_clients, name="admin_clients"),
     path("admin-panel/users/create/", views.admin_create_user, name="admin_create_user"),
@@ -96,8 +105,16 @@ urlpatterns = [
         views.admin_toggle_user_status,
         name="admin_toggle_user_status",
     ),
-    path("admin-panel/loan-products/", views.admin_loan_products, name="admin_loan_products"),
-    path("admin-panel/loan-products/form/", views.admin_product_form, name="admin_product_form"),
+    path(
+        "admin-panel/loan-products/",
+        views.admin_loan_products,
+        name="admin_loan_products",
+    ),
+    path(
+        "admin-panel/loan-products/form/",
+        views.admin_product_form,
+        name="admin_product_form",
+    ),
     path("admin-panel/reports/", views.admin_reports, name="admin_reports"),
     path("admin-panel/audit-log/", views.admin_audit_log, name="admin_audit_log"),
 ]

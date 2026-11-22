@@ -1,29 +1,442 @@
+
 {% extends "base.html" %}
-{% block title %}Reports - Bayan Bank{% endblock %}
+{% load humanize %}
+
+{% block title %}Management Reports - Bayan Bank{% endblock %}
+
 {% block content %}
-<h3 class="mb-3">Management Reports</h3>
-<a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Admin Dashboard</a>
-<div class="row g-2 align-items-end mb-4">
-  <div class="col-sm-4 col-md-3"><label class="form-label" for="date_from">From</label><input id="date_from" type="date" class="form-control" value="2026-11-01"></div>
-  <div class="col-sm-4 col-md-3"><label class="form-label" for="date_to">To</label><input id="date_to" type="date" class="form-control" value="2026-11-18"></div>
-  <div class="col-sm-4 col-md-3"><button type="button" class="btn btn-outline-dark">Apply Date Range</button></div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="mb-1">Management Reports</h3>
+        <p class="text-muted mb-0">
+            Actual financial and transaction activity from the database
+        </p>
+    </div>
+
+    <a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mt-2">
+        &larr; Back to Admin Dashboard
+    </a>
 </div>
-<div class="row g-3">
-  <div class="col-12"><div class="card shadow-sm"><div class="card-header">Financial Summary</div><div class="card-body">
-    <p>Income: <strong>&#8369; 1,420,500.00</strong> &nbsp; Expense: <strong>&#8369; 385,250.00</strong> &nbsp; Profit: <strong>&#8369; 1,035,250.00</strong></p>
-    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
-  </div></div></div>
-  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Active Loans</div><div class="card-body">
-    <p>386 active loans<br>Outstanding principal: <strong>&#8369; 8,450,000.00</strong></p>
-    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
-  </div></div></div>
-  <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-header">Delinquent Loans</div><div class="card-body">
-    <p>27 delinquent loans<br>Past due: <strong class="text-danger">&#8369; 185,750.00</strong></p>
-    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
-  </div></div></div>
-  <div class="col-12"><div class="card shadow-sm"><div class="card-header">Repayments</div><div class="card-body">
-    <p>Repayments in selected range: <strong>&#8369; 1,420,500.00</strong></p>
-    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=pdf">Download PDF</a> <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_reports' %}?export=excel">Download Excel</a>
-  </div></div></div>
+
+<!-- DATE FILTER -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'admin_reports' %}">
+            <div class="row g-3 align-items-end">
+
+                <div class="col-sm-4 col-md-3">
+                    <label for="date_from" class="form-label">From</label>
+                    <input
+                        type="date"
+                        id="date_from"
+                        name="date_from"
+                        class="form-control"
+                        value="{{ date_from_value }}"
+                        required
+                    >
+                </div>
+
+                <div class="col-sm-4 col-md-3">
+                    <label for="date_to" class="form-label">To</label>
+                    <input
+                        type="date"
+                        id="date_to"
+                        name="date_to"
+                        class="form-control"
+                        value="{{ date_to_value }}"
+                        required
+                    >
+                </div>
+
+                <div class="col-sm-4 col-md-3">
+                    <button type="submit" class="btn btn-outline-dark w-100">
+                        Apply Date Range
+                    </button>
+                </div>
+
+            </div>
+        </form>
+
+        <small class="text-muted d-block mt-3">
+            Reporting period:
+            <strong>{{ date_from }}</strong> to
+            <strong>{{ date_to }}</strong>
+        </small>
+    </div>
 </div>
+
+<!-- FINANCIAL ACTIVITY SUMMARY -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Financial and Transaction Activity</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <div class="p-3 rounded bg-light h-100">
+                    <small class="text-muted">Savings Interest Credited</small>
+                    <h4 class="mb-0 mt-2">
+                        &#8369; {{ total_interest|floatformat:2|intcomma }}
+                    </h4>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 rounded bg-light h-100">
+                    <small class="text-muted">Loan Repayments Collected</small>
+                    <h4 class="mb-0 mt-2">
+                        &#8369; {{ total_repayments|floatformat:2|intcomma }}
+                    </h4>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 rounded bg-light h-100">
+                    <small class="text-muted">Loan Disbursements</small>
+                    <h4 class="mb-0 mt-2">
+                        &#8369; {{ total_disbursements|floatformat:2|intcomma }}
+                    </h4>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 rounded bg-light h-100">
+                    <small class="text-muted">Savings Deposits</small>
+                    <h4 class="mb-0 mt-2">
+                        &#8369; {{ total_savings_deposits|floatformat:2|intcomma }}
+                    </h4>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 rounded bg-light h-100">
+                    <small class="text-muted">Savings Withdrawals</small>
+                    <h4 class="mb-0 mt-2">
+                        &#8369; {{ total_savings_withdrawals|floatformat:2|intcomma }}
+                    </h4>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <a
+                href="{% url 'admin_reports' %}?date_from={{ date_from_value }}&date_to={{ date_to_value }}&export=pdf"
+                class="btn btn-sm btn-outline-dark"
+            >
+                Download PDF
+            </a>
+
+            <a
+                href="{% url 'admin_reports' %}?date_from={{ date_from_value }}&date_to={{ date_to_value }}&export=excel"
+                class="btn btn-sm btn-outline-dark"
+            >
+                Download Excel
+            </a>
+        </div>
+
+        <small class="text-muted d-block mt-3">
+            These figures represent actual transaction activity, not a
+            complete accounting income and expense statement. Loan repayments
+            and savings deposits are not automatically income, and loan
+            disbursements and savings withdrawals are not automatically expenses.
+        </small>
+    </div>
+</div>
+
+<!-- LOAN PORTFOLIO -->
+<div class="row g-3 mb-4">
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Active Loans</h5>
+            </div>
+
+            <div class="card-body">
+                <h2 class="mb-2">{{ active_loan_count|intcomma }}</h2>
+                <p class="text-muted mb-1">Currently active loans</p>
+
+                <hr>
+
+                <small class="text-muted">
+                    Remaining scheduled balance
+                </small>
+
+                <h4 class="mt-1">
+                    &#8369; {{ outstanding_scheduled_balance|floatformat:2|intcomma }}
+                </h4>
+
+                <small class="text-muted">
+                    Includes unpaid scheduled principal, interest, and penalties.
+                    This is not a principal-only balance.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Delinquent Loans</h5>
+            </div>
+
+            <div class="card-body">
+                <h2 class="mb-2 text-danger">
+                    {{ delinquent_loan_count|intcomma }}
+                </h2>
+
+                <p class="text-muted mb-1">
+                    Loans with unpaid overdue installments
+                </p>
+
+                <hr>
+
+                <small class="text-muted">Overdue installment balance</small>
+
+                <h4 class="mt-1 text-danger">
+                    &#8369; {{ overdue_amount|floatformat:2|intcomma }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- CHARTS -->
+<div class="row g-3 mb-4">
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Loan Status Distribution</h5>
+            </div>
+
+            <div class="card-body">
+                <div style="height: 300px; position: relative;">
+                    <canvas id="loanStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Monthly Loan Disbursements vs. Repayments</h5>
+            </div>
+
+            <div class="card-body">
+                <div style="height: 300px; position: relative;">
+                    <canvas id="loanActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Monthly Savings Deposits vs. Withdrawals</h5>
+            </div>
+
+            <div class="card-body">
+                <div style="height: 300px; position: relative;">
+                    <canvas id="savingsActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Monthly Savings Interest Credited</h5>
+            </div>
+
+            <div class="card-body">
+                <div style="height: 300px; position: relative;">
+                    <canvas id="interestActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MONTHLY ACTIVITY TABLE -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Monthly Activity Details</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Month</th>
+                        <th>Interest Credited</th>
+                        <th>Loan Repayments</th>
+                        <th>Loan Disbursements</th>
+                        <th>Savings Deposits</th>
+                        <th>Savings Withdrawals</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in monthly_rows %}
+                    <tr>
+                        <td>{{ row.month }}</td>
+                        <td>&#8369; {{ row.interest|floatformat:2|intcomma }}</td>
+                        <td>&#8369; {{ row.repayments|floatformat:2|intcomma }}</td>
+                        <td>&#8369; {{ row.disbursements|floatformat:2|intcomma }}</td>
+                        <td>&#8369; {{ row.savings_deposits|floatformat:2|intcomma }}</td>
+                        <td>&#8369; {{ row.savings_withdrawals|floatformat:2|intcomma }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No monthly activity available.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- CHART DATA FROM DJANGO -->
+{{ chart_data_json|json_script:"management-report-chart-data" }}
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const chartElement = document.getElementById(
+        "management-report-chart-data"
+    );
+
+    if (!chartElement || typeof Chart === "undefined") {
+        console.error("Management report chart data or Chart.js is unavailable.");
+        return;
+    }
+
+    const chartData = JSON.parse(chartElement.textContent);
+
+    const currencyFormatter = new Intl.NumberFormat("en-PH", {
+        style: "currency",
+        currency: "PHP",
+        minimumFractionDigits: 2
+    });
+
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: "index"
+        },
+        plugins: {
+            legend: {
+                position: "bottom"
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        return context.dataset.label + ": " +
+                            currencyFormatter.format(context.parsed.y ?? context.parsed);
+                    }
+                }
+            }
+        }
+    };
+
+    // LOAN STATUS DISTRIBUTION
+    new Chart(document.getElementById("loanStatusChart"), {
+        type: "doughnut",
+        data: {
+            labels: chartData.loan_status.labels,
+            datasets: [{
+                label: "Number of Loans",
+                data: chartData.loan_status.values,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    });
+
+    // LOAN DISBURSEMENTS VS REPAYMENTS
+    new Chart(document.getElementById("loanActivityChart"), {
+        type: "bar",
+        data: {
+            labels: chartData.loan_activity.labels,
+            datasets: [
+                {
+                    label: "Disbursements",
+                    data: chartData.loan_activity.disbursements,
+                    borderWidth: 1
+                },
+                {
+                    label: "Repayments",
+                    data: chartData.loan_activity.repayments,
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: commonOptions
+    });
+
+    // SAVINGS DEPOSITS VS WITHDRAWALS
+    new Chart(document.getElementById("savingsActivityChart"), {
+        type: "bar",
+        data: {
+            labels: chartData.savings_activity.labels,
+            datasets: [
+                {
+                    label: "Deposits",
+                    data: chartData.savings_activity.deposits,
+                    borderWidth: 1
+                },
+                {
+                    label: "Withdrawals",
+                    data: chartData.savings_activity.withdrawals,
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: commonOptions
+    });
+
+    // SAVINGS INTEREST
+    new Chart(document.getElementById("interestActivityChart"), {
+        type: "line",
+        data: {
+            labels: chartData.interest_activity.labels,
+            datasets: [{
+                label: "Interest Credited",
+                data: chartData.interest_activity.interest,
+                borderWidth: 2,
+                tension: 0.3,
+                fill: false
+            }]
+        },
+        options: commonOptions
+    });
+});
+</script>
+
 {% endblock %}
