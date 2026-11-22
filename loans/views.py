@@ -16,7 +16,9 @@ from .models import Loan, LoanAgreement, LoanProduct
 
 
 STAFF = ("admin", "staff", "loan_officer")
-DECIDERS = ("admin", "loan_officer")
+DECIDERS = ("loan_officer",)
+DISBURSERS = ("staff",)
+PAYMENT_TAKERS = ("staff",)
 
 
 def _int(value):
@@ -211,6 +213,9 @@ def staff_loan(request, loan_id):
             ),
             "accounts": accounts,
             "agreement": agreement,
+            "can_decide": request.user.role.name in DECIDERS,
+            "can_disburse": request.user.role.name in DISBURSERS,
+            "can_record_payment": request.user.role.name in PAYMENT_TAKERS,
         },
     )
 
@@ -219,7 +224,7 @@ def staff_loan(request, loan_id):
 # STAFF: APPROVE LOAN
 # ==========================================
 
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_approve(request, loan_id):
     _run(
@@ -240,7 +245,7 @@ def staff_loan_approve(request, loan_id):
 # STAFF: REJECT LOAN
 # ==========================================
 
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_reject(request, loan_id):
     _run(
@@ -298,7 +303,7 @@ def staff_create_agreement(request, loan_id):
 # STAFF: DISBURSE TO REGULAR BANK ACCOUNT
 # ==========================================
 
-@role_required(*DECIDERS)
+@role_required(*DISBURSERS)
 @require_POST
 def staff_loan_disburse(request, loan_id):
     loan = get_object_or_404(
@@ -332,7 +337,7 @@ def staff_loan_disburse(request, loan_id):
 # STAFF: RECORD PAYMENT
 # ==========================================
 
-@role_required(*STAFF)
+@role_required(*PAYMENT_TAKERS)
 @require_POST
 def staff_loan_pay(request, loan_id):
     _run(

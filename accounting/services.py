@@ -7,7 +7,7 @@ from audit.services import log
 from notifications.models import Notification
 
 
-TRANSACTION_ROLES = ("admin", "staff")
+TRANSACTION_ROLES = ("staff",)
 
 
 def _require_staff(user):

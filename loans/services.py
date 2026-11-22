@@ -22,8 +22,9 @@ from .models import (
 )
 
 
-DECIDERS = ("admin", "loan_officer")
-PAYMENT_TAKERS = ("admin", "staff")
+DECIDERS = ("loan_officer",)
+DISBURSERS = ("staff",)
+PAYMENT_TAKERS = ("staff",)
 
 
 def _require_role(user, allowed, message):
@@ -501,7 +502,7 @@ def accept_loan_agreement(loan_id, by):
 def disburse_loan(loan_id, by, bank_account_id):
     _require_role(
         by,
-        DECIDERS,
+        DISBURSERS,
         "You are not allowed to disburse loans.",
     )
 
