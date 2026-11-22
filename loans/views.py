@@ -31,6 +31,7 @@ from .models import (
 
 STAFF = ("admin", "staff", "loan_officer")
 DECIDERS = ("admin", "loan_officer")
+DISBURSERS = ("admin", "staff")
 
 MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
 MAX_DOCUMENTS = 5
@@ -106,7 +107,8 @@ def portal_loans(request):
         .order_by("-applied_at")
     )
 
-    # Calculate each loan's outstanding amount from its installments.
+    today = timezone.localdate()
+
     for loan in loans:
         installments = list(loan.installments.all())
 
@@ -129,8 +131,12 @@ def portal_loans(request):
             if installment.status != Installment.Status.PAID
         ]
 
-    # Loan repayments use the client's regular bank account,
-    # never the savings account.
+        for installment in installments:
+            installment.remaining_balance = max(
+                installment.total_due - installment.amount_paid,
+                Decimal("0.00"),
+            )
+
     bank_account = BankAccount.objects.filter(
         client=request.client
     ).first()
@@ -139,6 +145,7 @@ def portal_loans(request):
         "loans": loans,
         "products": LoanProduct.objects.filter(is_active=True),
         "bank_account": bank_account,
+        "today": today,
     })
 
 
@@ -222,8 +229,6 @@ def portal_apply(request):
 @client_required
 @require_POST
 def portal_loan_repay(request, loan_id):
-    """Allow a borrower to repay their own active loan online."""
-
     loan = get_object_or_404(
         Loan,
         pk=loan_id,
@@ -335,7 +340,6 @@ def portal_accept_agreement(request, loan_id):
 
 @login_required
 def loan_agreement_pdf(request, loan_id):
-    """Download the agreement as a PDF (borrower or loan staff only)."""
     loan = get_object_or_404(
         Loan.objects.select_related("product", "client__user"),
         pk=loan_id,
@@ -417,7 +421,6 @@ def staff_loan(request, loan_id):
         loan.installments.order_by("number")
     )
 
-    # Calculate repayment totals from the installment schedule.
     total_due = sum(
         (installment.total_due for installment in installments),
         Decimal("0.00"),
@@ -433,7 +436,6 @@ def staff_loan(request, loan_id):
         Decimal("0.00"),
     )
 
-    # Retrieve actual payment records using their own payment timestamps.
     payment_history = (
         LoanPayment.objects.filter(loan=loan)
         .select_related("ledger_entry", "recorded_by")
@@ -446,6 +448,8 @@ def staff_loan(request, loan_id):
         or Decimal("0.00")
     )
 
+    current_role = _user_role(request.user)
+
     return render(request, "staff/loan_detail.html", {
         "loan": loan,
         "installments": installments,
@@ -456,19 +460,18 @@ def staff_loan(request, loan_id):
             "-checked_at"
         ).first(),
         "documents": loan.documents.order_by("-uploaded_at"),
-
-        # Repayment summary
         "total_due": total_due,
         "total_paid": total_paid,
         "total_installment_paid": total_installment_paid,
         "remaining_balance": remaining_balance,
-
-        # Actual payment history
         "payment_history": payment_history,
+        "can_decide": current_role in DECIDERS,
+        "can_create_agreement": current_role in STAFF,
+        "can_disburse": current_role in DISBURSERS,
     })
 
 
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_approve(request, loan_id):
     _run(
@@ -485,7 +488,7 @@ def staff_loan_approve(request, loan_id):
     )
 
 
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_reject(request, loan_id):
     _run(
@@ -503,7 +506,7 @@ def staff_loan_reject(request, loan_id):
     )
 
 
-@role_required(*DECIDERS)
+@role_required(*STAFF)
 @require_POST
 def staff_create_agreement(request, loan_id):
     loan = get_object_or_404(
@@ -533,7 +536,7 @@ def staff_create_agreement(request, loan_id):
     )
 
 
-@role_required(*DECIDERS)
+@role_required(*DISBURSERS)
 @require_POST
 def staff_loan_disburse(request, loan_id):
     loan = get_object_or_404(

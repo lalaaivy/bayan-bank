@@ -13,15 +13,17 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from accounting.models import BankAccount, LedgerEntry
+from accounting.money import BankError
 from audit.models import AuditLog
 from audit.services import log
 from clients.models import Client, ClientDocument
-from accounting.money import BankError
 from loans import services as loan_services
 from loans.calculations import build_schedule
 from loans.models import (
+    Disbursement,
     EligibilityCheck,
     Loan,
+    LoanAgreement,
     LoanProduct,
     LoanRule,
 )
@@ -58,8 +60,6 @@ def home(request):
 def portal_home(request):
     client = request.client
 
-    # Regular bank account balance.
-    # Cash deposits and loan disbursements are credited here.
     bank_account = BankAccount.objects.filter(
         client=client
     ).first()
@@ -70,7 +70,6 @@ def portal_home(request):
         else Decimal("0.00")
     )
 
-    # Each client is allowed only one savings account.
     accounts = SavingsAccount.objects.filter(
         client=client
     )
@@ -80,8 +79,6 @@ def portal_home(request):
         or Decimal("0.00")
     )
 
-    # Interest is calculated separately for each savings deposit.
-    # Only released deposits have finalized and credited interest.
     released_deposits = SavingsDeposit.objects.filter(
         savings_account__client=client,
         status=SavingsDeposit.Status.RELEASED,
@@ -96,26 +93,21 @@ def portal_home(request):
         or Decimal("0.00")
     )
 
-    # Most recently released savings deposit.
     latest_interest = (
         released_deposits
         .order_by("-released_at", "-id")
         .first()
     )
 
-    # Preserve compatibility with dashboard templates that use
-    # latest_interest.posted_at to display the interest date.
     if latest_interest:
         latest_interest.posted_at = latest_interest.released_at
 
-    # Client loan records.
     loans = (
         Loan.objects.filter(client=client)
         .select_related("product")
         .order_by("-applied_at")
     )
 
-    # Actual recent activity from bank, savings, and loan records.
     recent_transactions = (
         LedgerEntry.objects.filter(
             Q(bank_account__client=client)
@@ -767,18 +759,128 @@ def client_document_file(request, doc_id, side):
     return FileResponse(image.open("rb"))
 
 
+# ---------- staff loan release ----------
+
 @role_required("staff", "admin")
 def release_loans(request):
-    return render(request, "staff/release_loan.html")
+    """
+    Show real approved loans that have signed agreements,
+    have not been disbursed, and have an active regular bank account.
+    """
+
+    signed_agreements = LoanAgreement.objects.filter(
+        signed_at__isnull=False,
+    ).order_by("-signed_at", "-id")
+
+    disbursed_loan_ids = Disbursement.objects.values_list(
+        "loan_id",
+        flat=True,
+    )
+
+    loans = (
+        Loan.objects.filter(
+            pk__in=signed_agreements.values("loan_id"),
+            status=Loan.Status.APPROVED,
+        )
+        .exclude(pk__in=disbursed_loan_ids)
+        .select_related("client__user", "product")
+        .order_by("-applied_at", "-id")
+    )
+
+    loan_list = list(loans)
+
+    loan_ids = [loan.pk for loan in loan_list]
+    client_ids = [loan.client_id for loan in loan_list]
+
+    agreements_by_loan = {
+        agreement.loan_id: agreement
+        for agreement in signed_agreements.filter(
+            loan_id__in=loan_ids
+        )
+    }
+
+    accounts = (
+        BankAccount.objects.filter(
+            client_id__in=client_ids,
+            status=BankAccount.Status.ACTIVE,
+        )
+        .order_by("id")
+    )
+
+    accounts_by_client = {}
+
+    for account in accounts:
+        accounts_by_client.setdefault(account.client_id, account)
+
+    for loan in loan_list:
+        loan.release_agreement = agreements_by_loan.get(loan.pk)
+        loan.release_bank_account = accounts_by_client.get(
+            loan.client_id
+        )
+
+    context = {
+        "loans": loan_list,
+    }
+
+    return render(
+        request,
+        "staff/release_loan.html",
+        context,
+    )
 
 
 @role_required("staff", "admin")
 def confirm_loan_release(request):
-    return _demo_form(
+    """
+    Process an actual loan disbursement.
+
+    This view delegates all financial operations and validation
+    to the existing loans.services.disburse_loan() function.
+    """
+
+    if request.method != "POST":
+        return redirect("release_loans")
+
+    loan_id = request.POST.get("loan_id")
+    bank_account_id = request.POST.get("bank_account_id")
+
+    if not loan_id or not bank_account_id:
+        messages.error(
+            request,
+            "Missing loan or bank account information. "
+            "Please try again.",
+        )
+        return redirect("release_loans")
+
+    try:
+        loan_id = int(loan_id)
+        bank_account_id = int(bank_account_id)
+
+        loan = loan_services.disburse_loan(
+            loan_id,
+            request.user,
+            bank_account_id,
+        )
+
+    except (TypeError, ValueError):
+        messages.error(
+            request,
+            "Invalid loan or bank account selection.",
+        )
+        return redirect("release_loans")
+
+    except BankError as error:
+        messages.error(request, str(error))
+        return redirect("release_loans")
+
+    messages.success(
         request,
-        "staff/release_confirmation.html",
-        "release_loans",
+        f"Loan #{loan.pk} was successfully released. "
+        f"₱{loan.principal:,.2f} was credited to the client's "
+        "regular bank account.",
     )
+
+    return redirect("release_loans")
 
 
 @role_required("staff", "admin")
@@ -827,6 +929,7 @@ def loan_applications(request):
         },
     )
 
+
 @role_required("loan_officer", "admin")
 def officer_loans(request):
     loans = (
@@ -837,7 +940,6 @@ def officer_loans(request):
         .order_by("-applied_at", "-id")
     )
 
-    # Optional status filter.
     status_filter = request.GET.get("status", "").strip().lower()
 
     valid_statuses = {
@@ -872,7 +974,6 @@ def loan_application_detail(request, loan_id):
         pk=loan_id,
     )
 
-    # Process the officer's decision using the existing loan services.
     if request.method == "POST":
         decision = request.POST.get("decision", "").strip()
         remarks = request.POST.get("remarks", "").strip()
@@ -940,14 +1041,12 @@ def loan_application_detail(request, loan_id):
 
     client = loan.client
 
-    # Retrieve the latest saved eligibility assessment.
     eligibility = (
         loan.eligibility_checks
         .order_by("-checked_at")
         .first()
     )
 
-    # Retrieve the product's eligibility rules.
     rule = LoanRule.objects.filter(
         product=loan.product,
     ).first()
@@ -982,8 +1081,6 @@ def loan_application_detail(request, loan_id):
         else 0
     )
 
-    # Calculate the proposed installment using the existing
-    # amortization calculation used by the loan service.
     schedule = build_schedule(
         loan.principal,
         loan.annual_rate,
@@ -1001,11 +1098,9 @@ def loan_application_detail(request, loan_id):
         )
     )
 
-    # Actual applicant information.
     monthly_income = client.monthly_income or Decimal("0.00")
     credit_score = client.credit_score or 0
 
-    # Retrieve the actual active savings balance.
     savings_balance = (
         SavingsAccount.objects.filter(
             client=client,
@@ -1018,7 +1113,6 @@ def loan_application_detail(request, loan_id):
     required_savings = loan.principal * min_savings_ratio
     income_limit = monthly_income * max_installment_ratio
 
-    # Calculate age when the date of birth is available.
     age = None
 
     if client.date_of_birth:
@@ -1031,7 +1125,6 @@ def loan_application_detail(request, loan_id):
         ):
             age -= 1
 
-    # Prepare the individual eligibility criteria for display.
     criteria = []
 
     criteria.append({
@@ -1099,7 +1192,6 @@ def loan_application_detail(request, loan_id):
         ),
     })
 
-    # Documents actually uploaded for this application.
     documents = loan.documents.order_by("-uploaded_at")
 
     context = {
@@ -1108,8 +1200,6 @@ def loan_application_detail(request, loan_id):
         "eligibility": eligibility,
         "criteria": criteria,
         "documents": documents,
-
-        # Applicant information
         "applicant_name": (
             client.user.get_full_name()
             or client.user.username
@@ -1122,8 +1212,6 @@ def loan_application_detail(request, loan_id):
         "monthly_income": monthly_income,
         "credit_score": credit_score,
         "age": age,
-
-        # Actual loan and eligibility figures
         "proposed_installment": proposed_installment,
         "savings_balance": savings_balance,
         "required_savings": required_savings,
@@ -1140,6 +1228,7 @@ def loan_application_detail(request, loan_id):
         "officer/application_detail.html",
         context,
     )
+
 
 @role_required("loan_officer", "admin")
 def officer_loan_detail(request):

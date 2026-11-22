@@ -38,6 +38,18 @@ ALLOWED_HOSTS = [
 
 
 # --------------------------------------------------
+# OPENAI AI CHATBOT
+# --------------------------------------------------
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
+OPENAI_MODEL = os.environ.get(
+    "OPENAI_MODEL",
+    "gpt-4.1-mini",
+)
+
+
+# --------------------------------------------------
 # APPLICATIONS
 # --------------------------------------------------
 
@@ -58,6 +70,7 @@ INSTALLED_APPS = [
     "accounting",
     "notifications",
     "audit",
+    "chatbot.apps.ChatbotConfig",
 ]
 
 

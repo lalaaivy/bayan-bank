@@ -17,4 +17,10 @@ urlpatterns = [
         "notifications/",
         include("notifications.urls"),
     ),
+
+    # AI Chatbot
+    path(
+        "chatbot/",
+        include("chatbot.urls"),
+    ),
 ]
