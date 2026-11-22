@@ -1,22 +1,46 @@
 
+import os
+from decimal import Decimal
+
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.db.models import Sum
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from accounting.models import BankAccount
 from accounting.money import BankError
 from accounts.decorators import client_required, role_required
+from clients.models import Client
 
 from . import services
 from .agreement_pdf import generate_agreement_pdf
-from .models import Loan, LoanAgreement, LoanProduct
-
+from .models import (
+    Disbursement,
+    Installment,
+    Loan,
+    LoanAgreement,
+    LoanDocument,
+    LoanPayment,
+    LoanProduct,
+)
 
 STAFF = ("admin", "staff", "loan_officer")
 DECIDERS = ("admin", "loan_officer")
+DISBURSERS = ("admin", "staff")
+
+MAX_DOCUMENT_SIZE = 5 * 1024 * 1024
+MAX_DOCUMENTS = 5
+ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+ALLOWED_DOCUMENT_TYPES = {
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+}
 
 
 def _int(value):
@@ -24,6 +48,10 @@ def _int(value):
         return int(value)
     except (TypeError, ValueError):
         raise Http404
+
+
+def _user_role(user):
+    return getattr(getattr(user, "role", None), "name", None)
 
 
 def _run(request, ok, func, *args):
@@ -35,33 +63,102 @@ def _run(request, ok, func, *args):
         messages.error(request, str(e) or "Not allowed.")
 
 
+def _validate_loan_documents(files):
+    """Validate uploaded loan supporting documents."""
+    if len(files) > MAX_DOCUMENTS:
+        raise BankError(
+            f"You can upload a maximum of {MAX_DOCUMENTS} supporting documents."
+        )
+
+    for uploaded_file in files:
+        extension = os.path.splitext(uploaded_file.name)[1].lower()
+
+        if extension not in ALLOWED_DOCUMENT_EXTENSIONS:
+            raise BankError(
+                f"{uploaded_file.name}: Only PDF, JPG, JPEG, and PNG files are allowed."
+            )
+
+        if uploaded_file.size > MAX_DOCUMENT_SIZE:
+            raise BankError(
+                f"{uploaded_file.name}: File size must not exceed 5 MB."
+            )
+
+        if uploaded_file.size == 0:
+            raise BankError(
+                f"{uploaded_file.name}: Empty files are not allowed."
+            )
+
+        if uploaded_file.content_type not in ALLOWED_DOCUMENT_TYPES:
+            raise BankError(
+                f"{uploaded_file.name}: Unsupported file type."
+            )
+
+
 # ==========================================
 # CLIENT PORTAL
 # ==========================================
 
 @client_required
 def portal_loans(request):
-    loans = (
+    loans = list(
         request.client.loans
         .select_related("product")
+        .prefetch_related("documents", "installments")
         .order_by("-applied_at")
     )
 
-    return render(
-        request,
-        "portal/loans.html",
-        {
-            "loans": loans,
-            "products": LoanProduct.objects.filter(
-                is_active=True
+    today = timezone.localdate()
+
+    for loan in loans:
+        installments = list(loan.installments.all())
+
+        loan.remaining_balance = sum(
+            (
+                installment.total_due - installment.amount_paid
+                for installment in installments
             ),
-        },
-    )
+            Decimal("0.00"),
+        )
+
+        loan.remaining_balance = max(
+            loan.remaining_balance,
+            Decimal("0.00"),
+        )
+
+        loan.unpaid_installments = [
+            installment
+            for installment in installments
+            if installment.status != Installment.Status.PAID
+        ]
+
+        for installment in installments:
+            installment.remaining_balance = max(
+                installment.total_due - installment.amount_paid,
+                Decimal("0.00"),
+            )
+
+    bank_account = BankAccount.objects.filter(
+        client=request.client
+    ).first()
+
+    return render(request, "portal/loans.html", {
+        "loans": loans,
+        "products": LoanProduct.objects.filter(is_active=True),
+        "bank_account": bank_account,
+        "today": today,
+    })
 
 
 @client_required
 @require_POST
 def portal_apply(request):
+    if request.client.verification_status != Client.VerificationStatus.ACTIVE:
+        messages.error(
+            request,
+            "Your account must be verified (Active) before you can apply for a loan.",
+        )
+        return redirect("portal_loans")
+
     product = get_object_or_404(
         LoanProduct,
         pk=_int(request.POST.get("product")),
@@ -71,20 +168,79 @@ def portal_apply(request):
     try:
         term = int(request.POST.get("term_months", ""))
     except (TypeError, ValueError):
+        messages.error(request, "Enter the term in whole months.")
+        return redirect("portal_loans")
+
+    purpose = (request.POST.get("purpose") or "").strip()
+    documents = request.FILES.getlist("documents")
+    document_type = request.POST.get(
+        "document_type",
+        LoanDocument.DocumentType.OTHER,
+    )
+
+    if document_type not in LoanDocument.DocumentType.values:
+        messages.error(request, "Select a valid supporting document type.")
+        return redirect("portal_loans")
+
+    try:
+        if not purpose:
+            raise BankError(
+                "Please provide the purpose of your loan application."
+            )
+
+        if len(purpose) > 1000:
+            raise BankError(
+                "Loan purpose cannot exceed 1,000 characters."
+            )
+
+        _validate_loan_documents(documents)
+
+        loan = services.apply_for_loan(
+            request.client,
+            product,
+            request.POST.get("principal"),
+            term,
+            request.user,
+            purpose,
+        )
+
+        for uploaded_file in documents:
+            LoanDocument.objects.create(
+                loan=loan,
+                document_type=document_type,
+                file=uploaded_file,
+                uploaded_by=request.user,
+            )
+
+        messages.success(
+            request,
+            "Loan application submitted successfully.",
+        )
+
+    except BankError as e:
         messages.error(
             request,
-            "Enter the term in whole months.",
+            str(e) or "Unable to submit loan application.",
         )
-        return redirect("portal_loans")
+
+    return redirect("portal_loans")
+
+
+@client_required
+@require_POST
+def portal_loan_repay(request, loan_id):
+    loan = get_object_or_404(
+        Loan,
+        pk=loan_id,
+        client=request.client,
+    )
 
     _run(
         request,
-        "Application submitted.",
-        services.apply_for_loan,
-        request.client,
-        product,
-        request.POST.get("principal"),
-        term,
+        "Loan payment successful. Your bank account has been debited.",
+        services.make_online_payment,
+        loan.pk,
+        request.POST.get("amount"),
         request.user,
     )
 
@@ -92,16 +248,48 @@ def portal_apply(request):
 
 
 # ==========================================
-# CLIENT: VIEW LOAN AGREEMENT
+# LOAN DOCUMENT DOWNLOAD
+# ==========================================
+
+@login_required
+def loan_document_download(request, document_id):
+    document = get_object_or_404(
+        LoanDocument.objects.select_related("loan__client__user"),
+        pk=document_id,
+    )
+
+    role = _user_role(request.user)
+
+    if role == "client":
+        if document.loan.client.user_id != request.user.pk:
+            raise PermissionDenied
+    elif role not in STAFF:
+        raise PermissionDenied
+
+    try:
+        file_handle = document.file.open("rb")
+    except (FileNotFoundError, OSError, ValueError):
+        raise Http404(
+            "The requested document could not be found."
+        )
+
+    filename = os.path.basename(document.file.name)
+
+    return FileResponse(
+        file_handle,
+        as_attachment=True,
+        filename=filename,
+    )
+
+
+# ==========================================
+# LOAN AGREEMENT
 # ==========================================
 
 @client_required
 def portal_loan_agreement(request, loan_id):
     loan = get_object_or_404(
-        Loan.objects.select_related(
-            "product",
-            "client__user",
-        ),
+        Loan.objects.select_related("product", "client__user"),
         pk=loan_id,
         client=request.client,
     )
@@ -111,19 +299,11 @@ def portal_loan_agreement(request, loan_id):
         loan=loan,
     )
 
-    return render(
-        request,
-        "portal/loan_agreement.html",
-        {
-            "loan": loan,
-            "agreement": agreement,
-        },
-    )
+    return render(request, "portal/loan_agreement.html", {
+        "loan": loan,
+        "agreement": agreement,
+    })
 
-
-# ==========================================
-# CLIENT: ACCEPT AGREEMENT
-# ==========================================
 
 @client_required
 @require_POST
@@ -158,15 +338,54 @@ def portal_accept_agreement(request, loan_id):
     )
 
 
+@login_required
+def loan_agreement_pdf(request, loan_id):
+    loan = get_object_or_404(
+        Loan.objects.select_related("product", "client__user"),
+        pk=loan_id,
+    )
+
+    role = _user_role(request.user)
+
+    if role == "client":
+        if loan.client.user_id != request.user.pk:
+            raise PermissionDenied
+    elif role not in STAFF:
+        raise PermissionDenied
+
+    agreement = get_object_or_404(
+        LoanAgreement,
+        loan=loan,
+    )
+
+    try:
+        pdf = generate_agreement_pdf(loan, agreement)
+    except TypeError:
+        pdf = generate_agreement_pdf(agreement)
+
+    if hasattr(pdf, "getvalue"):
+        pdf = pdf.getvalue()
+
+    response = HttpResponse(
+        pdf,
+        content_type="application/pdf",
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="{agreement.agreement_number}.pdf"'
+    )
+
+    return response
+
+
 # ==========================================
-# STAFF: LOAN LIST
+# STAFF
 # ==========================================
 
 @role_required(*STAFF)
 def staff_loans(request):
     loans = (
-        Loan.objects
-        .select_related("client__user", "product")
+        Loan.objects.select_related("client__user", "product")
         .order_by("-applied_at")[:100]
     )
 
@@ -177,17 +396,10 @@ def staff_loans(request):
     )
 
 
-# ==========================================
-# STAFF: LOAN DETAILS
-# ==========================================
-
 @role_required(*STAFF)
 def staff_loan(request, loan_id):
     loan = get_object_or_404(
-        Loan.objects.select_related(
-            "client__user",
-            "product",
-        ),
+        Loan.objects.select_related("client__user", "product"),
         pk=loan_id,
     )
 
@@ -195,31 +407,71 @@ def staff_loan(request, loan_id):
         loan=loan
     ).first()
 
-    # Only active regular bank accounts belonging to this client.
-    accounts = BankAccount.objects.filter(
-        client=loan.client,
-        status=BankAccount.Status.ACTIVE,
-    ).order_by("account_number")
+    bank_account = BankAccount.objects.filter(
+        client=loan.client
+    ).first()
 
-    return render(
-        request,
-        "staff/loan_detail.html",
-        {
-            "loan": loan,
-            "installments": loan.installments.order_by(
-                "number"
-            ),
-            "accounts": accounts,
-            "agreement": agreement,
-        },
+    disbursement = (
+        Disbursement.objects.filter(loan=loan)
+        .select_related("bank_account", "disbursed_by", "ledger_entry")
+        .first()
     )
 
+    installments = list(
+        loan.installments.order_by("number")
+    )
 
-# ==========================================
-# STAFF: APPROVE LOAN
-# ==========================================
+    total_due = sum(
+        (installment.total_due for installment in installments),
+        Decimal("0.00"),
+    )
 
-@role_required(*STAFF)
+    total_installment_paid = sum(
+        (installment.amount_paid for installment in installments),
+        Decimal("0.00"),
+    )
+
+    remaining_balance = max(
+        total_due - total_installment_paid,
+        Decimal("0.00"),
+    )
+
+    payment_history = (
+        LoanPayment.objects.filter(loan=loan)
+        .select_related("ledger_entry", "recorded_by")
+        .order_by("-payment_date", "-pk")
+    )
+
+    total_paid = (
+        LoanPayment.objects.filter(loan=loan)
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
+    )
+
+    current_role = _user_role(request.user)
+
+    return render(request, "staff/loan_detail.html", {
+        "loan": loan,
+        "installments": installments,
+        "bank_account": bank_account,
+        "agreement": agreement,
+        "disbursement": disbursement,
+        "eligibility": loan.eligibility_checks.order_by(
+            "-checked_at"
+        ).first(),
+        "documents": loan.documents.order_by("-uploaded_at"),
+        "total_due": total_due,
+        "total_paid": total_paid,
+        "total_installment_paid": total_installment_paid,
+        "remaining_balance": remaining_balance,
+        "payment_history": payment_history,
+        "can_decide": current_role in DECIDERS,
+        "can_create_agreement": current_role in STAFF,
+        "can_disburse": current_role in DISBURSERS,
+    })
+
+
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_approve(request, loan_id):
     _run(
@@ -236,11 +488,7 @@ def staff_loan_approve(request, loan_id):
     )
 
 
-# ==========================================
-# STAFF: REJECT LOAN
-# ==========================================
-
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_reject(request, loan_id):
     _run(
@@ -258,11 +506,7 @@ def staff_loan_reject(request, loan_id):
     )
 
 
-# ==========================================
-# STAFF: CREATE LOAN AGREEMENT
-# ==========================================
-
-@role_required(*DECIDERS)
+@role_required(*STAFF)
 @require_POST
 def staff_create_agreement(request, loan_id):
     loan = get_object_or_404(
@@ -270,14 +514,12 @@ def staff_create_agreement(request, loan_id):
         pk=loan_id,
     )
 
-    agreement_number = f"AGR-{loan.pk:06d}"
-
     _run(
         request,
         "Loan agreement created.",
         services.create_loan_agreement,
         loan.pk,
-        agreement_number,
+        f"AGR-{loan.pk:06d}",
         timezone.localdate(),
         (
             "The borrower agrees to repay the loan "
@@ -294,11 +536,7 @@ def staff_create_agreement(request, loan_id):
     )
 
 
-# ==========================================
-# STAFF: DISBURSE TO REGULAR BANK ACCOUNT
-# ==========================================
-
-@role_required(*DECIDERS)
+@role_required(*DISBURSERS)
 @require_POST
 def staff_loan_disburse(request, loan_id):
     loan = get_object_or_404(
@@ -315,7 +553,7 @@ def staff_loan_disburse(request, loan_id):
 
     _run(
         request,
-        "Loan disbursed to regular bank account.",
+        "Loan disbursed to the client's regular bank account.",
         services.disburse_loan,
         loan.pk,
         request.user,
@@ -324,13 +562,9 @@ def staff_loan_disburse(request, loan_id):
 
     return redirect(
         "staff_loan",
-        loan_id=loan.pk,
+        loan_id=loan_id,
     )
 
-
-# ==========================================
-# STAFF: RECORD PAYMENT
-# ==========================================
 
 @role_required(*STAFF)
 @require_POST
@@ -351,49 +585,92 @@ def staff_loan_pay(request, loan_id):
 
 
 # ==========================================
-# AGREEMENT PDF DOWNLOAD
+# CALENDAR
 # ==========================================
 
-def loan_agreement_pdf(request, loan_id):
-    if not request.user.is_authenticated:
+@login_required
+def calendar_page(request):
+    if _user_role(request.user) not in STAFF + ("client",):
         raise PermissionDenied
 
-    loan = get_object_or_404(
-        Loan.objects.select_related(
-            "client__user",
-            "product",
-        ),
-        pk=loan_id,
+    return render(
+        request,
+        "loans/calendar.html",
     )
 
-    is_owner = loan.client.user_id == request.user.pk
 
-    role = getattr(request.user, "role", None)
-    role_name = getattr(role, "name", None)
+@login_required
+def calendar_events(request):
+    role = _user_role(request.user)
 
-    is_staff = role_name in STAFF
+    qs = Installment.objects.select_related(
+        "loan__client__user",
+        "loan__product",
+    )
 
-    if not is_owner and not is_staff:
+    if role == "client":
+        try:
+            qs = qs.filter(
+                loan__client=request.user.client_profile
+            )
+        except ObjectDoesNotExist:
+            raise PermissionDenied
+    elif role not in STAFF:
         raise PermissionDenied
 
-    agreement = get_object_or_404(
-        LoanAgreement,
-        loan=loan,
+    start = parse_date(
+        (request.GET.get("start") or "")[:10]
     )
 
-    pdf_bytes = generate_agreement_pdf(
-        loan,
-        agreement,
+    end = parse_date(
+        (request.GET.get("end") or "")[:10]
     )
 
-    response = HttpResponse(
-        pdf_bytes,
-        content_type="application/pdf",
-    )
+    if start and end:
+        qs = qs.filter(
+            due_date__gte=start,
+            due_date__lt=end,
+        )
 
-    response["Content-Disposition"] = (
-        f'attachment; filename="'
-        f'{agreement.agreement_number}.pdf"'
-    )
+    today = timezone.localdate()
+    events = []
 
-    return response
+    for installment in qs[:1000]:
+        amount = (
+            installment.principal_due
+            + installment.interest_due
+        )
+
+        if installment.status == Installment.Status.PAID:
+            color = "#198754"
+        elif (
+            installment.status == Installment.Status.OVERDUE
+            or installment.due_date < today
+        ):
+            color = "#dc3545"
+        else:
+            color = "#0d6efd"
+
+        title = f"₱ {amount:,.2f}"
+
+        if role != "client":
+            title = f"{installment.loan.client} · {title}"
+
+        event = {
+            "title": title,
+            "start": installment.due_date.isoformat(),
+            "color": color,
+            "allDay": True,
+        }
+
+        if role != "client":
+            event["url"] = (
+                f"/staff/loans/{installment.loan_id}/"
+            )
+
+        events.append(event)
+
+    return JsonResponse(
+        events,
+        safe=False,
+    )

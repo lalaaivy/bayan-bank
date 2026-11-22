@@ -1,0 +1,39 @@
+{% extends "base_client.html" %}
+{% block title %}Upload Identification - Bayan Bank{% endblock %}
+{% block content %}
+<h3 class="mb-3">Upload Identification</h3>
+<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+
+{% if client.verification_status == "rejected" %}
+<div class="alert alert-danger">Your previous ID was rejected. Please upload a clear photo of a valid ID.</div>
+{% endif %}
+
+<div class="card shadow-sm"><div class="card-body">
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="mb-3">
+    <label class="form-label" for="{{ form.id_type.id_for_label }}">ID Type</label>
+    {{ form.id_type }}
+    {% for error in form.id_type.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="{{ form.front_image.id_for_label }}">Front Image</label>
+    {{ form.front_image }}
+    <div class="form-text">JPG or PNG, up to 5 MB.</div>
+    {% for error in form.front_image.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="{{ form.back_image.id_for_label }}">Back Image (optional)</label>
+    {{ form.back_image }}
+    {% for error in form.back_image.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+  </div>
+
+  <button class="btn btn-dark">Submit for Verification</button>
+</form>
+</div></div>
+{% endblock %}

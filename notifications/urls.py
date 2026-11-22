@@ -3,20 +3,21 @@ from django.urls import path
 
 from . import views
 
+
 urlpatterns = [
     path(
-        "notifications/",
+        "",
         views.notification_list,
         name="notification_list",
     ),
     path(
-        "notifications/<int:notification_id>/open/",
-        views.notification_open,
-        name="notification_open",
+        "<int:notification_id>/read/",
+        views.mark_notification_read,
+        name="mark_notification_read",
     ),
     path(
-        "notifications/mark-all-read/",
-        views.notification_mark_all_read,
-        name="notification_mark_all_read",
+        "mark-all-read/",
+        views.mark_all_notifications_read,
+        name="mark_all_notifications_read",
     ),
 ]

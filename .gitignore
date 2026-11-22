@@ -16,6 +16,7 @@ db.sqlite3
 
 # Private uploaded files
 private_media/
+private_uploads/
 
 # Collected static files
 staticfiles/

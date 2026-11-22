@@ -1,5 +1,4 @@
 
-from datetime import timedelta
 from decimal import Decimal
 from html import escape
 from io import BytesIO
@@ -7,6 +6,7 @@ from io import BytesIO
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -28,8 +28,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from accounting.models import LedgerEntry, ReportExport
-from .models import Loan
+from accounting.models import ReportExport
+from .models import Loan, LoanPayment
 
 
 def _get_loan(request, loan_id):
@@ -65,6 +65,7 @@ def _report_data(request, loan_id):
         if raw_from is not None
         else loan.applied_at.date()
     )
+
     date_to = (
         parse_date(raw_to)
         if raw_to is not None
@@ -82,25 +83,39 @@ def _report_data(request, loan_id):
     )
 
     payments = list(
-        LedgerEntry.objects.filter(
+        LoanPayment.objects.filter(
             loan=loan,
-            entry_type=LedgerEntry.EntryType.LOAN_PAYMENT,
-            created_at__date__gte=date_from,
-            created_at__date__lte=date_to,
-        ).order_by("created_at", "id")
+            payment_date__date__gte=date_from,
+            payment_date__date__lte=date_to,
+        )
+        .select_related("ledger_entry", "recorded_by")
+        .order_by("payment_date", "pk")
     )
 
     total_due = sum(
         (item.total_due for item in installments),
         Decimal("0.00"),
     )
-    total_paid = sum(
+
+    total_applied = sum(
         (item.amount_paid for item in installments),
         Decimal("0.00"),
     )
+
+    total_paid = (
+        LoanPayment.objects.filter(loan=loan)
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0.00")
+    )
+
     remaining = max(
-        total_due - total_paid,
+        total_due - total_applied,
         Decimal("0.00"),
+    )
+
+    holder = (
+        loan.client.user.get_full_name()
+        or loan.client.user.username
     )
 
     return {
@@ -111,11 +126,9 @@ def _report_data(request, loan_id):
         "date_to": date_to,
         "total_due": total_due,
         "total_paid": total_paid,
+        "total_applied": total_applied,
         "remaining": remaining,
-        "holder": (
-            loan.client.user.get_full_name()
-            or loan.client.user.username
-        ),
+        "holder": holder,
     }, None
 
 
@@ -138,9 +151,19 @@ def _filename(data, extension):
     )
 
 
+def _payment_reference(payment):
+    reference = payment.ledger_entry.reference
+
+    if reference:
+        return reference
+
+    return f"Payment #{payment.pk}"
+
+
 @login_required
 def export_loan_pdf(request, loan_id):
     data, error = _report_data(request, loan_id)
+
     if error is not None:
         return error
 
@@ -186,46 +209,68 @@ def export_loan_pdf(request, loan_id):
         ),
     ]
 
-    rows = [[
-        "#", "Due Date", "Principal",
-        "Interest", "Paid", "Status",
+    schedule_rows = [[
+        "#",
+        "Due Date",
+        "Principal",
+        "Interest",
+        "Penalty",
+        "Total Due",
+        "Paid",
+        "Status",
     ]]
 
     for item in data["installments"]:
-        rows.append([
+        schedule_rows.append([
             str(item.number),
             str(item.due_date),
             f"{item.principal_due:,.2f}",
             f"{item.interest_due:,.2f}",
+            f"{item.penalty_amount:,.2f}",
+            f"{item.total_due:,.2f}",
             f"{item.amount_paid:,.2f}",
             item.get_status_display(),
         ])
 
     if not data["installments"]:
-        rows.append([
-            "-", "Not scheduled", "-", "-", "-", "-"
+        schedule_rows.append([
+            "-", "Not scheduled", "-", "-",
+            "-", "-", "-", "-",
         ])
 
-    table = Table(
-        rows,
+    schedule_table = Table(
+        schedule_rows,
         colWidths=[
-            10 * mm, 34 * mm, 34 * mm,
-            34 * mm, 34 * mm, 34 * mm,
+            8 * mm,
+            23 * mm,
+            23 * mm,
+            20 * mm,
+            20 * mm,
+            25 * mm,
+            25 * mm,
+            21 * mm,
         ],
         repeatRows=1,
     )
 
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#163A63")),
+    schedule_table.setStyle(TableStyle([
+        (
+            "BACKGROUND",
+            (0, 0),
+            (-1, 0),
+            colors.HexColor("#163A63"),
+        ),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 7),
+        ("FONTSIZE", (0, 0), (-1, -1), 6.5),
         ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-        ("ALIGN", (2, 1), (4, -1), "RIGHT"),
+        ("ALIGN", (2, 1), (6, -1), "RIGHT"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
     ]))
 
-    story.append(table)
+    story.append(schedule_table)
     story.append(Spacer(1, 12))
 
     story.append(Paragraph(
@@ -234,47 +279,76 @@ def export_loan_pdf(request, loan_id):
     ))
 
     payment_rows = [[
-        "Date", "Reference", "Amount (PHP)",
+        "Payment Date",
+        "Reference",
+        "Amount (PHP)",
     ]]
 
-    for entry in data["payments"]:
+    for payment in data["payments"]:
         payment_rows.append([
             timezone.localtime(
-                entry.created_at
+                payment.payment_date
             ).strftime("%Y-%m-%d %H:%M"),
-            p(entry.reference or "-"),
-            f"{entry.amount:,.2f}",
+            p(_payment_reference(payment)),
+            f"{payment.amount:,.2f}",
         ])
 
     if not data["payments"]:
         payment_rows.append([
-            "No payments in selected period", "", ""
+            "No payments in selected period",
+            "",
+            "",
         ])
 
     payment_table = Table(
         payment_rows,
-        colWidths=[45 * mm, 80 * mm, 55 * mm],
+        colWidths=[
+            45 * mm,
+            80 * mm,
+            55 * mm,
+        ],
         repeatRows=1,
     )
 
     payment_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#163A63")),
+        (
+            "BACKGROUND",
+            (0, 0),
+            (-1, 0),
+            colors.HexColor("#163A63"),
+        ),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 8),
         ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("ALIGN", (2, 1), (2, -1), "RIGHT"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]))
 
     story.append(payment_table)
     story.append(Spacer(1, 12))
+
     story.extend([
-        p(f"Scheduled Total: PHP {data['total_due']:,.2f}"),
-        p(f"Total Applied to Installments: PHP {data['total_paid']:,.2f}"),
-        p(f"Remaining Scheduled Balance: PHP {data['remaining']:,.2f}"),
+        p(
+            f"Scheduled Total: "
+            f"PHP {data['total_due']:,.2f}"
+        ),
+        p(
+            f"Total Payments Recorded: "
+            f"PHP {data['total_paid']:,.2f}"
+        ),
+        p(
+            f"Total Applied to Installments: "
+            f"PHP {data['total_applied']:,.2f}"
+        ),
+        p(
+            f"Remaining Scheduled Balance: "
+            f"PHP {data['remaining']:,.2f}"
+        ),
     ])
 
     document.build(story)
+
     filename = _filename(data, "pdf")
 
     with transaction.atomic():
@@ -289,21 +363,29 @@ def export_loan_pdf(request, loan_id):
         buffer.getvalue(),
         content_type="application/pdf",
     )
+
     response["Content-Disposition"] = (
         f'attachment; filename="{filename}"'
     )
+
     buffer.close()
+
     return response
 
 
 @login_required
 def export_loan_excel(request, loan_id):
     data, error = _report_data(request, loan_id)
+
     if error is not None:
         return error
 
     loan = data["loan"]
     workbook = Workbook()
+
+    # ------------------------------------------
+    # LOAN SUMMARY
+    # ------------------------------------------
 
     summary = workbook.active
     summary.title = "Loan Summary"
@@ -322,23 +404,28 @@ def export_loan_excel(request, loan_id):
     summary.append(["Report To", data["date_to"]])
     summary.append([])
     summary.append(["Scheduled Total", data["total_due"]])
-    summary.append(["Total Applied Payments", data["total_paid"]])
+    summary.append(["Total Payments Recorded", data["total_paid"]])
+    summary.append(["Total Applied to Installments", data["total_applied"]])
     summary.append(["Remaining Scheduled Balance", data["remaining"]])
 
-    for row in (6, 14, 15, 16):
+    for row in (6, 14, 15, 16, 17):
         summary.cell(row, 2).number_format = '#,##0.00'
 
     for row in (10, 11, 12):
         summary.cell(row, 2).number_format = "yyyy-mm-dd"
 
-    installments_sheet = workbook.create_sheet(
-        "Amortization"
-    )
+    # ------------------------------------------
+    # AMORTIZATION SCHEDULE
+    # ------------------------------------------
+
+    installments_sheet = workbook.create_sheet("Amortization")
+
     installments_sheet.append([
         "Installment #",
         "Due Date",
         "Principal",
         "Interest",
+        "Penalty",
         "Total Due",
         "Amount Paid",
         "Remaining",
@@ -351,6 +438,7 @@ def export_loan_excel(request, loan_id):
             item.due_date,
             item.principal_due,
             item.interest_due,
+            item.penalty_amount,
             item.total_due,
             item.amount_paid,
             max(
@@ -360,32 +448,47 @@ def export_loan_excel(request, loan_id):
             item.get_status_display(),
         ])
 
-    payments_sheet = workbook.create_sheet(
-        "Payment History"
-    )
+    # ------------------------------------------
+    # PAYMENT HISTORY
+    # ------------------------------------------
+
+    payments_sheet = workbook.create_sheet("Payment History")
+
     payments_sheet.append([
         "Payment Date",
         "Reference",
+        "Recorded By",
         "Amount",
     ])
 
-    for entry in data["payments"]:
+    for payment in data["payments"]:
         payments_sheet.append([
             timezone.localtime(
-                entry.created_at
+                payment.payment_date
             ).replace(tzinfo=None),
-            entry.reference,
-            entry.amount,
+            _payment_reference(payment),
+            str(payment.recorded_by),
+            payment.amount,
         ])
+
+    if not data["payments"]:
+        payments_sheet.append([
+            "No payments in selected period",
+            "",
+            "",
+            "",
+        ])
+
+    # ------------------------------------------
+    # FORMATTING
+    # ------------------------------------------
 
     for sheet in workbook.worksheets:
         sheet.freeze_panes = (
             "A2" if sheet != summary else "A3"
         )
 
-        header_row = 1
-
-        for cell in sheet[header_row]:
+        for cell in sheet[1]:
             cell.font = Font(
                 bold=True,
                 color="FFFFFF",
@@ -404,25 +507,28 @@ def export_loan_excel(request, loan_id):
     installments_sheet.auto_filter.ref = (
         installments_sheet.dimensions
     )
+
     payments_sheet.auto_filter.ref = (
         payments_sheet.dimensions
     )
 
-    for row in installments_sheet.iter_rows(
-        min_row=2
-    ):
+    for row in installments_sheet.iter_rows(min_row=2):
         row[1].number_format = "yyyy-mm-dd"
-        for cell in row[2:7]:
+
+        for cell in row[2:8]:
             cell.number_format = '#,##0.00'
 
-    for row in payments_sheet.iter_rows(
-        min_row=2
-    ):
+    for row in payments_sheet.iter_rows(min_row=2):
         row[0].number_format = "yyyy-mm-dd hh:mm"
-        row[2].number_format = '#,##0.00'
+        row[3].number_format = '#,##0.00'
+
+    # ------------------------------------------
+    # SAVE AND DOWNLOAD
+    # ------------------------------------------
 
     buffer = BytesIO()
     workbook.save(buffer)
+
     filename = _filename(data, "xlsx")
 
     with transaction.atomic():
@@ -440,8 +546,11 @@ def export_loan_excel(request, loan_id):
             "spreadsheetml.sheet"
         ),
     )
+
     response["Content-Disposition"] = (
         f'attachment; filename="{filename}"'
     )
+
     buffer.close()
+
     return response

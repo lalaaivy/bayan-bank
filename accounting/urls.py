@@ -7,7 +7,7 @@ from . import client_views
 
 
 urlpatterns = [
-    # Savings transaction exports
+    # Savings account statements
     path(
         "accounts/<int:account_id>/transactions/pdf/",
         views.export_transactions_pdf,
@@ -19,37 +19,15 @@ urlpatterns = [
         name="export_transactions_excel",
     ),
 
-    # Staff bank transactions
+    # Regular bank account statements
     path(
-        "bank/transactions/",
-        bank_views.bank_transactions,
-        name="bank_transactions",
+        "bank-accounts/<int:account_id>/transactions/pdf/",
+        views.export_bank_transactions_pdf,
+        name="export_bank_transactions_pdf",
     ),
     path(
-        "bank/deposit/",
-        bank_views.bank_deposit,
-        name="bank_deposit",
-    ),
-    path(
-        "bank/withdraw/",
-        bank_views.bank_withdraw,
-        name="bank_withdraw",
-    ),
-    path(
-        "bank/transfer/",
-        bank_views.bank_transfer,
-        name="bank_transfer",
-    ),
-
-    # Client bank transactions
-    path(
-        "portal/bank/",
-        client_views.client_bank_page,
-        name="client_bank_page",
-    ),
-    path(
-        "portal/bank/transfer/",
-        client_views.client_bank_transfer_view,
-        name="client_bank_transfer",
+        "bank-accounts/<int:account_id>/transactions/excel/",
+        views.export_bank_transactions_excel,
+        name="export_bank_transactions_excel",
     ),
 ]

@@ -1,69 +1,87 @@
 
 {% extends "base.html" %}
+
 {% block title %}Login - Bayan Bank{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-body p-4">
 
-        <h4 class="text-center mb-1">Welcome back</h4>
-        <p class="text-center text-muted mb-4">Sign in to your account</p>
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5 col-xl-4">
 
-        {% if form.errors %}
-          <div class="alert alert-danger">
-            Invalid username or password. Please try again.
-          </div>
-        {% endif %}
+        <div class="card auth-card shadow-sm">
+            <div class="card-body p-4">
+                <div class="auth-logo"><i class="bi bi-bank2" aria-hidden="true"></i></div>
+                <h3 class="text-center mb-1">Welcome back</h3>
+                <p class="text-center text-muted mb-4">
+                    Sign in to your account
+                </p>
 
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ next }}">
+                {% if form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        Invalid username or password. Please try again.
+                        {{ form.errors }}
+                    </div>
+                {% endif %}
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>5 wrong passwords will lock your account for 15 minutes.
+                </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="id_username">Username</label>
-            <input type="text" name="username" id="id_username"
-                   class="form-control" required autofocus>
-          </div>
+                <form method="post">
+                    {% csrf_token %}
 
-          <div class="mb-3">
-            <label class="form-label" for="id_password">Password</label>
-            <input type="password" name="password" id="id_password"
-                   class="form-control" required>
-          </div>
+                    <input type="hidden" name="next" value="{{ next }}">
 
-          <button type="submit" class="btn btn-dark w-100">Login</button>
-        </form>
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <i class="bi bi-person me-1" aria-hidden="true"></i>
+                            Username
+                        </label>
 
-        {# GOOGLE BUTTON SPOT: Aivy will add "Continue with Google" here later #}
+                        <input
+                            type="text"
+                            name="username"
+                            id="id_username"
+                            class="form-control"
+                            placeholder="Enter your username"
+                            autocomplete="username"
+                            required
+                            autofocus
+                        >
+                    </div>
 
-        <p class="text-center mt-3 mb-0">
-          No account yet? <a href="#">Register</a>
-        </p>
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">
+                            <i class="bi bi-lock me-1" aria-hidden="true"></i>
+                            Password
+                        </label>
 
-      </div>
+                        <input
+                            type="password"
+                            name="password"
+                            id="id_password"
+                            class="form-control"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Login
+                    </button>
+                </form>
+
+                {# GOOGLE BUTTON SPOT #}
+
+                <p class="text-center mt-4 mb-0">
+                    No account yet?
+                    <a href="{% url 'register' %}">Register</a>
+                </p>
+
+            </div>
+        </div>
+
     </div>
-  </div>
 </div>
+
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-<!-- Notes
-The next hidden field lets Django send people back to the page they originally wanted after login.
-The # on the Register link is a placeholder. Replace it with the URL name from docs/contract.md once you’ve read it.
-The comment marks where Aivy will add the Google button, so don’t put anything else there.
-This page extends base.html, so make sure templates/base.html exists first. -->
-=======
-<h2>Login</h2>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Login</button></form>
->>>>>>> main
