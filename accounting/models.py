@@ -4,6 +4,59 @@ from django.db import models
 from django.db.models import Q, F
 
 
+# --------------------------------------------------
+# REGULAR BANK ACCOUNT
+# --------------------------------------------------
+
+class BankAccount(models.Model):
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        FROZEN = "frozen", "Frozen"
+        CLOSED = "closed", "Closed"
+
+    client = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.PROTECT,
+        related_name="bank_accounts",
+    )
+
+    account_number = models.CharField(
+        max_length=30,
+        unique=True,
+    )
+
+    balance = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+
+    opened_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-opened_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(balance__gte=0),
+                name="bank_account_balance_nonnegative",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.account_number} - {self.client}"
+
+
+# --------------------------------------------------
+# LEDGER ENTRY
+# --------------------------------------------------
+
 class LedgerEntry(models.Model):
     """Append-only. Corrections use new reversing entries."""
 
@@ -14,35 +67,60 @@ class LedgerEntry(models.Model):
         TRANSFER_OUT = "transfer_out"
         LOAN_DISBURSEMENT = "loan_disbursement"
         LOAN_PAYMENT = "loan_payment"
+        INTEREST = "interest"
 
     entry_type = models.CharField(
-        max_length=20, choices=EntryType.choices
+        max_length=20,
+        choices=EntryType.choices,
     )
+
     amount = models.DecimalField(
-        max_digits=14, decimal_places=2
+        max_digits=14,
+        decimal_places=2,
     )
+
     balance_after = models.DecimalField(
-        max_digits=14, decimal_places=2,
-        null=True, blank=True
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
     )
+
     savings_account = models.ForeignKey(
         "savings.SavingsAccount",
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="ledger_entries",
     )
+
+    bank_account = models.ForeignKey(
+        "accounting.BankAccount",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="ledger_entries",
+    )
+
     loan = models.ForeignKey(
         "loans.Loan",
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="ledger_entries",
     )
-    reference = models.CharField(max_length=100, blank=True)
+
+    reference = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="+",
     )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -68,6 +146,7 @@ class LedgerEntry(models.Model):
                         "transfer_out",
                         "loan_disbursement",
                         "loan_payment",
+                        "interest",
                     ]
                 ),
                 name="ledger_valid_entry_type",
@@ -87,6 +166,10 @@ class LedgerEntry(models.Model):
         )
 
 
+# --------------------------------------------------
+# REPORT EXPORT
+# --------------------------------------------------
+
 class ReportExport(models.Model):
 
     class ReportType(models.TextChoices):
@@ -102,31 +185,40 @@ class ReportExport(models.Model):
         choices=ReportType.choices,
         default=ReportType.TRANSACTION,
     )
+
     file_format = models.CharField(
         max_length=10,
         choices=Format.choices,
         default=Format.PDF,
     )
+
     savings_account = models.ForeignKey(
         "savings.SavingsAccount",
         on_delete=models.PROTECT,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         related_name="report_exports",
     )
+
     loan = models.ForeignKey(
         "loans.Loan",
         on_delete=models.PROTECT,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         related_name="report_exports",
     )
+
     date_from = models.DateField()
     date_to = models.DateField()
+
     generated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="generated_reports",
     )
+
     generated_at = models.DateTimeField(auto_now_add=True)
+
     filename = models.CharField(max_length=255)
 
     class Meta:

@@ -6,9 +6,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounting.models import BankAccount
 from accounting.money import BankError
 from accounts.decorators import client_required, role_required
-from savings.models import SavingsAccount
 
 from . import services
 from .agreement_pdf import generate_agreement_pdf
@@ -195,6 +195,12 @@ def staff_loan(request, loan_id):
         loan=loan
     ).first()
 
+    # Only active regular bank accounts belonging to this client.
+    accounts = BankAccount.objects.filter(
+        client=loan.client,
+        status=BankAccount.Status.ACTIVE,
+    ).order_by("account_number")
+
     return render(
         request,
         "staff/loan_detail.html",
@@ -203,7 +209,7 @@ def staff_loan(request, loan_id):
             "installments": loan.installments.order_by(
                 "number"
             ),
-            "accounts": loan.client.savings_accounts.all(),
+            "accounts": accounts,
             "agreement": agreement,
         },
     )
@@ -289,10 +295,10 @@ def staff_create_agreement(request, loan_id):
 
 
 # ==========================================
-# STAFF: DISBURSE LOAN
+# STAFF: DISBURSE TO REGULAR BANK ACCOUNT
 # ==========================================
 
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_loan_disburse(request, loan_id):
     loan = get_object_or_404(
@@ -301,14 +307,15 @@ def staff_loan_disburse(request, loan_id):
     )
 
     account = get_object_or_404(
-        SavingsAccount,
+        BankAccount,
         pk=_int(request.POST.get("account")),
         client=loan.client,
+        status=BankAccount.Status.ACTIVE,
     )
 
     _run(
         request,
-        "Loan disbursed.",
+        "Loan disbursed to regular bank account.",
         services.disburse_loan,
         loan.pk,
         request.user,

@@ -7,6 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from loans.models import Installment, Loan
+from notifications.models import Notification
 
 
 PENALTY_RATE = Decimal("0.02")
@@ -14,7 +15,10 @@ CENT = Decimal("0.01")
 
 
 class Command(BaseCommand):
-    help = "Mark overdue installments and apply one-time 2% penalties."
+    help = (
+        "Mark overdue installments, apply one-time 2% "
+        "penalties, and notify clients."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -30,6 +34,7 @@ class Command(BaseCommand):
         overdue_count = 0
         penalty_count = 0
         paid_count = 0
+        notification_count = 0
 
         with transaction.atomic():
             installments = (
@@ -39,11 +44,15 @@ class Command(BaseCommand):
                     due_date__lt=today,
                 )
                 .exclude(status=Installment.Status.PAID)
+                .select_related("loan__client__user")
                 .order_by("pk")
             )
 
             for installment in installments:
-                unpaid = installment.total_due - installment.amount_paid
+                unpaid = (
+                    installment.total_due
+                    - installment.amount_paid
+                )
 
                 if unpaid <= 0:
                     installment.status = Installment.Status.PAID
@@ -54,14 +63,18 @@ class Command(BaseCommand):
                     continue
 
                 fields = []
+                newly_overdue = False
 
                 if installment.status != Installment.Status.OVERDUE:
                     installment.status = Installment.Status.OVERDUE
                     fields.append("status")
                     overdue_count += 1
+                    newly_overdue = True
 
                 if installment.penalty_amount == 0:
-                    penalty = (unpaid * PENALTY_RATE).quantize(
+                    penalty = (
+                        unpaid * PENALTY_RATE
+                    ).quantize(
                         CENT,
                         rounding=ROUND_HALF_UP,
                     )
@@ -74,6 +87,25 @@ class Command(BaseCommand):
                 if fields:
                     installment.save(update_fields=fields)
 
+                if newly_overdue:
+                    outstanding = (
+                        installment.total_due
+                        - installment.amount_paid
+                    )
+
+                    Notification.objects.create(
+                        user=installment.loan.client.user,
+                        kind="loan_overdue",
+                        message=(
+                            f"Loan #{installment.loan_id}, "
+                            f"installment #{installment.number} "
+                            f"is overdue. Outstanding amount: "
+                            f"PHP {outstanding:,.2f}."
+                        )[:255],
+                    )
+
+                    notification_count += 1
+
             active_loans = (
                 Loan.objects.select_for_update()
                 .filter(status=Loan.Status.ACTIVE)
@@ -81,7 +113,9 @@ class Command(BaseCommand):
             )
 
             for loan in active_loans:
-                loan_installments = list(loan.installments.all())
+                loan_installments = list(
+                    loan.installments.all()
+                )
 
                 if not loan_installments:
                     continue
@@ -99,6 +133,7 @@ class Command(BaseCommand):
                 f"Processing date: {today}\n"
                 f"Newly overdue: {overdue_count}\n"
                 f"New penalties: {penalty_count}\n"
-                f"Loans marked paid: {paid_count}"
+                f"Loans marked paid: {paid_count}\n"
+                f"Notifications created: {notification_count}"
             )
         )

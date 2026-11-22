@@ -10,25 +10,11 @@ from django.db.models import F, Q
 
 class LoanProduct(models.Model):
     name = models.CharField(max_length=100, unique=True)
-
-    annual_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-    )
-
-    min_amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
-    max_amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
+    annual_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    min_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    max_amount = models.DecimalField(max_digits=14, decimal_places=2)
     min_months = models.PositiveSmallIntegerField()
     max_months = models.PositiveSmallIntegerField()
-
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -84,16 +70,8 @@ class Loan(models.Model):
         on_delete=models.PROTECT,
     )
 
-    principal = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
-    annual_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-    )
-
+    principal = models.DecimalField(max_digits=14, decimal_places=2)
+    annual_rate = models.DecimalField(max_digits=5, decimal_places=2)
     term_months = models.PositiveSmallIntegerField()
 
     status = models.CharField(
@@ -112,25 +90,10 @@ class Loan(models.Model):
         related_name="+",
     )
 
-    decided_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    reject_reason = models.CharField(
-        max_length=255,
-        blank=True,
-    )
-
-    disbursed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    start_date = models.DateField(
-        null=True,
-        blank=True,
-    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    reject_reason = models.CharField(max_length=255, blank=True)
+    disbursed_at = models.DateTimeField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -172,32 +135,19 @@ class Installment(models.Model):
     number = models.PositiveSmallIntegerField()
     due_date = models.DateField()
 
-    principal_due = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
-    interest_due = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
+    principal_due = models.DecimalField(max_digits=14, decimal_places=2)
+    interest_due = models.DecimalField(max_digits=14, decimal_places=2)
     amount_paid = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         default=0,
     )
-
     penalty_amount = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         default=0,
     )
-
-    paid_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
+    paid_at = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(
         max_length=10,
@@ -207,7 +157,6 @@ class Installment(models.Model):
 
     class Meta:
         ordering = ["loan", "number"]
-
         constraints = [
             models.UniqueConstraint(
                 fields=["loan", "number"],
@@ -249,7 +198,6 @@ class Installment(models.Model):
 # ==========================================
 
 class LoanRule(models.Model):
-
     product = models.OneToOneField(
         LoanProduct,
         on_delete=models.CASCADE,
@@ -262,14 +210,8 @@ class LoanRule(models.Model):
         default=0,
     )
 
-    minimum_credit_score = models.PositiveIntegerField(
-        default=0,
-    )
-
-    minimum_age = models.PositiveSmallIntegerField(
-        default=18,
-    )
-
+    minimum_credit_score = models.PositiveIntegerField(default=0)
+    minimum_age = models.PositiveSmallIntegerField(default=18)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -332,7 +274,6 @@ class EligibilityCheck(models.Model):
 # ==========================================
 
 class LoanAgreement(models.Model):
-
     loan = models.OneToOneField(
         Loan,
         on_delete=models.PROTECT,
@@ -346,17 +287,10 @@ class LoanAgreement(models.Model):
 
     agreement_date = models.DateField()
 
-    # Records when the client accepts the agreement.
-    # NULL means the agreement has not been accepted.
-    signed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
+    # NULL means the client has not accepted the agreement.
+    signed_at = models.DateTimeField(null=True, blank=True)
 
-    terms_and_conditions = models.TextField(
-        blank=True,
-    )
-
+    terms_and_conditions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -368,7 +302,6 @@ class LoanAgreement(models.Model):
 # ==========================================
 
 class LoanPayment(models.Model):
-
     loan = models.ForeignKey(
         Loan,
         on_delete=models.PROTECT,
@@ -381,11 +314,7 @@ class LoanPayment(models.Model):
         related_name="loan_payment_record",
     )
 
-    amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
     payment_date = models.DateTimeField(auto_now_add=True)
 
     recorded_by = models.ForeignKey(
@@ -411,17 +340,28 @@ class LoanPayment(models.Model):
 # ==========================================
 
 class Disbursement(models.Model):
-
     loan = models.OneToOneField(
         Loan,
         on_delete=models.PROTECT,
         related_name="disbursement_record",
     )
 
+    # Preserved for compatibility with historical disbursements.
     savings_account = models.ForeignKey(
         "savings.SavingsAccount",
         on_delete=models.PROTECT,
         related_name="loan_disbursement_records",
+        null=True,
+        blank=True,
+    )
+
+    # New destination for regular bank account disbursements.
+    bank_account = models.ForeignKey(
+        "accounting.BankAccount",
+        on_delete=models.PROTECT,
+        related_name="loan_disbursement_records",
+        null=True,
+        blank=True,
     )
 
     ledger_entry = models.OneToOneField(
@@ -430,11 +370,7 @@ class Disbursement(models.Model):
         related_name="loan_disbursement_record",
     )
 
-    amount = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-    )
-
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
     disbursed_at = models.DateTimeField(auto_now_add=True)
 
     disbursed_by = models.ForeignKey(
@@ -448,6 +384,19 @@ class Disbursement(models.Model):
             models.CheckConstraint(
                 condition=Q(amount__gt=0),
                 name="disbursement_amount_positive",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        bank_account__isnull=False,
+                        savings_account__isnull=True,
+                    )
+                    | Q(
+                        bank_account__isnull=True,
+                        savings_account__isnull=False,
+                    )
+                ),
+                name="disbursement_one_destination",
             ),
         ]
 

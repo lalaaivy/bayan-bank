@@ -1,7 +1,7 @@
 
 from django.urls import path
 
-from . import views, exports
+from . import views, exports, payments_views
 
 urlpatterns = [
     # Client portal
@@ -63,7 +63,19 @@ urlpatterns = [
         name="staff_loan_pay",
     ),
 
-    # Exports
+    # Staff payments management
+    path(
+        "staff/payments/",
+        payments_views.staff_payments,
+        name="staff_payments",
+    ),
+    path(
+        "staff/payments/record/",
+        payments_views.staff_record_payment,
+        name="staff_record_payment",
+    ),
+
+    # Loan agreement and exports
     path(
         "loans/<int:loan_id>/agreement/pdf/",
         views.loan_agreement_pdf,
