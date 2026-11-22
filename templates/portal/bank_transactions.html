@@ -2,121 +2,109 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}My Bank Transactions - Bayan Bank{% endblock %}
+{% block title %}Transfers - Bayan Bank{% endblock %}
 
 {% block content %}
-
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h3>My Bank Transactions</h3>
-    <p class="text-muted">
-      View your regular bank accounts and transfer money.
+    <h3 class="mb-1">Transfers & Transactions</h3>
+    <p class="text-muted mb-0">
+      Manage transfers and view your regular account activity.
     </p>
   </div>
-
   <a href="{% url 'portal_home' %}"
      class="btn btn-outline-secondary">
-    Back to Dashboard
+    Dashboard
   </a>
 </div>
 
 <div class="card shadow-sm mb-4">
-  <div class="card-header">My Regular Bank Accounts</div>
+  <div class="card-body p-4">
+    <div class="text-muted small">Available Balance</div>
 
-  <div class="table-responsive">
-    <table class="table mb-0">
-      <thead>
-        <tr>
-          <th>Account Number</th>
-          <th>Status</th>
-          <th class="text-end">Balance</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for account in accounts %}
-        <tr>
-          <td>{{ account.account_number }}</td>
-          <td>{{ account.get_status_display }}</td>
-          <td class="text-end">
-            ₱ {{ account.balance|floatformat:2|intcomma }}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="3" class="text-center py-3">
-            No regular bank accounts found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% if account %}
+      <h2 class="fw-bold my-2">
+        ₱ {{ account.balance|floatformat:2|intcomma }}
+      </h2>
+      <div class="text-muted">
+        Regular Account · {{ account.account_number }}
+      </div>
+    {% else %}
+      <h3>₱ 0.00</h3>
+      <div class="text-muted">
+        No active regular bank account.
+      </div>
+    {% endif %}
   </div>
 </div>
 
 <div class="card shadow-sm mb-4">
-  <div class="card-header">Transfer Money</div>
+  <div class="card-header fw-semibold">
+    Send Money
+  </div>
+  <div class="card-body p-4">
+    <p class="text-muted">
+      Transfer money to another Bayan Bank regular account.
+    </p>
 
-  <div class="card-body">
+    {% if account %}
     <form method="post"
           action="{% url 'client_bank_transfer' %}">
       {% csrf_token %}
 
       <div class="mb-3">
-        <label class="form-label">From My Account</label>
-
-        <select name="source"
-                class="form-select"
-                required>
-          <option value="">Select account</option>
-
-          {% for account in accounts %}
-            {% if account.status == "active" %}
-            <option value="{{ account.pk }}">
-              {{ account.account_number }}
-              — ₱{{ account.balance|floatformat:2|intcomma }}
-            </option>
-            {% endif %}
-          {% endfor %}
-        </select>
+        <label class="form-label">
+          From
+        </label>
+        <input type="text"
+               class="form-control"
+               value="{{ account.account_number }}"
+               disabled>
       </div>
 
       <div class="mb-3">
         <label class="form-label">
-          Destination Account Number
+          Recipient Account Number
         </label>
-
         <input type="text"
                name="destination"
                class="form-control"
-               placeholder="Example: BA-000002"
                maxlength="30"
+               placeholder="BA-000003"
                required>
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Amount (₱)</label>
-
+        <label class="form-label">
+          Amount (₱)
+        </label>
         <input type="number"
                name="amount"
-               class="form-control"
                min="0.01"
                step="0.01"
+               class="form-control"
                required>
       </div>
 
-      <button type="submit" class="btn btn-primary">
+      <button class="btn btn-primary" type="submit">
         Transfer Money
       </button>
     </form>
+    {% else %}
+      <div class="alert alert-info mb-0">
+        An active regular bank account is required
+        before you can transfer money.
+      </div>
+    {% endif %}
   </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-  <div class="card-header">Recent Transactions</div>
-
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold">
+    Transaction History
+  </div>
   <div class="table-responsive">
-    <table class="table table-hover mb-0">
+    <table class="table table-hover align-middle mb-0">
       <thead>
         <tr>
           <th>Date</th>
@@ -127,22 +115,15 @@
           <th class="text-end">Balance After</th>
         </tr>
       </thead>
-
       <tbody>
         {% for entry in transactions %}
         <tr>
-          <td>
-            {{ entry.created_at|date:"M d, Y h:i A" }}
-          </td>
-
+          <td>{{ entry.created_at|date:"M d, Y h:i A" }}</td>
           <td>{{ entry.bank_account.account_number }}</td>
-
           <td>{{ entry.get_entry_type_display }}</td>
-
           <td>{{ entry.reference|default:"-" }}</td>
-
           <td class="text-end">
-            {% if entry.entry_type == "withdrawal" or entry.entry_type == "transfer_out" %}
+            {% if entry.entry_type == "withdrawal" or entry.entry_type == "transfer_out" or entry.entry_type == "loan_payment" %}
               <span class="text-danger">
                 - ₱{{ entry.amount|floatformat:2|intcomma }}
               </span>
@@ -152,15 +133,17 @@
               </span>
             {% endif %}
           </td>
-
           <td class="text-end">
-            ₱{{ entry.balance_after|floatformat:2|intcomma }}
+            {% if entry.balance_after != None %}
+              ₱{{ entry.balance_after|floatformat:2|intcomma }}
+            {% else %}
+              —
+            {% endif %}
           </td>
         </tr>
-
         {% empty %}
         <tr>
-          <td colspan="6" class="text-center py-3">
+          <td colspan="6" class="text-center text-muted py-4">
             No transactions yet.
           </td>
         </tr>
@@ -169,5 +152,4 @@
     </table>
   </div>
 </div>
-
 {% endblock %}

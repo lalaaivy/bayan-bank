@@ -18,6 +18,7 @@ from .models import (
 )
 
 
+
 STAFF_VIEWERS = ("admin", "staff", "loan_officer")
 CASHIERS = ("admin", "staff")
 

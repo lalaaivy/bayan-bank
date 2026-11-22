@@ -140,7 +140,16 @@ def portal_home(request):
         "latest_interest": latest_interest,
     }
 
-    return render(request, "portal/home.html", context)
+    return render(
+        request,
+        "portal/home.html",
+        {
+            "bank_account": bank_account,
+            "savings_account": savings_account,
+            "bank_transactions": bank_transactions,
+            "loans": loans,
+        },
+    )
 
 
 @role_required("staff", "admin", "loan_officer")
