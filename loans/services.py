@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from accounts.models import Role, User
 from accounting.models import BankAccount, LedgerEntry
 from accounting.money import BankError, to_money
 from audit.services import log
@@ -23,7 +24,14 @@ from .models import (
 )
 
 DECIDERS = ("admin", "loan_officer")
+DISBURSERS = ("admin", "staff")
 PAYMENT_TAKERS = ("admin", "staff")
+
+INTERNAL_NOTIFICATION_ROLES = (
+    Role.ADMIN,
+    Role.STAFF,
+    Role.LOAN_OFFICER,
+)
 
 DEFAULT_MAX_INSTALLMENT_RATIO = Decimal("0.40")
 DEFAULT_MIN_SAVINGS_RATIO = Decimal("0.10")
@@ -42,13 +50,67 @@ def _get_loan_locked(loan_id):
         raise BankError("Loan not found.")
 
 
-def _notify_client(loan, kind, message):
-    """Create a notification for the borrower."""
-    Notification.objects.create(
-        user=loan.client.user,
-        kind=kind,
-        message=message[:255],
+def _notify_loan_parties(
+    loan,
+    kind,
+    client_message,
+    staff_message=None,
+    exclude_user=None,
+):
+    """
+    Notify the borrower and active internal users.
+
+    Internal recipients:
+    - Admin
+    - Staff
+    - Loan Officer
+
+    The borrower receives the client-specific message.
+    Internal users receive the staff-specific message.
+    The user performing the action is excluded from internal
+    notifications to avoid notifying them about their own action.
+
+    Notifications are created inside the current database transaction.
+    If the banking operation rolls back, its notifications roll back too.
+    """
+
+    recipients = {
+        loan.client.user_id: (
+            loan.client.user,
+            client_message[:255],
+        )
+    }
+
+    internal_users = User.objects.filter(
+        is_active=True,
+        role__name__in=INTERNAL_NOTIFICATION_ROLES,
+    ).exclude(
+        pk=loan.client.user_id,
     )
+
+    if exclude_user is not None:
+        internal_users = internal_users.exclude(
+            pk=exclude_user.pk,
+        )
+
+    internal_message = (
+        staff_message or client_message
+    )[:255]
+
+    for user in internal_users:
+        recipients[user.pk] = (
+            user,
+            internal_message,
+        )
+
+    Notification.objects.bulk_create([
+        Notification(
+            user=user,
+            kind=kind,
+            message=message,
+        )
+        for user, message in recipients.values()
+    ])
 
 
 def _calculate_age(date_of_birth, today=None):
@@ -364,6 +426,21 @@ def apply_for_loan(client, product, principal, term_months, by, purpose=""):
 
     _evaluate(loan, None)
 
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.LOAN_APPLICATION_SUBMITTED,
+        (
+            f"Your loan application for P{loan.principal:,.2f} "
+            "has been submitted successfully."
+        ),
+        (
+            f"New loan application from "
+            f"{loan.client.user.get_username()} for "
+            f"P{loan.principal:,.2f}. Application ID: {loan.pk}."
+        ),
+        exclude_user=by,
+    )
+
     return loan
 
 
@@ -414,11 +491,19 @@ def approve_loan(loan_id, by):
         update_fields=["status", "decided_by", "decided_at"]
     )
 
-    _notify_client(
+    _notify_loan_parties(
         loan,
         Notification.Kind.LOAN_APPROVED,
-        f"Your loan application for P{loan.principal:,.2f} has been approved. "
-        "Please review your loan agreement.",
+        (
+            f"Your loan application for P{loan.principal:,.2f} "
+            "has been approved. Please review your loan agreement."
+        ),
+        (
+            f"Loan application #{loan.pk} for "
+            f"{loan.client.user.get_username()} "
+            f"(P{loan.principal:,.2f}) has been approved."
+        ),
+        exclude_user=by,
     )
 
     log(by, "loan_approve", loan)
@@ -465,11 +550,19 @@ def reject_loan(loan_id, by, reason):
         ]
     )
 
-    _notify_client(
+    _notify_loan_parties(
         loan,
         Notification.Kind.LOAN_REJECTED,
-        f"Your loan application for P{loan.principal:,.2f} was rejected. "
-        f"Reason: {reason}",
+        (
+            f"Your loan application for P{loan.principal:,.2f} "
+            f"was rejected. Reason: {reason}"
+        ),
+        (
+            f"Loan application #{loan.pk} for "
+            f"{loan.client.user.get_username()} "
+            f"(P{loan.principal:,.2f}) was rejected."
+        ),
+        exclude_user=by,
     )
 
     log(by, "loan_reject", loan, reason=reason)
@@ -511,11 +604,18 @@ def create_loan_agreement(
         terms_and_conditions=terms_and_conditions,
     )
 
-    _notify_client(
+    _notify_loan_parties(
         loan,
         Notification.Kind.AGREEMENT_READY,
-        f"Your loan agreement {agreement.agreement_number} is ready. "
-        "Please sign in to review and accept it.",
+        (
+            f"Your loan agreement {agreement.agreement_number} is ready. "
+            "Please sign in to review and accept it."
+        ),
+        (
+            f"Agreement {agreement.agreement_number} was created "
+            f"for loan #{loan.pk} belonging to "
+            f"{loan.client.user.get_username()}."
+        ),
     )
 
     return agreement
@@ -551,6 +651,16 @@ def accept_loan_agreement(loan_id, by):
 
     log(by, "loan_agreement_accept", loan)
 
+    _notify_loan_parties(
+        loan,
+        Notification.Kind.AGREEMENT_ACCEPTED,
+        "Your acceptance of the loan agreement has been recorded.",
+        (
+            f"{loan.client.user.get_username()} accepted "
+            f"the agreement for loan #{loan.pk}."
+        ),
+    )
+
     return agreement
 
 
@@ -568,7 +678,7 @@ def disburse_loan(loan_id, by, bank_account_id):
     """
     _require_role(
         by,
-        DECIDERS,
+        DISBURSERS,
         "You are not allowed to disburse loans.",
     )
 
@@ -670,11 +780,19 @@ def disburse_loan(loan_id, by, bank_account_id):
         update_fields=["status", "disbursed_at", "start_date"]
     )
 
-    _notify_client(
+    _notify_loan_parties(
         loan,
         Notification.Kind.LOAN_DISBURSED,
-        f"Your loan of P{loan.principal:,.2f} has been disbursed "
-        f"to your bank account {account.account_number}.",
+        (
+            f"Your loan of P{loan.principal:,.2f} has been disbursed "
+            f"to your bank account {account.account_number}."
+        ),
+        (
+            f"Loan #{loan.pk} for "
+            f"{loan.client.user.get_username()} has been disbursed. "
+            f"Amount: P{loan.principal:,.2f}."
+        ),
+        exclude_user=by,
     )
 
     log(
@@ -815,10 +933,25 @@ def record_payment(loan_id, amount, by):
             f"Remaining balance: P{remaining_after_payment:,.2f}."
         )
 
-    _notify_client(
+    if loan_fully_paid:
+        staff_payment_message = (
+            f"Loan #{loan.pk} for "
+            f"{loan.client.user.get_username()} is now fully paid. "
+            f"Final payment: P{amount:,.2f}."
+        )
+    else:
+        staff_payment_message = (
+            f"Payment of P{amount:,.2f} recorded for loan #{loan.pk} "
+            f"belonging to {loan.client.user.get_username()}. "
+            f"Remaining balance: P{remaining_after_payment:,.2f}."
+        )
+
+    _notify_loan_parties(
         loan,
         Notification.Kind.LOAN_PAYMENT_RECORDED,
         payment_message,
+        staff_payment_message,
+        exclude_user=by,
     )
 
     log(
@@ -988,16 +1121,29 @@ def make_online_payment(loan_id, amount, by):
             f"Your online loan payment of P{amount:,.2f} was successful. "
             "Your loan is now fully paid."
         )
+        staff_payment_message = (
+            f"Loan #{loan.pk} for "
+            f"{loan.client.user.get_username()} is now fully paid "
+            f"through an online payment of P{amount:,.2f}."
+        )
     else:
         payment_message = (
             f"Your online loan payment of P{amount:,.2f} was successful. "
             f"Remaining loan balance: P{remaining_after_payment:,.2f}."
         )
+        staff_payment_message = (
+            f"Online loan payment of P{amount:,.2f} received for "
+            f"loan #{loan.pk}, belonging to "
+            f"{loan.client.user.get_username()}. "
+            f"Remaining balance: P{remaining_after_payment:,.2f}."
+        )
 
-    _notify_client(
+    _notify_loan_parties(
         loan,
         Notification.Kind.LOAN_PAYMENT_RECORDED,
         payment_message,
+        staff_payment_message,
+        exclude_user=by,
     )
 
     log(
@@ -1011,4 +1157,3 @@ def make_online_payment(loan_id, amount, by):
     )
 
     return entry
-

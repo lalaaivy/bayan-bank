@@ -273,7 +273,7 @@
   </div>
 
   <!-- LOAN DECISION -->
-  {% if loan.status == "pending" %}
+  {% if loan.status == "pending" and can_decide %}
     <div class="card border-0 shadow-sm rounded-3 mb-4">
       <div class="card-header bg-white py-3">
         <h5 class="fw-bold mb-0">Loan Decision</h5>
@@ -320,9 +320,14 @@
 
         <p class="small text-muted mt-3 mb-0">
           Ineligible applications cannot be approved. Applications requiring
-          review may be assessed by authorized staff.
+          review may be assessed by authorized decision-makers.
         </p>
       </div>
+    </div>
+  {% elif loan.status == "pending" %}
+    <div class="alert alert-info mb-4">
+      <i class="bi bi-info-circle me-1"></i>
+      This application is awaiting a decision from an Admin or Loan Officer.
     </div>
   {% endif %}
 
@@ -399,13 +404,19 @@
             No loan agreement has been created yet.
           </p>
 
-          <form method="post" action="{% url 'staff_create_agreement' loan.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-file-earmark-plus me-1"></i>
-              Create Loan Agreement
-            </button>
-          </form>
+          {% if can_create_agreement %}
+            <form method="post" action="{% url 'staff_create_agreement' loan.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-file-earmark-plus me-1"></i>
+                Create Loan Agreement
+              </button>
+            </form>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              An authorized staff member can create the loan agreement.
+            </div>
+          {% endif %}
 
         {% else %}
 
@@ -450,22 +461,28 @@
               </div>
             </div>
 
-            <form
-              method="post"
-              action="{% url 'staff_loan_disburse' loan.pk %}">
-              {% csrf_token %}
+            {% if can_disburse %}
+              <form
+                method="post"
+                action="{% url 'staff_loan_disburse' loan.pk %}">
+                {% csrf_token %}
 
-              <input
-                type="hidden"
-                name="account"
-                value="{{ bank_account.pk }}">
+                <input
+                  type="hidden"
+                  name="account"
+                  value="{{ bank_account.pk }}">
 
-              <button type="submit" class="btn btn-primary">
-                <i class="bi bi-bank me-1"></i>
-                Disburse ₱{{ loan.principal|floatformat:2 }}
-                to Regular Bank Account
-              </button>
-            </form>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-bank me-1"></i>
+                  Disburse ₱{{ loan.principal|floatformat:2 }}
+                  to Regular Bank Account
+                </button>
+              </form>
+            {% else %}
+              <div class="alert alert-info mb-0">
+                An authorized disbursing staff member can process this loan.
+              </div>
+            {% endif %}
 
           {% elif bank_account %}
 

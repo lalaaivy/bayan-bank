@@ -1,13 +1,157 @@
 {% extends "base.html" %}
+
 {% block title %}Loans Ready for Release - Bayan Bank{% endblock %}
+
 {% block content %}
-<h3 class="mb-3">Loans Ready for Release</h3>
-<a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
-<div class="card shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
-  <thead><tr><th>Agreement</th><th>Client</th><th>Product</th><th>Approved Amount</th><th>Accepted</th><th></th></tr></thead>
-  <tbody>
-    <tr><td>AGR-2026-0318</td><td>Liza Navarro</td><td>Business Loan</td><td>&#8369; 150,000.00</td><td>Nov 18, 2026</td><td><a href="{% url 'confirm_loan_release' %}" class="btn btn-sm btn-dark">Release Loan</a></td></tr>
-    <tr><td>AGR-2026-0315</td><td>Mark Villanueva</td><td>Personal Loan</td><td>&#8369; 40,000.00</td><td>Nov 17, 2026</td><td><a href="{% url 'confirm_loan_release' %}" class="btn btn-sm btn-dark">Release Loan</a></td></tr>
-  </tbody>
-</table></div></div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Loans Ready for Release</h3>
+
+    <a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">
+        &larr; Back to Dashboard
+    </a>
+</div>
+
+<p class="text-muted">
+    Approved loans with signed agreements that are waiting for disbursement.
+</p>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+
+            <thead>
+                <tr>
+                    <th>Agreement</th>
+                    <th>Client</th>
+                    <th>Product</th>
+                    <th>Approved Amount</th>
+                    <th>Accepted</th>
+                    <th>Destination Account</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for loan in loans %}
+
+                <tr>
+                    <td>
+                        <strong>
+                            {{ loan.release_agreement.agreement_number }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {% if loan.client.user.get_full_name %}
+                            {{ loan.client.user.get_full_name }}
+                        {% else %}
+                            {{ loan.client.user.username }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {{ loan.product.name }}
+                    </td>
+
+                    <td>
+                        &#8369; {{ loan.principal|floatformat:2 }}
+                    </td>
+
+                    <td>
+                        {{ loan.release_agreement.signed_at|date:"M d, Y" }}
+                    </td>
+
+                    <td>
+                        {% if loan.release_bank_account %}
+
+                            <strong>
+                                {{ loan.release_bank_account.account_number }}
+                            </strong>
+
+                            <br>
+
+                            <small class="text-muted">
+                                Regular Bank Account
+                            </small>
+
+                        {% else %}
+
+                            <span class="text-danger">
+                                No active bank account
+                            </span>
+
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if loan.release_bank_account %}
+
+                            <form method="POST"
+                                  action="{% url 'confirm_loan_release' %}">
+
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="loan_id"
+                                    value="{{ loan.pk }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="bank_account_id"
+                                    value="{{ loan.release_bank_account.pk }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-success"
+                                    onclick="return confirm('Are you sure you want to release this loan?');"
+                                >
+                                    Release Loan
+                                </button>
+
+                            </form>
+
+                        {% else %}
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-secondary"
+                                disabled
+                            >
+                                Cannot Release
+                            </button>
+
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+
+                        <h6 class="text-muted">
+                            No Loans Ready for Release
+                        </h6>
+
+                        <p class="text-muted mb-0">
+                            Approved loans will appear here after their
+                            agreements have been signed by the clients.
+                        </p>
+
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+    </div>
+</div>
+
 {% endblock %}

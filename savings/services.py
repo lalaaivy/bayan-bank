@@ -7,9 +7,11 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.db import transaction
 from django.utils import timezone
 
+from accounts.models import Role, User
 from accounting.models import BankAccount, LedgerEntry
 from accounting.money import BankError, to_money
 from audit.services import log
+from notifications.models import Notification
 
 from .models import (
     SavingsAccount,
@@ -21,6 +23,79 @@ from .models import (
 CENT = Decimal("0.01")
 DEFAULT_ANNUAL_INTEREST_RATE = Decimal("2.00")
 SUPPORTED_TERMS = (3, 6, 12)
+
+INTERNAL_NOTIFICATION_ROLES = (
+    Role.ADMIN,
+    Role.LOAN_OFFICER,
+    Role.STAFF,
+)
+
+# These notification kinds will be added to notifications/models.py next.
+NOTIFICATION_KINDS = {
+    "SAVINGS_OPENED": "savings_opened",
+    "CASH_DEPOSIT": "cash_deposit",
+    "SAVINGS_TRANSFER": "savings_transfer",
+    "SAVINGS_RELEASED": "savings_released",
+    "EARLY_WITHDRAWAL_REQUESTED": "early_wd_requested",
+    "EARLY_WITHDRAWAL_APPROVED": "early_wd_approved",
+    "EARLY_WITHDRAWAL_REJECTED": "early_wd_rejected",
+}
+
+
+def _notify_savings_event(
+    client,
+    kind,
+    client_message,
+    staff_message=None,
+    exclude_user=None,
+):
+    """
+    Notify the client and active internal users about a savings event.
+
+    The user who performed the staff action is excluded from internal
+    notifications to avoid notifying them about their own transaction.
+    """
+    notifications = []
+
+    if client and client.user_id:
+        notifications.append(
+            Notification(
+                user=client.user,
+                kind=kind,
+                message=client_message[:255],
+            )
+        )
+
+    internal_users = User.objects.filter(
+        is_active=True,
+        role__name__in=INTERNAL_NOTIFICATION_ROLES,
+    )
+
+    if client and client.user_id:
+        internal_users = internal_users.exclude(
+            pk=client.user_id,
+        )
+
+    if exclude_user is not None:
+        internal_users = internal_users.exclude(
+            pk=exclude_user.pk,
+        )
+
+    internal_message = (
+        staff_message or client_message
+    )[:255]
+
+    notifications.extend(
+        Notification(
+            user=user,
+            kind=kind,
+            message=internal_message,
+        )
+        for user in internal_users
+    )
+
+    if notifications:
+        Notification.objects.bulk_create(notifications)
 
 
 def _lock_savings_account(account_id):
@@ -144,6 +219,18 @@ def open_account(client, by):
         client_id=client.pk,
     )
 
+    _notify_savings_event(
+        client=client,
+        kind=NOTIFICATION_KINDS["SAVINGS_OPENED"],
+        client_message=(
+            f"Your savings account {account.account_number} has been opened."
+        ),
+        staff_message=(
+            f"A savings account was opened for client {client}."
+        ),
+        exclude_user=by,
+    )
+
     return account
 
 
@@ -180,6 +267,20 @@ def staff_cash_deposit(bank_account_id, amount, by):
         account,
         amount=amount,
         reference=reference,
+    )
+
+    _notify_savings_event(
+        client=account.client,
+        kind=NOTIFICATION_KINDS["CASH_DEPOSIT"],
+        client_message=(
+            f"A cash deposit of PHP {amount:,.2f} was credited "
+            f"to your bank account."
+        ),
+        staff_message=(
+            f"A cash deposit of PHP {amount:,.2f} was recorded "
+            f"for client {account.client}."
+        ),
+        exclude_user=by,
     )
 
     return entry
@@ -265,6 +366,20 @@ def transfer_to_savings(
         to_account=savings.account_number,
         reference=reference,
         deposit_id=deposit.pk,
+    )
+
+    _notify_savings_event(
+        client=savings.client,
+        kind=NOTIFICATION_KINDS["SAVINGS_TRANSFER"],
+        client_message=(
+            f"PHP {amount:,.2f} was transferred from your bank account "
+            f"to your savings account. Maturity date: {maturity_date}."
+        ),
+        staff_message=(
+            f"Client {savings.client} transferred PHP {amount:,.2f} "
+            f"to their savings account."
+        ),
+        exclude_user=by,
     )
 
     return {
@@ -370,6 +485,26 @@ def _release_deposit_locked(deposit, bank_account, savings, by, early=False):
         total_release=total_release,
         early_withdrawal=early,
         reference=reference,
+    )
+
+    release_description = (
+        "early withdrawal" if early else "matured savings deposit"
+    )
+
+    _notify_savings_event(
+        client=savings.client,
+        kind=NOTIFICATION_KINDS["SAVINGS_RELEASED"],
+        client_message=(
+            f"Your {release_description} has been released. "
+            f"PHP {total_release:,.2f} was transferred to your bank account. "
+            f"Interest earned: PHP {interest:,.2f}."
+        ),
+        staff_message=(
+            f"A {release_description} for client {savings.client} "
+            f"was released. Total: PHP {total_release:,.2f}; "
+            f"interest: PHP {interest:,.2f}."
+        ),
+        exclude_user=by,
     )
 
     return {
@@ -481,6 +616,19 @@ def request_early_withdrawal(deposit_id, reason, by):
         reason=reason,
     )
 
+    _notify_savings_event(
+        client=deposit.savings_account.client,
+        kind=NOTIFICATION_KINDS["EARLY_WITHDRAWAL_REQUESTED"],
+        client_message=(
+            "Your early withdrawal request has been submitted "
+            "and is waiting for staff review."
+        ),
+        staff_message=(
+            f"Client {deposit.savings_account.client} requested "
+            f"an early withdrawal for savings deposit #{deposit.pk}."
+        ),
+    )
+
     return withdrawal_request
 
 
@@ -573,6 +721,20 @@ def review_early_withdrawal_request(
             branch_reference=branch_reference,
         )
 
+        _notify_savings_event(
+            client=savings.client,
+            kind=NOTIFICATION_KINDS["EARLY_WITHDRAWAL_APPROVED"],
+            client_message=(
+                "Your early withdrawal request was approved. "
+                "The funds have been transferred to your regular bank account."
+            ),
+            staff_message=(
+                f"Early withdrawal request #{withdrawal_request.pk} "
+                f"for client {savings.client} was approved."
+            ),
+            exclude_user=reviewed_by,
+        )
+
         return result
 
     withdrawal_request.status = (
@@ -595,6 +757,21 @@ def review_early_withdrawal_request(
         withdrawal_request.deposit.savings_account,
         request_id=withdrawal_request.pk,
         staff_notes=staff_notes,
+    )
+
+    _notify_savings_event(
+        client=withdrawal_request.deposit.savings_account.client,
+        kind=NOTIFICATION_KINDS["EARLY_WITHDRAWAL_REJECTED"],
+        client_message=(
+            "Your early withdrawal request was rejected. "
+            "Please contact the bank if you need more information."
+        ),
+        staff_message=(
+            f"Early withdrawal request #{withdrawal_request.pk} "
+            f"for client {withdrawal_request.deposit.savings_account.client} "
+            f"was rejected."
+        ),
+        exclude_user=reviewed_by,
     )
 
     return withdrawal_request
