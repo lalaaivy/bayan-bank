@@ -10,14 +10,21 @@
         --bank-teal: #00485C;
         --bank-yellow: #FDBE1A;
         --bank-blue: #2878B8;
-        --bank-red: #D94B45;
+        --bank-red: #E8503A;
         --bank-cream: #F7F0E5;
         --bank-card: #FFF9F0;
         --bank-text: #172B32;
         --bank-muted: #7A8590;
         --bank-border: #E9E0D3;
         color: var(--bank-text);
+        background: var(--bank-cream);
+        font-family: "Plus Jakarta Sans", sans-serif;
         padding-bottom: 30px;
+    }
+
+    .client-detail-page .row.g-3 {
+        --bs-gutter-x: 14px;
+        --bs-gutter-y: 14px;
     }
 
     .client-detail-page .page-back {
@@ -43,11 +50,12 @@
     .client-detail-page .profile-header {
         background: var(--bank-teal);
         color: white;
-        border-radius: 22px;
+        border-radius: 30px;
         padding: 27px 30px;
         position: relative;
         overflow: hidden;
-        margin-bottom: 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
     }
 
     .client-detail-page .profile-header::after {
@@ -94,18 +102,18 @@
     }
 
     .client-detail-page .status-active {
-        background: #DDF3E6;
-        color: #197044;
+        background: #DDEFE5;
+        color: #0A6B3C;
     }
 
     .client-detail-page .status-pending {
-        background: #FFF0C2;
-        color: #805D00;
+        background: #FFF3CC;
+        color: #6B5200;
     }
 
     .client-detail-page .status-rejected {
-        background: #FCE1DF;
-        color: #A52E29;
+        background: #FBE4DF;
+        color: var(--bank-red);
     }
 
     .client-detail-page .status-neutral {
@@ -115,18 +123,19 @@
 
     .client-detail-page .summary-card {
         background: var(--bank-card);
-        border: 1px solid var(--bank-border);
-        border-radius: 19px;
-        padding: 19px;
+        border: 1px solid rgba(255,255,255,.7);
+        border-radius: 30px;
+        padding: 20px;
         height: 100%;
         position: relative;
         overflow: hidden;
-        transition: transform .2s ease, box-shadow .2s ease;
+        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
+        transition: transform .18s ease, box-shadow .18s ease;
     }
 
     .client-detail-page .summary-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 9px 22px rgba(23,43,50,.07);
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(18, 32, 43, 0.1);
     }
 
     .client-detail-page .summary-card::after {
@@ -162,7 +171,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: 50%;
         font-size: 17px;
         font-weight: 800;
         margin-bottom: 15px;
@@ -174,8 +183,8 @@
     }
 
     .client-detail-page .summary-icon.yellow {
-        color: #856000;
-        background: #FFF0BE;
+        color: #6B5200;
+        background: #FFF3CC;
     }
 
     .client-detail-page .summary-icon.blue {
@@ -185,7 +194,7 @@
 
     .client-detail-page .summary-icon.red {
         color: var(--bank-red);
-        background: #FBE5E3;
+        background: #FBE4DF;
     }
 
     .client-detail-page .summary-label {
@@ -210,10 +219,11 @@
 
     .client-detail-page .detail-card {
         background: var(--bank-card);
-        border: 1px solid var(--bank-border);
-        border-radius: 19px;
+        border: 1px solid rgba(255,255,255,.7);
+        border-radius: 28px;
         overflow: hidden;
-        margin-bottom: 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
     }
 
     .client-detail-page .detail-card-header {
@@ -246,9 +256,9 @@
     .client-detail-page .info-item {
         height: 100%;
         padding: 11px 13px;
-        border-radius: 12px;
-        background: #F8F3EA;
-        border: 1px solid rgba(233,224,211,.7);
+        border-radius: 16px;
+        background: var(--bank-cream);
+        border: 1px solid var(--bank-border);
     }
 
     .client-detail-page .info-label {
@@ -266,9 +276,9 @@
     }
 
     .client-detail-page .credit-score-panel {
-        background: #FFF2C9;
-        border: 1px solid #F2D77D;
-        border-radius: 15px;
+        background: #FFF3CC;
+        border: 1px solid var(--bank-border);
+        border-radius: 22px;
         padding: 18px 20px;
     }
 
@@ -290,10 +300,10 @@
     .client-detail-page select,
     .client-detail-page textarea {
         border: 1px solid var(--bank-border);
-        border-radius: 10px;
+        border-radius: 16px;
         padding: 10px 12px;
         width: 100%;
-        background: #FFFCF7;
+        background: var(--bank-card);
         color: var(--bank-text);
         font-size: 13px;
     }
@@ -301,8 +311,8 @@
     .client-detail-page input:focus,
     .client-detail-page select:focus,
     .client-detail-page textarea:focus {
-        border-color: var(--bank-blue);
-        box-shadow: 0 0 0 3px rgba(40,120,184,.12);
+        border-color: var(--bank-teal);
+        box-shadow: 0 0 0 3px rgba(0,72,92,.12);
         outline: none;
     }
 
@@ -318,7 +328,7 @@
     }
 
     .client-detail-page .btn-bank:hover {
-        background: #003746;
+        background: #00323F;
         color: white;
         transform: translateY(-1px);
     }
@@ -326,13 +336,13 @@
     .client-detail-page .table {
         margin: 0;
         color: var(--bank-text);
-        font-size: 12px;
+        font-size: 13px;
         white-space: nowrap;
     }
 
     .client-detail-page .table thead th {
-        background: #F1E9DC;
-        color: var(--bank-teal);
+        background: var(--bank-cream);
+        color: var(--bank-muted);
         border-bottom: 1px solid var(--bank-border);
         padding: 14px 16px;
         font-size: 10px;
@@ -348,7 +358,7 @@
     }
 
     .client-detail-page .table tbody tr:hover {
-        background: #FBF3E7;
+        background: var(--bank-card);
     }
 
     .client-detail-page .table .badge {
@@ -369,18 +379,18 @@
     }
 
     .client-detail-page .badge-success-soft {
-        background: #DDF3E6;
-        color: #197044;
+        background: #DDEFE5;
+        color: #0A6B3C;
     }
 
     .client-detail-page .badge-warning-soft {
-        background: #FFF0C2;
-        color: #805D00;
+        background: #FFF3CC;
+        color: #6B5200;
     }
 
     .client-detail-page .badge-danger-soft {
-        background: #FCE1DF;
-        color: #A52E29;
+        background: #FBE4DF;
+        color: var(--bank-red);
     }
 
     .client-detail-page .badge-neutral {
@@ -396,7 +406,7 @@
     }
 
     .client-detail-page .table-responsive {
-        border-radius: 0 0 19px 19px;
+        border-radius: 0 0 28px 28px;
     }
 
     @media (max-width: 767px) {
