@@ -1,124 +1,621 @@
+
 {% extends "base_client.html" %}
+
 {% block title %}Upload Identification - Bayan Bank{% endblock %}
+
 {% block content %}
-<h3 class="mb-3">Upload Identification</h3>
-<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
+<div class="upload-page">
 
-{% if client.verification_status == "rejected" %}
-<div class="alert alert-danger">Your previous ID was rejected. Please upload a clear photo of a valid ID.</div>
-{% endif %}
+    <div class="upload-header">
+        <div>
+            <span class="page-eyebrow">ACCOUNT VERIFICATION</span>
+            <h3>Identity Verification</h3>
+            <p>Upload a valid government-issued ID to verify your Bayan Bank account.</p>
+        </div>
 
-<div class="card shadow-sm"><div class="card-body">
-<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
-  {% if form.non_field_errors %}
-  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-  {% endif %}
+        <a href="{% url 'portal_home' %}" class="back-link">
+            &larr; Back to Dashboard
+        </a>
+    </div>
 
-  <div class="mb-3">
-    <label class="form-label" for="{{ form.id_type.id_for_label }}">ID Type</label>
-    {{ form.id_type }}
-    {% for error in form.id_type.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-  </div>
+    {% if client.verification_status == "rejected" %}
+        <div class="rejected-notice">
+            <div class="notice-icon">!</div>
+            <div>
+                <strong>Previous ID Submission Rejected</strong>
+                <p>Please upload a clear photo of a valid ID to submit it for verification again.</p>
+            </div>
+        </div>
+    {% endif %}
 
-  <div class="mb-3">
-    <label class="form-label" for="{{ form.front_image.id_for_label }}">Front Image</label>
-    {{ form.front_image }}
-    <div class="form-text">JPG or PNG, up to 5 MB.</div>
-    {% for error in form.front_image.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-  </div>
+    <div class="verification-layout">
 
-  <div class="mb-3">
-    <label class="form-label" for="{{ form.back_image.id_for_label }}">Back Image (optional)</label>
-    {{ form.back_image }}
-    {% for error in form.back_image.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-  </div>
+        <div class="upload-main-card">
 
-  <button class="btn btn-dark">Submit for Verification</button>
-</form>
-</div></div>
+            <div class="card-heading">
+                <div class="heading-icon">▣</div>
+                <div>
+                    <h5>Upload Your Identification</h5>
+                    <p>Provide the required details and images below.</p>
+                </div>
+            </div>
+
+            <div class="upload-info">
+                <span>ⓘ</span>
+                <p>Make sure your ID is readable, not blurry, and all important details are visible.</p>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <label class="form-label" for="{{ form.id_type.id_for_label }}">
+                        Identification Type
+                    </label>
+
+                    {{ form.id_type }}
+
+                    {% for error in form.id_type.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>01</span>
+                        Front of Identification
+                        <span class="required-tag">Required</span>
+                    </div>
+
+                    <label class="upload-dropzone" for="{{ form.front_image.id_for_label }}">
+                        <div class="upload-symbol">↑</div>
+                        <strong>Upload Front Image</strong>
+                        <span>Choose a clear image of the front of your ID</span>
+                        <small>JPG or PNG · Maximum 5 MB</small>
+                        {{ form.front_image }}
+                    </label>
+
+                    {% for error in form.front_image.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>02</span>
+                        Back of Identification
+                        <span class="optional-tag">Optional</span>
+                    </div>
+
+                    <label class="upload-dropzone" for="{{ form.back_image.id_for_label }}">
+                        <div class="upload-symbol">↑</div>
+                        <strong>Upload Back Image</strong>
+                        <span>Upload the back side if your ID has one</span>
+                        <small>JPG or PNG · Maximum 5 MB</small>
+                        {{ form.back_image }}
+                    </label>
+
+                    {% for error in form.back_image.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="submit-section">
+                    <p>By submitting, your identification will be sent to our staff for review.</p>
+
+                    <button type="submit" class="submit-btn">
+                        Submit for Verification <span>&rarr;</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <aside class="upload-sidebar">
+
+            <div class="guide-card">
+                <h6>Photo Guidelines</h6>
+                <p>Follow these tips to avoid rejection.</p>
+
+                <div class="guide-item">
+                    <span class="guide-check">✓</span>
+                    <div>
+                        <strong>Clear and readable</strong>
+                        <small>All text and details should be visible.</small>
+                    </div>
+                </div>
+
+                <div class="guide-item">
+                    <span class="guide-check">✓</span>
+                    <div>
+                        <strong>Good lighting</strong>
+                        <small>Avoid dark images and strong glare.</small>
+                    </div>
+                </div>
+
+                <div class="guide-item">
+                    <span class="guide-check">✓</span>
+                    <div>
+                        <strong>Complete ID image</strong>
+                        <small>Do not crop out the edges of your ID.</small>
+                    </div>
+                </div>
+
+                <div class="guide-item">
+                    <span class="guide-check">✓</span>
+                    <div>
+                        <strong>Valid identification</strong>
+                        <small>Use a valid government-issued ID.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="privacy-card">
+                <div class="privacy-icon">🔒</div>
+                <h6>Your Information Matters</h6>
+                <p>Your submitted identification is used for account verification and review.</p>
+            </div>
+
+        </aside>
+
+    </div>
+</div>
+
 <style>
-    .client-main > h3 {
-        display: none;
+    .upload-page {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 12px 4px 30px;
+        color: #26343B;
     }
 
-    .client-main > .card {
-        background: #fff;
-        border: 0;
-        border-radius: 28px;
-        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
-    }
-
-    .client-main > .card > .card-body {
-        padding: 20px;
-    }
-
-    .client-main > .card form {
+    .upload-header {
         display: flex;
-        flex-direction: column;
-        gap: 14px;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
     }
 
-    .client-main > .card form > .mb-3 {
-        margin-bottom: 0 !important;
+    .page-eyebrow {
+        display: block;
+        color: #0A6B3C;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 7px;
     }
 
-    .client-main > .card .form-label {
-        color: #4B5963;
+    .upload-header h3 {
+        color: #19343D;
+        font-size: 26px;
+        font-weight: 750;
+        margin: 0 0 5px;
     }
 
-    .client-main > .card input,
-    .client-main > .card select,
-    .client-main > .card textarea {
-        border: 1px solid #E1E5EC;
-        border-radius: 16px;
+    .upload-header p {
+        color: #7A8590;
+        font-size: 13px;
+        margin: 0;
     }
 
-    .client-main > .card input:focus,
-    .client-main > .card select:focus,
-    .client-main > .card textarea:focus {
+    .back-link {
+        color: #00485C;
+        background: #fff;
+        border: 1px solid #DCE5E7;
+        border-radius: 999px;
+        padding: 10px 16px;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+    .back-link:hover {
+        background: #EAF2F3;
+    }
+
+    .rejected-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        background: #FBE9E5;
+        border: 1px solid #F5D2CA;
+        border-radius: 17px;
+        padding: 17px;
+        margin-bottom: 20px;
+    }
+
+    .notice-icon {
+        background: #E8503A;
+        color: #fff;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+
+    .rejected-notice strong {
+        color: #A63C30;
+        font-size: 13px;
+    }
+
+    .rejected-notice p {
+        color: #9B5148;
+        font-size: 12px;
+        margin: 4px 0 0;
+    }
+
+    .verification-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .upload-main-card,
+    .guide-card,
+    .privacy-card {
+        background: #fff;
+        border: 1px solid #E9EDEF;
+        border-radius: 25px;
+        box-shadow: 0 10px 30px rgba(18, 32, 43, .045);
+    }
+
+    .upload-main-card {
+        padding: 28px;
+    }
+
+    .card-heading {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding-bottom: 22px;
+        border-bottom: 1px solid #EDF0F1;
+        margin-bottom: 22px;
+    }
+
+    .heading-icon {
+        width: 46px;
+        height: 46px;
+        background: #EAF2F3;
+        color: #00485C;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 23px;
+    }
+
+    .card-heading h5 {
+        color: #19343D;
+        font-size: 16px;
+        font-weight: 750;
+        margin: 0 0 4px;
+    }
+
+    .card-heading p {
+        color: #89949B;
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .upload-info {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 14px;
+        border-radius: 13px;
+        background: #EAF2F3;
+        margin-bottom: 25px;
+    }
+
+    .upload-info span {
+        color: #00485C;
+        font-size: 16px;
+    }
+
+    .upload-info p {
+        color: #45616B;
+        font-size: 12px;
+        margin: 2px 0 0;
+    }
+
+    .form-section {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        color: #485861;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 9px;
+    }
+
+    .upload-page select,
+    .upload-page input:not([type="file"]) {
+        width: 100%;
+        min-height: 46px;
+        padding: 11px 14px;
+        background: #FAFBFB;
+        border: 1px solid #E1E7E9;
+        border-radius: 13px;
+        font-size: 13px;
+    }
+
+    .upload-page select:focus,
+    .upload-page input:focus {
+        outline: none;
         border-color: #00485C;
-        box-shadow: 0 0 0 0.2rem rgba(0, 72, 92, 0.14);
+        box-shadow: 0 0 0 3px rgba(0, 72, 92, .09);
     }
 
-    .client-main > .card .form-text {
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: #19343D;
+        font-size: 13px;
+        font-weight: 750;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .section-title > span:first-child {
+        color: #00485C;
+        background: #EAF2F3;
+        padding: 5px 8px;
+        border-radius: 7px;
+        font-size: 10px;
+    }
+
+    .required-tag,
+    .optional-tag {
+        font-size: 9px;
+        font-weight: 750;
+        border-radius: 999px;
+        padding: 5px 9px;
+        margin-left: auto;
+    }
+
+    .required-tag {
+        background: #FBE9E5;
+        color: #C34D3D;
+    }
+
+    .optional-tag {
+        background: #F1F2EE;
         color: #7A8590;
     }
 
-    .client-main > .card .text-danger,
-    .client-main > .alert-danger {
-        color: #E8503A !important;
+    .upload-dropzone {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 7px;
+        padding: 27px 15px;
+        background: #FAFBFB;
+        border: 1.5px dashed #C8D6D9;
+        border-radius: 17px;
+        cursor: pointer;
+        transition: .2s ease;
     }
 
-    .client-main > .alert-danger {
-        background: #FBE4DF;
-        border-color: #FBE4DF;
-        border-radius: 16px;
-    }
-
-    .client-main > .card .btn {
-        border-radius: 999px;
-    }
-
-    .client-main > .card .btn-dark {
-        background: #00485C;
+    .upload-dropzone:hover {
+        background: #F0F6F6;
         border-color: #00485C;
-        color: #fff;
     }
 
-    .client-main > .card .btn-dark:hover {
-        background: #00323F;
-        border-color: #00323F;
-    }
-
-    .client-main > .btn-outline-secondary {
-        border-color: #00485C;
-        border-radius: 999px;
+    .upload-symbol {
+        width: 42px;
+        height: 42px;
+        background: #EAF2F3;
         color: #00485C;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 13px;
+        font-size: 22px;
+        font-weight: 700;
     }
 
-    .client-main > .btn-outline-secondary:hover {
+    .upload-dropzone strong {
+        color: #19343D;
+        font-size: 13px;
+    }
+
+    .upload-dropzone span {
+        color: #7A8590;
+        font-size: 11px;
+    }
+
+    .upload-dropzone small {
+        color: #9AA3A8;
+        font-size: 10px;
+    }
+
+    .upload-dropzone input[type="file"] {
+        display: block;
+        max-width: 100%;
+        font-size: 11px;
+        margin-top: 7px;
+        color: #52636B;
+    }
+
+    .field-error {
+        color: #E8503A;
+        font-size: 11px;
+        margin-top: 7px;
+    }
+
+    .upload-page .alert-danger {
+        color: #B83E2E;
+        background: #FBE9E5;
+        border: 1px solid #F5D2CA;
+        border-radius: 13px;
+        font-size: 12px;
+    }
+
+    .submit-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding-top: 22px;
+        border-top: 1px solid #EDF0F1;
+    }
+
+    .submit-section p {
+        color: #89949B;
+        font-size: 11px;
+        margin: 0;
+        max-width: 260px;
+    }
+
+    .submit-btn {
         background: #00485C;
         color: #fff;
+        border: 1px solid #00485C;
+        border-radius: 999px;
+        padding: 12px 20px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .submit-btn:hover {
+        background: #003542;
+    }
+
+    .submit-btn span {
+        margin-left: 8px;
+    }
+
+    .upload-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .guide-card,
+    .privacy-card {
+        padding: 21px;
+    }
+
+    .guide-card h6,
+    .privacy-card h6 {
+        color: #19343D;
+        font-size: 14px;
+        font-weight: 750;
+        margin: 0 0 6px;
+    }
+
+    .guide-card > p,
+    .privacy-card p {
+        color: #89949B;
+        font-size: 11px;
+        line-height: 1.6;
+        margin-bottom: 18px;
+    }
+
+    .guide-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-top: 17px;
+    }
+
+    .guide-check {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 21px;
+        height: 21px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #E7F3EA;
+        color: #0A6B3C;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .guide-item strong {
+        display: block;
+        color: #485861;
+        font-size: 11px;
+        margin-bottom: 3px;
+    }
+
+    .guide-item small {
+        color: #89949B;
+        font-size: 10px;
+        line-height: 1.5;
+    }
+
+    .privacy-icon {
+        font-size: 22px;
+        margin-bottom: 10px;
+    }
+
+    .privacy-card p {
+        margin: 0;
+    }
+
+    @media (max-width: 900px) {
+        .verification-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .upload-sidebar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .upload-page {
+            padding: 8px 0 22px;
+        }
+
+        .upload-header h3 {
+            font-size: 23px;
+        }
+
+        .upload-main-card {
+            padding: 20px 16px;
+            border-radius: 21px;
+        }
+
+        .upload-sidebar {
+            grid-template-columns: 1fr;
+        }
+
+        .submit-section {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .submit-section p {
+            max-width: none;
+        }
+
+        .submit-btn {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}

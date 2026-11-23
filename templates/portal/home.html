@@ -1,3 +1,4 @@
+
 {% extends "base_client.html" %}
 {% load humanize %}
 
@@ -380,30 +381,38 @@
 </div>
 
 <style>
+
 /* =========================================
    BAYAN BANK CLIENT DASHBOARD
-   Dashboard-specific styles only.
-   Global layout is controlled by base_client.html.
-   Colors are set once below, change them here.
+   SIMPLE COLOR FOUNDATION
 ========================================= */
 
 :root {
   --teal: #00485C;
   --teal-dark: #00323F;
   --teal-soft: #DCEBEF;
+
   --yellow: #FDBE1A;
-  --yellow-light: #FFCB45;
+  --yellow-light: #FDBE1A;
   --yellow-soft: #FFF3CC;
+
   --green: #0A6B3C;
   --green-soft: #DDEFE5;
+
   --coral: #E8503A;
   --coral-soft: #FBE4DF;
   --red-dark: #A5191F;
-  --page-bg: #F1F2EE;
-  --ink: #12202B;
+
+  --page-bg: #F7F0E5;
+  --card-bg: #FFF9F0;
+
+  --ink: #172B32;
   --muted: #7A8590;
+
   --card-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
 }
+
+/* Main Dashboard */
 
 body.client-app {
   background: var(--page-bg);
@@ -415,6 +424,7 @@ body.client-app {
   width: 100%;
   max-width: none;
   margin: 0;
+  background: var(--page-bg);
 }
 
 /* Welcome */
@@ -471,7 +481,7 @@ body.client-app {
   gap: 7px;
   padding: 4px 11px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--card-bg);
   color: #4B5963;
   font-size: 11px;
   font-weight: 700;
@@ -481,7 +491,7 @@ body.client-app {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #8792a5;
+  background: #8792A5;
 }
 
 .status-dot.active { background: var(--green); }
@@ -496,7 +506,7 @@ body.client-app {
   padding: 0 16px;
   border: 0;
   border-radius: 999px;
-  background: #fff;
+  background: var(--card-bg);
   box-shadow: var(--card-shadow);
   color: var(--ink);
   font-size: 12px;
@@ -523,8 +533,15 @@ body.client-app {
   font-size: 13px;
 }
 
-.dashboard-alert.alert-danger { background: var(--coral-soft); color: var(--red-dark); }
-.dashboard-alert.alert-warning { background: var(--yellow-soft); color: #6B5200; }
+.dashboard-alert.alert-danger {
+  background: var(--coral-soft);
+  color: var(--red-dark);
+}
+
+.dashboard-alert.alert-warning {
+  background: var(--yellow-soft);
+  color: #6B5200;
+}
 
 .dashboard-alert > i {
   font-size: 19px;
@@ -575,18 +592,18 @@ body.client-app {
   overflow: hidden;
   min-width: 0;
   padding: 22px;
-  border: 1px solid rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.5);
   border-radius: 30px;
   box-shadow: var(--card-shadow);
 }
 
 .regular-account {
-  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  background: var(--teal);
   color: #fff;
 }
 
 .savings-account {
-  background: linear-gradient(135deg, var(--yellow-light), var(--yellow));
+  background: var(--yellow);
   color: var(--ink);
 }
 
@@ -603,7 +620,7 @@ body.client-app {
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1px;
-  opacity: 0.78;
+  opacity: 0.85;
 }
 
 .account-card h2 {
@@ -669,12 +686,12 @@ body.client-app {
   gap: 10px;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(255,255,255,0.25);
   font-size: 11px;
 }
 
 .account-card-footer span {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .account-card-footer a {
@@ -697,11 +714,23 @@ body.client-app {
 }
 
 .savings-account .account-card-footer {
-  border-color: rgba(18,32,43,0.15);
+  border-color: rgba(18,32,43,0.18);
 }
 
 .savings-account .account-card-footer a {
   border-color: rgba(18,32,43,0.35);
+}
+
+/* Regular Account Text */
+
+.regular-account,
+.regular-account h2,
+.regular-account strong,
+.regular-account span,
+.regular-account small,
+.regular-account p,
+.regular-account i {
+  color: #fff;
 }
 
 /* Interest Summary */
@@ -712,9 +741,9 @@ body.client-app {
   gap: 16px;
   padding: 20px 24px;
   margin-bottom: 18px;
-  border: 1px solid rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.7);
   border-radius: 28px;
-  background: rgba(255,255,255,0.85);
+  background: var(--card-bg);
   box-shadow: var(--card-shadow);
 }
 
@@ -785,9 +814,9 @@ body.client-app {
   gap: 14px;
   min-width: 0;
   padding: 14px;
-  border: 1px solid rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.7);
   border-radius: 24px;
-  background: rgba(255,255,255,0.85);
+  background: var(--card-bg);
   box-shadow: var(--card-shadow);
   color: var(--ink);
   text-decoration: none;
@@ -811,10 +840,25 @@ body.client-app {
   font-size: 19px;
 }
 
-.action-blue { background: var(--teal-soft); color: var(--teal); }
-.action-green { background: var(--green-soft); color: var(--green); }
-.action-purple { background: var(--yellow-soft); color: #8A6400; }
-.action-orange { background: var(--coral-soft); color: var(--coral); }
+.action-blue {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.action-green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.action-purple {
+  background: var(--yellow-soft);
+  color: #8A6400;
+}
+
+.action-orange {
+  background: var(--coral-soft);
+  color: var(--coral);
+}
 
 .dashboard-action > span:nth-child(2) {
   display: flex;
@@ -851,9 +895,9 @@ body.client-app {
 .dashboard-panel {
   min-width: 0;
   padding: 20px;
-  border: 1px solid rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.7);
   border-radius: 30px;
-  background: rgba(255,255,255,0.85);
+  background: var(--card-bg);
   box-shadow: var(--card-shadow);
 }
 
@@ -891,7 +935,7 @@ body.client-app {
   align-items: center;
   gap: 11px;
   padding: 13px 0;
-  border-top: 1px solid #EEF0EC;
+  border-top: 1px solid #EAE3D8;
 }
 
 .transaction-icon {
@@ -939,8 +983,13 @@ body.client-app {
   white-space: nowrap;
 }
 
-.transaction-value.positive { color: var(--green); }
-.transaction-value.negative { color: var(--coral); }
+.transaction-value.positive {
+  color: var(--green);
+}
+
+.transaction-value.negative {
+  color: var(--coral);
+}
 
 /* Loan Summary */
 
@@ -969,7 +1018,7 @@ body.client-app {
   align-items: center;
   gap: 10px;
   padding: 13px 0;
-  border-top: 1px solid #EEF0EC;
+  border-top: 1px solid #EAE3D8;
 }
 
 .loan-product-icon {
@@ -1020,7 +1069,7 @@ body.client-app {
   padding: 14px;
   margin-top: 14px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--teal);
   color: #fff;
   font-size: 11px;
   font-weight: 800;
@@ -1029,7 +1078,7 @@ body.client-app {
 }
 
 .loan-action-button:hover {
-  background: var(--teal);
+  background: var(--teal-dark);
   color: #fff;
 }
 
@@ -1085,6 +1134,10 @@ body.client-app {
 /* Responsive Dashboard */
 
 @media (max-width: 768px) {
+  .dashboard-welcome {
+    padding-right: 0;
+  }
+
   .account-grid {
     grid-template-columns: 1fr;
   }
@@ -1099,6 +1152,10 @@ body.client-app {
 }
 
 @media (max-width: 520px) {
+  .dashboard-welcome {
+    gap: 10px;
+  }
+
   .dashboard-welcome h2 {
     font-size: 20px;
   }
@@ -1136,15 +1193,6 @@ body.client-app {
   }
 }
 
-.regular-account,
-.regular-account h2,
-.regular-account strong,
-.regular-account span,
-.regular-account small,
-.regular-account p,
-.regular-account i {
-  color: #fff !important;
-}
 </style>
 
 {% endblock %}

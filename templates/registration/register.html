@@ -1,26 +1,86 @@
+
 {% extends "base.html" %}
+
 {% block title %}Register - Bayan Bank{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-8">
-    <h3 class="mb-3">Create your account</h3>
-    <div class="card shadow-sm"><div class="card-body">
-      <form method="post" class="row g-3">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}
-        <div class="col-md-6">
-          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+
+<div class="register-layout">
+
+    <!-- LEFT: BRANDING PANEL -->
+    <div class="register-brand-panel">
+        <div class="register-brand-content">
+            <div class="register-brand-logo">
+                <i class="bi bi-bank2"></i>
+            </div>
+
+            <p class="register-eyebrow">WELCOME TO BAYAN BANK</p>
+            <h1>Banking built around you.</h1>
+
+            <p class="register-brand-description">
+                Start your journey with a banking experience designed
+                to make managing your money simpler and more accessible.
+            </p>
+
+            <div class="register-brand-footer">
+                <span>Secure. Simple. For every Filipino.</span>
+            </div>
         </div>
-        {% endfor %}
-        <div class="col-12">
-          <button class="btn btn-dark">Register</button>
-          <a href="{% url 'login' %}" class="ms-2">I already have an account</a>
+    </div>
+
+    <!-- RIGHT: REGISTRATION FORM -->
+    <div class="register-form-panel">
+
+        <div class="register-form-heading">
+            <span class="register-step">CREATE YOUR ACCOUNT</span>
+            <h2>Get started.</h2>
+            <p>Fill in your details to create your Bayan Bank account.</p>
         </div>
-      </form>
-    </div></div>
-  </div>
+
+        <form method="post" class="register-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="register-fields">
+                {% for field in form %}
+                    <div class="register-field">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <small class="register-help">
+                                {{ field.help_text|safe }}
+                            </small>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <small class="register-error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn register-submit">
+                Create Account
+                <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+
+            <p class="register-login-link">
+                Already have an account?
+                <a href="{% url 'login' %}">Sign in</a>
+            </p>
+        </form>
+
+    </div>
+
 </div>
+
 {% endblock %}

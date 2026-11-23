@@ -1,0 +1,163 @@
+[1mdiff --git a/templates/base_client.html b/templates/base_client.html[m
+[1mindex bb2c597..cf7e195 100644[m
+[1m--- a/templates/base_client.html[m
+[1m+++ b/templates/base_client.html[m
+[36m@@ -347,64 +347,6 @@[m
+       border-radius: 8px;[m
+     }[m
+ [m
+[31m-    /* Chatbot Shortcut */[m
+[31m-[m
+[31m-    .kabayan-float-button {[m
+[31m-      position: fixed;[m
+[31m-      right: 25px;[m
+[31m-      bottom: 25px;[m
+[31m-      z-index: 1050;[m
+[31m-      display: flex;[m
+[31m-      align-items: center;[m
+[31m-      gap: 10px;[m
+[31m-      padding: 10px 17px 10px 10px;[m
+[31m-      border-radius: 50px;[m
+[31m-      background: linear-gradient(135deg, #1769d2, #084298);[m
+[31m-      color: #fff;[m
+[31m-      text-decoration: none;[m
+[31m-      box-shadow: 0 5px 20px rgba(13, 78, 160, 0.25);[m
+[31m-      transition: transform 0.2s ease, box-shadow 0.2s ease;[m
+[31m-    }[m
+[31m-[m
+[31m-    .kabayan-float-button:hover {[m
+[31m-      transform: translateY(-3px);[m
+[31m-      color: #fff;[m
+[31m-      box-shadow: 0 8px 25px rgba(13, 78, 160, 0.35);[m
+[31m-    }[m
+[31m-[m
+[31m-    .kabayan-float-button:focus-visible {[m
+[31m-      outline: 3px solid #80bdff;[m
+[31m-      outline-offset: 4px;[m
+[31m-    }[m
+[31m-[m
+[31m-    .kabayan-float-icon {[m
+[31m-      display: flex;[m
+[31m-      align-items: center;[m
+[31m-      justify-content: center;[m
+[31m-      width: 42px;[m
+[31m-      height: 42px;[m
+[31m-      flex-shrink: 0;[m
+[31m-      border-radius: 50%;[m
+[31m-      background: rgba(255, 255, 255, 0.2);[m
+[31m-      font-size: 20px;[m
+[31m-    }[m
+[31m-[m
+[31m-    .kabayan-float-text {[m
+[31m-      display: flex;[m
+[31m-      flex-direction: column;[m
+[31m-      line-height: 1.3;[m
+[31m-    }[m
+[31m-[m
+[31m-    .kabayan-float-text strong {[m
+[31m-      font-size: 13px;[m
+[31m-      font-weight: 700;[m
+[31m-    }[m
+[31m-[m
+[31m-    .kabayan-float-text small {[m
+[31m-      color: rgba(255, 255, 255, 0.85);[m
+[31m-      font-size: 10px;[m
+[31m-    }[m
+[31m-[m
+     @media (max-width: 991.98px) {[m
+       .client-sidebar {[m
+         width: 0;[m
+[36m@@ -474,27 +416,12 @@[m
+         position: absolute;[m
+       }[m
+ [m
+[31m-      .kabayan-float-button {[m
+[31m-        right: 16px;[m
+[31m-        bottom: 16px;[m
+[31m-        padding: 8px;[m
+[31m-      }[m
+[31m-[m
+[31m-      .kabayan-float-icon {[m
+[31m-        width: 45px;[m
+[31m-        height: 45px;[m
+[31m-      }[m
+[31m-[m
+[31m-      .kabayan-float-text {[m
+[31m-        display: none;[m
+[31m-      }[m
+     }[m
+ [m
+     @media (prefers-reduced-motion: reduce) {[m
+       .client-sidebar .client-sidebar-link,[m
+       .notification-link,[m
+[31m-      .client-back,[m
+[31m-      .kabayan-float-button {[m
+[32m+[m[32m      .client-back {[m
+         transition: none;[m
+       }[m
+     }[m
+[36m@@ -535,6 +462,36 @@[m
+             </a>[m
+           </li>[m
+ [m
+[32m+[m[32m          <li>[m
+[32m+[m[32m            <a[m
+[32m+[m[32m              class="client-sidebar-link {% if request.resolver_match.url_name == 'my_loans' or request.resolver_match.url_name == 'loan_detail' or request.resolver_match.url_name == 'apply_loan' or request.resolver_match.url_name == 'accept_agreement' %}active{% endif %}"[m
+[32m+[m[32m              href="{% url 'my_loans' %}"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              <i class="bi bi-credit-card" aria-hidden="true"></i>[m
+[32m+[m[32m              My Loans[m
+[32m+[m[32m            </a>[m
+[32m+[m[32m          </li>[m
+[32m+[m
+[32m+[m[32m          <li>[m
+[32m+[m[32m            <a[m
+[32m+[m[32m              class="client-sidebar-link {% if request.resolver_match.url_name == 'portal_savings' or request.resolver_match.url_name == 'savings_history' %}active{% endif %}"[m
+[32m+[m[32m              href="{% url 'portal_savings' %}"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              <i class="bi bi-wallet2" aria-hidden="true"></i>[m
+[32m+[m[32m              Savings[m
+[32m+[m[32m            </a>[m
+[32m+[m[32m          </li>[m
+[32m+[m
+[32m+[m[32m          <li>[m
+[32m+[m[32m            <a[m
+[32m+[m[32m              class="client-sidebar-link {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}"[m
+[32m+[m[32m              href="{% url 'notification_list' %}"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              <i class="bi bi-bell" aria-hidden="true"></i>[m
+[32m+[m[32m              Notifications[m
+[32m+[m[32m            </a>[m
+[32m+[m[32m          </li>[m
+[32m+[m
+         </ul>[m
+       </div>[m
+     </nav>[m
+[36m@@ -756,26 +713,7 @@[m
+     </div>[m
+   </div>[m
+ [m
+[31m-  <!-- Floating Kabayan Chatbot Shortcut -->[m
+[31m-  {% if request.user.is_authenticated and request.user.role.name == 'client' %}[m
+[31m-    {% if request.resolver_match.url_name != 'chat_page' %}[m
+[31m-      <a[m
+[31m-        href="{% url 'chatbot:chat_page' %}"[m
+[31m-        class="kabayan-float-button"[m
+[31m-        aria-label="Chat with Kabayan, Bayan Bank AI Assistant"[m
+[31m-        title="Ask Kabayan"[m
+[31m-      >[m
+[31m-        <span class="kabayan-float-icon">[m
+[31m-          <i class="bi bi-chat-dots-fill" aria-hidden="true"></i>[m
+[31m-        </span>[m
+[31m-[m
+[31m-        <span class="kabayan-float-text">[m
+[31m-          <strong>Ask Kabayan</strong>[m
+[31m-          <small>How can I help?</small>[m
+[31m-        </span>[m
+[31m-      </a>[m
+[31m-    {% endif %}[m
+[31m-  {% endif %}[m
+[32m+[m[32m  {% block chatbot %}{% endblock %}[m
+ [m
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>[m
+ [m

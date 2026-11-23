@@ -137,6 +137,155 @@
         padding-bottom: 8px;
       }
     }
+
+/* =========================================
+   BAYAN BANK - STAFF & OFFICER THEME
+========================================= */
+
+:root {
+    --bank-teal: #00485C;
+    --bank-yellow: #FDBE1A;
+    --bank-background: #F1F2EE;
+    --bank-white: #FFFFFF;
+    --bank-text: #12202B;
+    --bank-muted: #7A8590;
+}
+
+/* PAGE BACKGROUND */
+
+body {
+    background: var(--bank-background);
+    color: var(--bank-text);
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    background: var(--bank-teal) !important;
+    color: #FFFFFF;
+    border: none !important;
+}
+
+.sidebar-header {
+    background: transparent;
+}
+
+.brand-link {
+    color: #FFFFFF !important;
+    font-weight: 800;
+}
+
+.brand-mark {
+    background: var(--bank-yellow) !important;
+    color: var(--bank-teal) !important;
+}
+
+/* SIDEBAR LINKS */
+
+.sidebar .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 5px 0;
+    padding: 13px 14px;
+    border-radius: 13px;
+    color: rgba(255, 255, 255, 0.78) !important;
+    text-decoration: none;
+    transition: background .2s ease, color .2s ease;
+}
+
+.sidebar .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF !important;
+}
+
+.sidebar .sidebar-link.active {
+    background: var(--bank-yellow) !important;
+    color: var(--bank-teal) !important;
+    font-weight: 800;
+}
+
+/* SIDEBAR USER AREA */
+
+.sidebar-user {
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.sidebar-user-info strong {
+    color: #FFFFFF;
+}
+
+.sidebar-logout {
+    background: rgba(253, 190, 26, 0.14);
+    color: var(--bank-yellow);
+    border: none;
+    border-radius: 12px;
+}
+
+.sidebar-logout:hover {
+    background: var(--bank-yellow);
+    color: var(--bank-teal);
+}
+
+/* TOP BAR */
+
+.topbar {
+    background: #FFFFFF !important;
+    color: var(--bank-text);
+    border-bottom: 1px solid #E8EAE5;
+    box-shadow: none;
+}
+
+.topbar-title {
+    color: var(--bank-text);
+    font-weight: 800;
+}
+
+.topbar-user-name {
+    color: var(--bank-text);
+}
+
+/* MAIN WORKSPACE */
+
+.desktop-main {
+    background: var(--bank-background);
+}
+
+.content-main {
+    background: var(--bank-background);
+}
+
+/* PAGE HEADINGS */
+
+.page-heading {
+    color: var(--bank-text);
+}
+
+.page-breadcrumb .breadcrumb-item a {
+    color: var(--bank-teal);
+    text-decoration: none;
+}
+
+.page-breadcrumb .breadcrumb-item.active {
+    color: var(--bank-muted);
+}
+
+/* NOTIFICATION BADGES */
+
+.sidebar-notification-count,
+.topbar-notification-count {
+    background: #E8503A;
+}
+
+/* MOBILE SIDEBAR */
+
+@media (max-width: 991.98px) {
+    .sidebar {
+        background: var(--bank-teal) !important;
+    }
+}
+
   </style>
 </head>
 

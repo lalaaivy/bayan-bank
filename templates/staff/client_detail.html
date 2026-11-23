@@ -4,173 +4,618 @@
 {% block title %}Client Profile - Bayan Bank{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
 
+<style>
+    .client-detail-page {
+        --bank-teal: #00485C;
+        --bank-yellow: #FDBE1A;
+        --bank-blue: #2878B8;
+        --bank-red: #D94B45;
+        --bank-cream: #F7F0E5;
+        --bank-card: #FFF9F0;
+        --bank-text: #172B32;
+        --bank-muted: #7A8590;
+        --bank-border: #E9E0D3;
+        color: var(--bank-text);
+        padding-bottom: 30px;
+    }
+
+    .client-detail-page .page-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--bank-teal);
+        background: var(--bank-card);
+        border: 1px solid var(--bank-border);
+        border-radius: 50px;
+        padding: 9px 16px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+        transition: .2s ease;
+    }
+
+    .client-detail-page .page-back:hover {
+        background: var(--bank-teal);
+        color: white;
+    }
+
+    .client-detail-page .profile-header {
+        background: var(--bank-teal);
+        color: white;
+        border-radius: 22px;
+        padding: 27px 30px;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 22px;
+    }
+
+    .client-detail-page .profile-header::after {
+        content: "";
+        position: absolute;
+        width: 190px;
+        height: 190px;
+        border: 28px solid rgba(255,255,255,.05);
+        border-radius: 50%;
+        right: -45px;
+        top: -75px;
+        pointer-events: none;
+    }
+
+    .client-detail-page .profile-label {
+        color: rgba(255,255,255,.68);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 7px;
+    }
+
+    .client-detail-page .profile-name {
+        font-size: clamp(22px, 3vw, 30px);
+        font-weight: 800;
+        margin: 0 0 5px;
+        color: white;
+    }
+
+    .client-detail-page .profile-code {
+        color: rgba(255,255,255,.72);
+        font-size: 13px;
+    }
+
+    .client-detail-page .profile-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 9px 15px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .client-detail-page .status-active {
+        background: #DDF3E6;
+        color: #197044;
+    }
+
+    .client-detail-page .status-pending {
+        background: #FFF0C2;
+        color: #805D00;
+    }
+
+    .client-detail-page .status-rejected {
+        background: #FCE1DF;
+        color: #A52E29;
+    }
+
+    .client-detail-page .status-neutral {
+        background: #E7EDF0;
+        color: #52636B;
+    }
+
+    .client-detail-page .summary-card {
+        background: var(--bank-card);
+        border: 1px solid var(--bank-border);
+        border-radius: 19px;
+        padding: 19px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .client-detail-page .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 9px 22px rgba(23,43,50,.07);
+    }
+
+    .client-detail-page .summary-card::after {
+        content: "";
+        position: absolute;
+        width: 75px;
+        height: 75px;
+        border-radius: 50%;
+        right: -25px;
+        bottom: -30px;
+        opacity: .13;
+    }
+
+    .client-detail-page .summary-card.teal::after {
+        background: var(--bank-teal);
+    }
+
+    .client-detail-page .summary-card.yellow::after {
+        background: var(--bank-yellow);
+    }
+
+    .client-detail-page .summary-card.blue::after {
+        background: var(--bank-blue);
+    }
+
+    .client-detail-page .summary-card.red::after {
+        background: var(--bank-red);
+    }
+
+    .client-detail-page .summary-icon {
+        width: 39px;
+        height: 39px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 800;
+        margin-bottom: 15px;
+    }
+
+    .client-detail-page .summary-icon.teal {
+        color: var(--bank-teal);
+        background: #DCECEF;
+    }
+
+    .client-detail-page .summary-icon.yellow {
+        color: #856000;
+        background: #FFF0BE;
+    }
+
+    .client-detail-page .summary-icon.blue {
+        color: var(--bank-blue);
+        background: #E1EFFA;
+    }
+
+    .client-detail-page .summary-icon.red {
+        color: var(--bank-red);
+        background: #FBE5E3;
+    }
+
+    .client-detail-page .summary-label {
+        color: var(--bank-muted);
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .client-detail-page .summary-value {
+        font-size: clamp(19px, 2vw, 25px);
+        font-weight: 800;
+        color: var(--bank-text);
+        overflow-wrap: anywhere;
+    }
+
+    .client-detail-page .summary-note {
+        color: var(--bank-muted);
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .client-detail-page .detail-card {
+        background: var(--bank-card);
+        border: 1px solid var(--bank-border);
+        border-radius: 19px;
+        overflow: hidden;
+        margin-bottom: 22px;
+    }
+
+    .client-detail-page .detail-card-header {
+        padding: 19px 22px;
+        border-bottom: 1px solid var(--bank-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .client-detail-page .section-title {
+        color: var(--bank-teal);
+        font-size: 16px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .client-detail-page .section-subtitle {
+        color: var(--bank-muted);
+        font-size: 12px;
+        margin: 4px 0 0;
+    }
+
+    .client-detail-page .detail-card-body {
+        padding: 23px;
+    }
+
+    .client-detail-page .info-item {
+        height: 100%;
+        padding: 11px 13px;
+        border-radius: 12px;
+        background: #F8F3EA;
+        border: 1px solid rgba(233,224,211,.7);
+    }
+
+    .client-detail-page .info-label {
+        color: var(--bank-muted);
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .client-detail-page .info-value {
+        color: var(--bank-text);
+        font-size: 13px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .client-detail-page .credit-score-panel {
+        background: #FFF2C9;
+        border: 1px solid #F2D77D;
+        border-radius: 15px;
+        padding: 18px 20px;
+    }
+
+    .client-detail-page .credit-score-number {
+        color: var(--bank-teal);
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+
+    .client-detail-page .form-label {
+        color: var(--bank-text);
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 7px;
+    }
+
+    .client-detail-page input,
+    .client-detail-page select,
+    .client-detail-page textarea {
+        border: 1px solid var(--bank-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        width: 100%;
+        background: #FFFCF7;
+        color: var(--bank-text);
+        font-size: 13px;
+    }
+
+    .client-detail-page input:focus,
+    .client-detail-page select:focus,
+    .client-detail-page textarea:focus {
+        border-color: var(--bank-blue);
+        box-shadow: 0 0 0 3px rgba(40,120,184,.12);
+        outline: none;
+    }
+
+    .client-detail-page .btn-bank {
+        background: var(--bank-teal);
+        color: white;
+        border: 1px solid var(--bank-teal);
+        border-radius: 50px;
+        padding: 10px 19px;
+        font-size: 12px;
+        font-weight: 800;
+        transition: .2s ease;
+    }
+
+    .client-detail-page .btn-bank:hover {
+        background: #003746;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    .client-detail-page .table {
+        margin: 0;
+        color: var(--bank-text);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .client-detail-page .table thead th {
+        background: #F1E9DC;
+        color: var(--bank-teal);
+        border-bottom: 1px solid var(--bank-border);
+        padding: 14px 16px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+    }
+
+    .client-detail-page .table tbody td {
+        padding: 14px 16px;
+        border-color: var(--bank-border);
+        vertical-align: middle;
+    }
+
+    .client-detail-page .table tbody tr:hover {
+        background: #FBF3E7;
+    }
+
+    .client-detail-page .table .badge {
+        padding: 6px 9px;
+        border-radius: 50px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .client-detail-page .badge-bank {
+        background: #DCECEF;
+        color: var(--bank-teal);
+    }
+
+    .client-detail-page .badge-savings {
+        background: #E1EFFA;
+        color: var(--bank-blue);
+    }
+
+    .client-detail-page .badge-success-soft {
+        background: #DDF3E6;
+        color: #197044;
+    }
+
+    .client-detail-page .badge-warning-soft {
+        background: #FFF0C2;
+        color: #805D00;
+    }
+
+    .client-detail-page .badge-danger-soft {
+        background: #FCE1DF;
+        color: #A52E29;
+    }
+
+    .client-detail-page .badge-neutral {
+        background: #E7EDF0;
+        color: #52636B;
+    }
+
+    .client-detail-page .empty-state {
+        color: var(--bank-muted);
+        padding: 28px 15px !important;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .client-detail-page .table-responsive {
+        border-radius: 0 0 19px 19px;
+    }
+
+    @media (max-width: 767px) {
+        .client-detail-page .profile-header {
+            padding: 22px;
+        }
+
+        .client-detail-page .detail-card-body {
+            padding: 17px;
+        }
+
+        .client-detail-page .detail-card-header {
+            padding: 16px 18px;
+        }
+    }
+</style>
+
+<div class="container-fluid py-3 client-detail-page">
+
+    <!-- Back Button -->
     <div class="mb-3">
-        <a href="{% url 'staff_clients' %}" class="btn btn-sm btn-outline-secondary">
+        <a href="{% url 'staff_clients' %}" class="page-back">
             &larr; Back to Clients
         </a>
     </div>
 
-    <!-- Client Header -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-        <div>
-            <h3 class="mb-1">
-                {{ client.user.get_full_name|default:client.user.username }}
-            </h3>
-            <span class="text-muted">{{ client.client_code }}</span>
-        </div>
+    <!-- Client Profile Header -->
+    <div class="profile-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 position-relative" style="z-index:1;">
+            <div>
+                <div class="profile-label">Client Profile</div>
+                <h3 class="profile-name">
+                    {{ client.user.get_full_name|default:client.user.username }}
+                </h3>
+                <div class="profile-code">Client ID: {{ client.client_code }}</div>
+            </div>
 
-        {% if client.verification_status == "active" %}
-            <span class="badge bg-success">Verified</span>
-        {% elif client.verification_status == "pending" %}
-            <span class="badge bg-warning text-dark">Pending Verification</span>
-        {% elif client.verification_status == "rejected" %}
-            <span class="badge bg-danger">Rejected</span>
-        {% else %}
-            <span class="badge bg-secondary">
-                {{ client.get_verification_status_display }}
-            </span>
-        {% endif %}
+            <div>
+                {% if client.verification_status == "active" %}
+                    <span class="profile-status status-active">● Verified</span>
+                {% elif client.verification_status == "pending" %}
+                    <span class="profile-status status-pending">● Pending Verification</span>
+                {% elif client.verification_status == "rejected" %}
+                    <span class="profile-status status-rejected">● Rejected</span>
+                {% else %}
+                    <span class="profile-status status-neutral">
+                        {{ client.get_verification_status_display }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Summary Cards -->
     <div class="row g-3 mb-4">
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="text-muted small mb-1">Regular Bank Balance</div>
-                    <div class="fs-4 fw-bold">
-                        ₱{{ bank_account.balance|default:0|floatformat:2 }}
-                    </div>
-                    <small class="text-muted">Regular bank account</small>
+        <div class="col-6 col-xl-3">
+            <div class="summary-card teal">
+                <div class="summary-icon teal">₱</div>
+                <div class="summary-label">Regular Bank Balance</div>
+                <div class="summary-value">
+                    ₱{{ bank_account.balance|default:0|floatformat:2 }}
                 </div>
+                <div class="summary-note">Regular bank account</div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="text-muted small mb-1">Savings Balance</div>
-                    <div class="fs-4 fw-bold">
-                        ₱{{ total_savings|floatformat:2 }}
-                    </div>
-                    <small class="text-muted">Interest-earning account</small>
+        <div class="col-6 col-xl-3">
+            <div class="summary-card yellow">
+                <div class="summary-icon yellow">₱</div>
+                <div class="summary-label">Savings Balance</div>
+                <div class="summary-value">
+                    ₱{{ total_savings|floatformat:2 }}
                 </div>
+                <div class="summary-note">Interest-earning account</div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="text-muted small mb-1">Total Loans</div>
-                    <div class="fs-4 fw-bold">{{ loans|length }}</div>
-                    <small class="text-muted">Loan records</small>
-                </div>
+        <div class="col-6 col-xl-3">
+            <div class="summary-card blue">
+                <div class="summary-icon blue">↗</div>
+                <div class="summary-label">Total Loans</div>
+                <div class="summary-value">{{ loans|length }}</div>
+                <div class="summary-note">Loan records</div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="text-muted small mb-1">Transactions</div>
-                    <div class="fs-4 fw-bold">{{ transactions|length }}</div>
-                    <small class="text-muted">Recent transaction records</small>
-                </div>
+        <div class="col-6 col-xl-3">
+            <div class="summary-card red">
+                <div class="summary-icon red">≡</div>
+                <div class="summary-label">Transactions</div>
+                <div class="summary-value">{{ transactions|length }}</div>
+                <div class="summary-note">Recent transaction records</div>
             </div>
         </div>
 
     </div>
 
     <!-- Personal Information -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Client Information</h5>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <div>
+                <h5 class="section-title">Client Information</h5>
+                <p class="section-subtitle">Personal and registration details</p>
+            </div>
         </div>
 
-        <div class="card-body">
+        <div class="detail-card-body">
             <div class="row g-3">
 
                 <div class="col-md-4">
-                    <div class="text-muted small">First Name</div>
-                    <div>{{ client.user.first_name|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Last Name</div>
-                    <div>{{ client.user.last_name|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Username</div>
-                    <div>{{ client.user.username }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Email Address</div>
-                    <div>{{ client.user.email|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Mobile Number</div>
-                    <div>{{ client.phone|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Date of Birth</div>
-                    <div>{{ client.date_of_birth|date:"F d, Y"|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Sex</div>
-                    <div>{{ client.get_sex_display|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Civil Status</div>
-                    <div>{{ client.get_civil_status_display|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Nationality</div>
-                    <div>{{ client.nationality|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="text-muted small">Address</div>
-                    <div>{{ client.address|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="text-muted small">Employment Status</div>
-                    <div>{{ client.get_employment_status_display|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="text-muted small">Source of Income</div>
-                    <div>{{ client.source_of_income|default:"Not provided" }}</div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="text-muted small">Monthly Income</div>
-                    <div>
-                        {% if client.monthly_income %}
-                            ₱{{ client.monthly_income|floatformat:2 }}
-                        {% else %}
-                            Not provided
-                        {% endif %}
+                    <div class="info-item">
+                        <div class="info-label">First Name</div>
+                        <div class="info-value">{{ client.user.first_name|default:"Not provided" }}</div>
                     </div>
                 </div>
 
                 <div class="col-md-4">
-                    <div class="text-muted small">Credit Score</div>
-                    <div class="fw-bold">{{ client.credit_score }}</div>
+                    <div class="info-item">
+                        <div class="info-label">Last Name</div>
+                        <div class="info-value">{{ client.user.last_name|default:"Not provided" }}</div>
+                    </div>
                 </div>
 
                 <div class="col-md-4">
-                    <div class="text-muted small">Registration Date</div>
-                    <div>{{ client.created_at|date:"F d, Y" }}</div>
+                    <div class="info-item">
+                        <div class="info-label">Username</div>
+                        <div class="info-value">{{ client.user.username }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Email Address</div>
+                        <div class="info-value">{{ client.user.email|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Mobile Number</div>
+                        <div class="info-value">{{ client.phone|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Date of Birth</div>
+                        <div class="info-value">{{ client.date_of_birth|date:"F d, Y"|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Sex</div>
+                        <div class="info-value">{{ client.get_sex_display|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Civil Status</div>
+                        <div class="info-value">{{ client.get_civil_status_display|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Nationality</div>
+                        <div class="info-value">{{ client.nationality|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">{{ client.address|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <div class="info-label">Employment Status</div>
+                        <div class="info-value">{{ client.get_employment_status_display|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <div class="info-label">Source of Income</div>
+                        <div class="info-value">{{ client.source_of_income|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Monthly Income</div>
+                        <div class="info-value">
+                            {% if client.monthly_income %}
+                                ₱{{ client.monthly_income|floatformat:2 }}
+                            {% else %}
+                                Not provided
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Credit Score</div>
+                        <div class="info-value">{{ client.credit_score }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-item">
+                        <div class="info-label">Registration Date</div>
+                        <div class="info-value">{{ client.created_at|date:"F d, Y" }}</div>
+                    </div>
                 </div>
 
             </div>
@@ -178,22 +623,21 @@
     </div>
 
     <!-- Credit Score Management -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Credit Score Management</h5>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <div>
+                <h5 class="section-title">Credit Score Management</h5>
+                <p class="section-subtitle">Review and update the client's credit score</p>
+            </div>
         </div>
 
-        <div class="card-body">
+        <div class="detail-card-body">
 
-            <div class="mb-3">
-                <div class="text-muted small">Current Credit Score</div>
-                <div class="fs-3 fw-bold">{{ client.credit_score }}</div>
-                <small class="text-muted">
-                    Enter a score between 0 and 850.
-                </small>
+            <div class="credit-score-panel mb-4">
+                <div class="text-muted small fw-bold mb-2">CURRENT CREDIT SCORE</div>
+                <div class="credit-score-number">{{ client.credit_score }}</div>
+                <small class="text-muted">Enter a score between 0 and 850.</small>
             </div>
-
-            <hr>
 
             <form method="POST"
                   onsubmit="return confirm('Are you sure you want to update this client credit score?');">
@@ -217,7 +661,7 @@
                         {{ credit_score_form.credit_score }}
 
                         {% for error in credit_score_form.credit_score.errors %}
-                            <div class="text-danger small">{{ error }}</div>
+                            <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                     </div>
 
@@ -230,14 +674,14 @@
                         {{ credit_score_form.reason }}
 
                         {% for error in credit_score_form.reason.errors %}
-                            <div class="text-danger small">{{ error }}</div>
+                            <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                     </div>
 
                 </div>
 
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-primary">
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-bank">
                         Update Credit Score
                     </button>
                 </div>
@@ -246,15 +690,19 @@
         </div>
     </div>
 
-    <!-- Loans -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Loan Records</h5>
+    <!-- Loan Records -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <div>
+                <h5 class="section-title">Loan Records</h5>
+                <p class="section-subtitle">All loan applications associated with this client</p>
+            </div>
+            <span class="badge badge-bank">{{ loans|length }} Records</span>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle">
+                <thead>
                     <tr>
                         <th>Loan Product</th>
                         <th>Principal Amount</th>
@@ -268,26 +716,26 @@
                 <tbody>
                     {% for loan in loans %}
                         <tr>
-                            <td>{{ loan.product.name }}</td>
+                            <td class="fw-bold">{{ loan.product.name }}</td>
                             <td>₱{{ loan.principal|floatformat:2 }}</td>
                             <td>{{ loan.annual_rate }}%</td>
                             <td>{{ loan.term_months }} months</td>
                             <td>{{ loan.applied_at|date:"M d, Y" }}</td>
                             <td>
                                 {% if loan.status == "approved" or loan.status == "active" %}
-                                    <span class="badge bg-success">
+                                    <span class="badge badge-success-soft">
                                         {{ loan.get_status_display }}
                                     </span>
                                 {% elif loan.status == "pending" %}
-                                    <span class="badge bg-warning text-dark">
+                                    <span class="badge badge-warning-soft">
                                         {{ loan.get_status_display }}
                                     </span>
                                 {% elif loan.status == "rejected" or loan.status == "defaulted" %}
-                                    <span class="badge bg-danger">
+                                    <span class="badge badge-danger-soft">
                                         {{ loan.get_status_display }}
                                     </span>
                                 {% else %}
-                                    <span class="badge bg-secondary">
+                                    <span class="badge badge-neutral">
                                         {{ loan.get_status_display }}
                                     </span>
                                 {% endif %}
@@ -295,7 +743,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="6" class="empty-state">
                                 This client has no loan records.
                             </td>
                         </tr>
@@ -306,17 +754,17 @@
     </div>
 
     <!-- Regular Bank Account -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Regular Bank Account</h5>
-            <small class="text-muted">
-                Used for loan disbursements and transfers to savings.
-            </small>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <div>
+                <h5 class="section-title">Regular Bank Account</h5>
+                <p class="section-subtitle">Used for loan disbursements and transfers to savings</p>
+            </div>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle">
+                <thead>
                     <tr>
                         <th>Account Number</th>
                         <th>Balance</th>
@@ -328,17 +776,15 @@
                 <tbody>
                     {% if bank_account %}
                         <tr>
-                            <td>{{ bank_account.account_number }}</td>
-                            <td class="fw-semibold">
-                                ₱{{ bank_account.balance|floatformat:2 }}
-                            </td>
+                            <td class="fw-bold">{{ bank_account.account_number }}</td>
+                            <td class="fw-bold">₱{{ bank_account.balance|floatformat:2 }}</td>
                             <td>
                                 {% if bank_account.status == "active" %}
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge badge-success-soft">Active</span>
                                 {% elif bank_account.status == "frozen" %}
-                                    <span class="badge bg-warning text-dark">Frozen</span>
+                                    <span class="badge badge-warning-soft">Frozen</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">
+                                    <span class="badge badge-neutral">
                                         {{ bank_account.get_status_display }}
                                     </span>
                                 {% endif %}
@@ -347,7 +793,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
+                            <td colspan="4" class="empty-state">
                                 No regular bank account found.
                             </td>
                         </tr>
@@ -358,17 +804,18 @@
     </div>
 
     <!-- Savings Accounts -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Savings Account</h5>
-            <small class="text-muted">
-                This is the only account that earns interest.
-            </small>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <div>
+                <h5 class="section-title">Savings Account</h5>
+                <p class="section-subtitle">This is the only account that earns interest</p>
+            </div>
+            <span class="badge badge-savings">{{ savings_accounts|length }} Accounts</span>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle">
+                <thead>
                     <tr>
                         <th>Account Number</th>
                         <th>Balance</th>
@@ -380,17 +827,15 @@
                 <tbody>
                     {% for account in savings_accounts %}
                         <tr>
-                            <td>{{ account.account_number }}</td>
-                            <td class="fw-semibold">
-                                ₱{{ account.balance|floatformat:2 }}
-                            </td>
+                            <td class="fw-bold">{{ account.account_number }}</td>
+                            <td class="fw-bold">₱{{ account.balance|floatformat:2 }}</td>
                             <td>
                                 {% if account.status == "active" %}
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge badge-success-soft">Active</span>
                                 {% elif account.status == "frozen" %}
-                                    <span class="badge bg-warning text-dark">Frozen</span>
+                                    <span class="badge badge-warning-soft">Frozen</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">
+                                    <span class="badge badge-neutral">
                                         {{ account.get_status_display }}
                                     </span>
                                 {% endif %}
@@ -399,7 +844,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
+                            <td colspan="4" class="empty-state">
                                 This client has no savings account.
                             </td>
                         </tr>
@@ -410,15 +855,18 @@
     </div>
 
     <!-- Transaction History -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Recent Transaction History</h5>
-            <small class="text-muted">Latest 100 transaction records</small>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <div>
+                <h5 class="section-title">Recent Transaction History</h5>
+                <p class="section-subtitle">Latest 100 transaction records</p>
+            </div>
+            <span class="badge badge-bank">{{ transactions|length }} Transactions</span>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle">
+                <thead>
                     <tr>
                         <th>Date</th>
                         <th>Reference</th>
@@ -438,19 +886,17 @@
                             <td>
                                 {% if transaction.bank_account %}
                                     {{ transaction.bank_account.account_number }}
-                                    <span class="badge bg-primary">Bank</span>
+                                    <span class="badge badge-bank">Bank</span>
                                 {% elif transaction.savings_account %}
                                     {{ transaction.savings_account.account_number }}
-                                    <span class="badge bg-success">Savings</span>
+                                    <span class="badge badge-savings">Savings</span>
                                 {% elif transaction.loan %}
                                     Loan #{{ transaction.loan.pk }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td class="fw-semibold">
-                                ₱{{ transaction.amount|floatformat:2 }}
-                            </td>
+                            <td class="fw-bold">₱{{ transaction.amount|floatformat:2 }}</td>
                             <td>
                                 {% if transaction.balance_after != None %}
                                     ₱{{ transaction.balance_after|floatformat:2 }}
@@ -461,7 +907,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="6" class="empty-state">
                                 No transaction records found for this client.
                             </td>
                         </tr>
