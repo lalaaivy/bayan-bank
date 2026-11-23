@@ -1,105 +1,293 @@
+
+import re
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import NoReverseMatch, reverse
 from django.views.decorators.http import require_POST
-import re
 
 from .models import Notification
 
 
-def notification_destination(notification):
-    role = getattr(
-        getattr(notification.user, "role", None),
+# --------------------------------------------------
+# Notification destinations
+# --------------------------------------------------
+
+def _user_role(user):
+    """Return the current user's banking role."""
+    return getattr(
+        getattr(user, "role", None),
         "name",
         "",
+    ) or ""
+
+
+def _extract_loan_id(message):
+    """
+    Extract a loan ID from existing notification messages.
+
+    Supported examples:
+        Loan #2 has been disbursed.
+        New loan application #3 was submitted.
+        Application ID: 4
+        for loan #5
+    """
+    patterns = (
+        r"\bapplication\s+ID\s*:\s*(\d+)\b",
+        r"\bloan\s+application\s*#?\s*(\d+)\b",
+        r"\bloan\s*#\s*(\d+)\b",
     )
 
-    kind = str(getattr(notification, "kind", "")).lower()
+    for pattern in patterns:
+        match = re.search(
+            pattern,
+            message or "",
+            flags=re.IGNORECASE,
+        )
+
+        if match:
+            return int(match.group(1))
+
+    return None
+
+
+def _extract_client_id(message):
+    """
+    Extract a client ID from existing notification messages.
+
+    Supported examples:
+        Client #3 is pending verification.
+        Client #5 uploaded an ID.
+    """
+    match = re.search(
+        r"\bclient\s*#\s*(\d+)\b",
+        message or "",
+        flags=re.IGNORECASE,
+    )
+
+    if match:
+        return int(match.group(1))
+
+    return None
+
+
+def _is_loan_notification(kind):
+    return (
+        "loan" in kind
+        or "application" in kind
+        or "agreement" in kind
+        or "installment" in kind
+        or "repayment" in kind
+        or kind == "admin_loan_status"
+    )
+
+
+def _is_savings_notification(kind):
+    return (
+        "saving" in kind
+        or "interest" in kind
+        or "early_wd" in kind
+    )
+
+
+def _is_client_notification(kind):
+    return (
+        "client" in kind
+        or "verification" in kind
+    )
+
+
+def _is_payment_notification(kind):
+    return (
+        "payment" in kind
+        or "repayment" in kind
+    )
+
+
+def _safe_reverse(name, **kwargs):
+    """
+    Return a URL only when the named route exists.
+
+    This prevents notification navigation from crashing
+    if a route changes in a future update.
+    """
+    try:
+        return reverse(name, kwargs=kwargs or None)
+    except NoReverseMatch:
+        return None
+
+
+def notification_destination(notification):
+    """
+    Determine where a notification should lead.
+
+    Uses existing role-specific routes and extracts
+    record IDs from older notification messages.
+
+    All destination views retain their own permissions.
+    """
+    role = _user_role(notification.user)
+    kind = str(notification.kind or "").lower()
+    message = notification.message or ""
+
+    loan_id = _extract_loan_id(message)
+    client_id = _extract_client_id(message)
+
+    # ----------------------------------------------
+    # CLIENT
+    # ----------------------------------------------
 
     if role == "client":
-        if any(
-            word in kind
-            for word in (
-                "loan",
-                "payment",
-                "repayment",
-                "installment",
-                "agreement",
+        if _is_loan_notification(kind) or _is_payment_notification(kind):
+            return _safe_reverse("portal_loans") or _safe_reverse(
+                "my_loans"
             )
-        ):
-            return "portal_loans"
 
-        if any(
-            word in kind
-            for word in (
-                "saving",
-                "deposit",
-                "withdraw",
-                "transfer",
-                "interest",
+        if (
+            _is_savings_notification(kind)
+            or "deposit" in kind
+            or "withdraw" in kind
+            or "transfer" in kind
+        ):
+            return _safe_reverse("portal_savings") or _safe_reverse(
+                "savings_history"
             )
-        ):
-            return "portal_savings"
 
-        return "portal_home"
+        return _safe_reverse("portal_home")
+
+    # ----------------------------------------------
+    # LOAN OFFICER
+    # ----------------------------------------------
+
+    if role == "loan_officer":
+        if loan_id is not None:
+            url = _safe_reverse(
+                "loan_application_detail",
+                loan_id=loan_id,
+            )
+            if url:
+                return url
+
+        if _is_loan_notification(kind) or _is_payment_notification(kind):
+            return (
+                _safe_reverse("loan_applications")
+                or _safe_reverse("staff_loans")
+            )
+
+        return (
+            _safe_reverse("officer_home")
+            or _safe_reverse("staff_home")
+        )
+
+    # ----------------------------------------------
+    # STAFF
+    # ----------------------------------------------
+
+    if role == "staff":
+        if client_id is not None and _is_client_notification(kind):
+            url = _safe_reverse(
+                "verify_client_detail",
+                client_id=client_id,
+            )
+            if url:
+                return url
+
+        if loan_id is not None:
+            url = _safe_reverse(
+                "staff_loan",
+                loan_id=loan_id,
+            )
+            if url:
+                return url
+
+        if _is_client_notification(kind):
+            return _safe_reverse("verify_clients") or _safe_reverse(
+                "staff_clients"
+            )
+
+        if _is_payment_notification(kind):
+            return _safe_reverse("staff_payments")
+
+        if _is_savings_notification(kind):
+            return _safe_reverse("staff_savings")
+
+        if "bank" in kind or "transaction" in kind:
+            return _safe_reverse("bank_transactions")
+
+        if _is_loan_notification(kind):
+            return _safe_reverse("staff_loans")
+
+        return _safe_reverse("staff_home")
+
+    # ----------------------------------------------
+    # ADMIN
+    # ----------------------------------------------
 
     if role == "admin":
-        if "client" in kind or "verification" in kind:
-            return "staff_clients"
+        if client_id is not None and _is_client_notification(kind):
+            url = _safe_reverse(
+                "staff_client_detail",
+                client_id=client_id,
+            )
+            if url:
+                return url
 
-        if "loan" in kind or "overdue" in kind:
-            return "staff_loans"
+        if loan_id is not None:
+            url = _safe_reverse(
+                "staff_loan",
+                loan_id=loan_id,
+            )
+            if url:
+                return url
+
+        if _is_client_notification(kind):
+            return (
+                _safe_reverse("admin_clients")
+                or _safe_reverse("staff_clients")
+            )
+
+        if _is_loan_notification(kind) or _is_payment_notification(kind):
+            return _safe_reverse("staff_loans")
 
         if (
             "transaction" in kind
             or "transfer" in kind
             or "withdraw" in kind
+            or "deposit" in kind
         ):
-            return "bank_transactions"
+            return (
+                _safe_reverse("bank_transactions")
+                or _safe_reverse("admin_reports")
+            )
 
-        return "staff_home"
+        if _is_savings_notification(kind):
+            return _safe_reverse("admin_reports")
 
-    if role == "loan_officer":
-        if "loan" in kind or "payment" in kind:
-            return "staff_loans"
+        return (
+            _safe_reverse("admin_home")
+            or _safe_reverse("staff_home")
+        )
 
-        return "staff_home"
+    return _safe_reverse("home")
 
-    if role == "staff":
-        if "client" in kind or "verification" in kind:
-            return "staff_clients"
 
-        if "payment" in kind or "repayment" in kind:
-            return "staff_payments"
-
-        if "saving" in kind:
-            return "staff_savings"
-
-        if "bank" in kind or "transaction" in kind:
-            return "bank_transactions"
-
-        if "loan" in kind:
-            return "staff_loans"
-
-        return "staff_home"
-
-    return "home"
-
+# --------------------------------------------------
+# Notification list
+# --------------------------------------------------
 
 @login_required
 def notification_list(request):
-    notifications = Notification.objects.filter(
-        user=request.user,
-    ).order_by("-created_at", "-id")
+    notifications = (
+        Notification.objects
+        .filter(user=request.user)
+        .order_by("-created_at", "-id")
+    )
 
     unread_count = notifications.filter(
         is_read=False,
     ).count()
 
-    role = getattr(
-        getattr(request.user, "role", None),
-        "name",
-        None,
-    )
+    role = _user_role(request.user)
 
     if role == "client":
         template_name = "notifications/list.html"
@@ -115,6 +303,35 @@ def notification_list(request):
         },
     )
 
+
+# --------------------------------------------------
+# Open notification and mark as read
+# --------------------------------------------------
+
+@login_required
+@require_POST
+def notification_open(request, notification_id):
+    notification = get_object_or_404(
+        Notification,
+        pk=notification_id,
+        user=request.user,
+    )
+
+    destination = notification_destination(notification)
+
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+
+    if destination:
+        return redirect(destination)
+
+    return redirect("notification_list")
+
+
+# --------------------------------------------------
+# Mark one notification as read
+# --------------------------------------------------
 
 @login_required
 @require_POST
@@ -132,36 +349,9 @@ def mark_notification_read(request, notification_id):
     return redirect("notification_list")
 
 
-@login_required
-@require_POST
-def notification_open(request, notification_id):
-    notification = get_object_or_404(
-        Notification,
-        pk=notification_id,
-        user=request.user,
-    )
-
-    if not notification.is_read:
-        notification.is_read = True
-        notification.save(update_fields=["is_read"])
-
-    role = getattr(getattr(request.user, "role", None), "name", None)
-    if notification.kind in {"admin_client_pending", "client_id_uploaded"}:
-        match = re.search(r"Client #?(\d+)|client #?(\d+)", notification.message)
-        if match:
-            client_id = int(next(group for group in match.groups() if group))
-            if role == "staff":
-                return redirect("verify_client_detail", client_id=client_id)
-            if role == "admin":
-                return redirect("staff_client_detail", client_id=client_id)
-
-    if role == "loan_officer" and notification.kind == "loan_application_submitted":
-        match = re.search(r"Application ID:\s*(\d+)", notification.message, re.IGNORECASE)
-        if match:
-            return redirect("loan_application_detail", loan_id=int(match.group(1)))
-
-    return redirect(notification_destination(notification))
-
+# --------------------------------------------------
+# Mark all notifications as read
+# --------------------------------------------------
 
 @login_required
 @require_POST
@@ -174,12 +364,11 @@ def mark_all_notifications_read(request):
     return redirect("notification_list")
 
 
+# --------------------------------------------------
+# Compatibility with older notification routes
+# --------------------------------------------------
+
 @login_required
 @require_POST
 def notification_mark_all_read(request):
-    Notification.objects.filter(
-        user=request.user,
-        is_read=False,
-    ).update(is_read=True)
-
-    return redirect("notification_list")
+    return mark_all_notifications_read(request)

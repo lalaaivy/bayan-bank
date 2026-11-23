@@ -112,30 +112,28 @@
             {{ notification.message }}
           </p>
 
-          {% if notification.kind == "admin_client_pending" or notification.kind == "client_id_uploaded" %}
-            <form method="post" action="{% url 'notification_open' notification.id %}" class="mb-2">
+          <div class="d-flex flex-wrap align-items-center gap-3">
+
+            <form method="post"
+                  action="{% url 'notification_open' notification.id %}">
               {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>
-                Review Client
+              <button type="submit"
+                      class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right me-1"
+                   aria-hidden="true"></i>
+                {% if notification.kind == "admin_client_pending" or notification.kind == "client_id_uploaded" %}
+                  Review Client
+                {% elif notification.kind == "loan_application_submitted" %}
+                  Review Application
+                {% else %}
+                  View Details
+                {% endif %}
               </button>
             </form>
-          {% endif %}
 
-          {% if request.user.role.name == "loan_officer" and notification.kind == "loan_application_submitted" %}
-            <form method="post" action="{% url 'notification_open' notification.id %}" class="mb-2">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>
-                Review Application
-              </button>
-            </form>
-          {% endif %}
-
-          {% if notification.is_read %}
-            <span class="badge bg-secondary">Read</span>
-          {% else %}
-            <div class="d-flex align-items-center gap-2">
+            {% if notification.is_read %}
+              <span class="badge bg-secondary">Read</span>
+            {% else %}
               <span class="badge bg-primary">New</span>
 
               <form method="post"
@@ -146,15 +144,18 @@
                   Mark as read
                 </button>
               </form>
-            </div>
-          {% endif %}
+            {% endif %}
+
+          </div>
         </div>
 
       </div>
 
       {% empty %}
       <div class="text-center py-5 px-3">
-        <i class="bi bi-bell-slash text-muted" style="font-size: 3rem;" aria-hidden="true"></i>
+        <i class="bi bi-bell-slash text-muted"
+           style="font-size: 3rem;"
+           aria-hidden="true"></i>
         <h3 class="h6 fw-bold mt-3">No notifications yet</h3>
         <p class="text-muted mb-0">
           Important updates and alerts will appear here.
@@ -187,6 +188,12 @@
 
   .notification-message {
     overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 576px) {
+    .staff-notification-item {
+      padding: 1rem !important;
+    }
   }
 </style>
 {% endblock %}
