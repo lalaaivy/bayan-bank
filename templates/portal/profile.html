@@ -1,4 +1,3 @@
-
 {% extends "base_client.html" %}
 
 {% block title %}My Profile - Bayan Bank{% endblock %}
@@ -203,6 +202,49 @@
                 Logout
             </button>
         </form>
+    </div>
+
+    <!-- Account Access / Deactivation -->
+    <div class="profile-card account-access-card">
+
+        <div class="profile-card-heading">
+            <div class="profile-section-icon danger-icon">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+            <div>
+                <h5>Account Access</h5>
+                <p>Manage your access to Bayan Bank</p>
+            </div>
+        </div>
+
+        <div class="account-deactivation-content">
+            <div>
+                <h6>Deactivate My Account</h6>
+                <p>
+                    You can temporarily deactivate your Bayan Bank login access.
+                    You will be logged out immediately and will no longer be able
+                    to sign in until your reactivation request is reviewed and approved.
+                </p>
+                <p class="deactivation-warning">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Deactivation does not delete your account, bank accounts,
+                    loans, or transaction history.
+                </p>
+            </div>
+
+            <form
+                method="post"
+                action="{% url 'client_deactivate' %}"
+                onsubmit="return confirm('Are you sure you want to deactivate your Bayan Bank account? You will be logged out immediately.');"
+            >
+                {% csrf_token %}
+                <button type="submit" class="profile-deactivate-btn">
+                    <i class="bi bi-person-x-fill"></i>
+                    Deactivate My Account
+                </button>
+            </form>
+        </div>
+
     </div>
 
 </div>
@@ -468,6 +510,77 @@
         color: #fff;
     }
 
+    /* Account Deactivation */
+    .account-access-card {
+        border: 1px solid #F2D8D4;
+    }
+
+    .danger-icon {
+        background: #FBE4DF;
+        color: #C83E2D;
+    }
+
+    .account-deactivation-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+
+    .account-deactivation-content > div {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .account-deactivation-content h6 {
+        margin: 0 0 8px;
+        color: #263640;
+        font-size: 0.92rem;
+        font-weight: 700;
+    }
+
+    .account-deactivation-content p {
+        margin: 0 0 10px;
+        color: #7A8590;
+        font-size: 0.82rem;
+        line-height: 1.6;
+    }
+
+    .account-deactivation-content .deactivation-warning {
+        color: #8A5A20;
+    }
+
+    .deactivation-warning i {
+        margin-right: 4px;
+    }
+
+    .account-deactivation-content form {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    .profile-deactivate-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 43px;
+        padding: 11px 19px;
+        border: 1px solid #C83E2D;
+        border-radius: 999px;
+        background: #C83E2D;
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s ease;
+    }
+
+    .profile-deactivate-btn:hover {
+        border-color: #A52D20;
+        background: #A52D20;
+    }
+
     @media (max-width: 650px) {
         .profile-overview {
             align-items: flex-start;
@@ -507,6 +620,19 @@
         }
 
         .profile-actions form {
+            width: 100%;
+        }
+
+        .account-deactivation-content {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .account-deactivation-content form {
+            width: 100%;
+        }
+
+        .profile-deactivate-btn {
             width: 100%;
         }
     }

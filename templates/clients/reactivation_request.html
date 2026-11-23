@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Request Account Reactivation - Bayan Bank{% endblock %}
+
+{% block content %}
+
+<style>
+    .reactivation-page {
+        min-height: 75vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 16px;
+    }
+
+    .reactivation-card {
+        width: 100%;
+        max-width: 560px;
+        background: #fff;
+        border: 1px solid #e5eaf0;
+        border-radius: 18px;
+        padding: 36px;
+        box-shadow: 0 12px 35px rgba(15, 35, 65, 0.08);
+    }
+
+    .reactivation-icon {
+        width: 58px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        background: #eaf2ff;
+        color: #1756a9;
+        font-size: 26px;
+        margin-bottom: 22px;
+    }
+
+    .reactivation-card h2 {
+        font-weight: 700;
+        color: #17365f;
+        margin-bottom: 10px;
+    }
+
+    .reactivation-description {
+        color: #68778a;
+        line-height: 1.6;
+        margin-bottom: 25px;
+    }
+
+    .reactivation-field {
+        margin-bottom: 18px;
+    }
+
+    .reactivation-field label {
+        display: block;
+        font-weight: 600;
+        color: #34445a;
+        margin-bottom: 7px;
+    }
+
+    .reactivation-field input,
+    .reactivation-field textarea {
+        width: 100%;
+        border: 1px solid #dce3eb;
+        border-radius: 9px;
+        padding: 11px 13px;
+        outline: none;
+    }
+
+    .reactivation-field input:focus,
+    .reactivation-field textarea:focus {
+        border-color: #2563a8;
+        box-shadow: 0 0 0 3px rgba(37, 99, 168, 0.12);
+    }
+
+    .reactivation-field textarea {
+        min-height: 115px;
+        resize: vertical;
+    }
+
+    .reactivation-submit {
+        width: 100%;
+        border: none;
+        border-radius: 9px;
+        padding: 13px;
+        background: #174f91;
+        color: #fff;
+        font-weight: 600;
+        transition: background 0.2s ease;
+    }
+
+    .reactivation-submit:hover {
+        background: #103c70;
+    }
+
+    .reactivation-back {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #1756a9;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .reactivation-back:hover {
+        text-decoration: underline;
+    }
+
+    .reactivation-notice {
+        background: #f1f6fc;
+        border: 1px solid #dce9f8;
+        border-radius: 10px;
+        padding: 13px;
+        color: #49617e;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 22px;
+    }
+
+    @media (max-width: 576px) {
+        .reactivation-card {
+            padding: 25px 20px;
+        }
+    }
+</style>
+
+<div class="reactivation-page">
+    <div class="reactivation-card">
+
+        <div class="reactivation-icon">
+            <i class="bi bi-person-check"></i>
+        </div>
+
+        <h2>Request Account Reactivation</h2>
+
+        <p class="reactivation-description">
+            If your Bayan Bank login has been deactivated, you may
+            submit a reactivation request for administrator or staff
+            review.
+        </p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="reactivation-notice">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            Submitting this form does not immediately reactivate your
+            login. Your request must be reviewed and approved.
+            Your financial records and accounts remain preserved.
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="reactivation-field">
+                <label for="client_id">Client ID</label>
+                <input
+                    type="number"
+                    name="client_id"
+                    id="client_id"
+                    min="1"
+                    placeholder="Enter your Client ID"
+                    required
+                >
+            </div>
+
+            <div class="reactivation-field">
+                <label for="username">Username</label>
+                <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    maxlength="150"
+                    placeholder="Enter your registered username"
+                    autocomplete="username"
+                    required
+                >
+            </div>
+
+            <div class="reactivation-field">
+                <label for="reason">Reason for Reactivation</label>
+                <textarea
+                    name="reason"
+                    id="reason"
+                    minlength="10"
+                    maxlength="2000"
+                    placeholder="Explain why you are requesting account reactivation..."
+                    required
+                ></textarea>
+                <small class="text-muted">
+                    Please provide at least 10 characters.
+                </small>
+            </div>
+
+            <button type="submit" class="reactivation-submit">
+                Submit Reactivation Request
+                <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </form>
+
+        <a href="{% url 'login' %}" class="reactivation-back">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Login
+        </a>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,9 +1,9 @@
-
 from django.db import transaction
 
 from accounting.models import BankAccount, LedgerEntry
 from accounting.money import BankError, to_money
 from audit.services import log
+from clients.services import client_has_active_security_freeze
 from notifications.models import Notification
 
 
@@ -24,6 +24,7 @@ def _get_active_account(account_id):
         account = (
             BankAccount.objects
             .select_for_update()
+            .select_related("client", "client__user")
             .get(pk=account_id)
         )
     except (BankAccount.DoesNotExist, ValueError, TypeError):
@@ -32,6 +33,12 @@ def _get_active_account(account_id):
     if account.status != BankAccount.Status.ACTIVE:
         raise BankError(
             f"Bank account {account.account_number} is not active."
+        )
+
+    if client_has_active_security_freeze(account.client_id):
+        raise BankError(
+            "This client's account is under a security restriction. "
+            "Transactions are currently unavailable."
         )
 
     return account
@@ -151,6 +158,7 @@ def transfer_between_banks(
     accounts = list(
         BankAccount.objects
         .select_for_update()
+        .select_related("client", "client__user")
         .filter(pk__in=[source_id, destination_id])
         .order_by("pk")
     )
@@ -169,6 +177,20 @@ def transfer_between_banks(
     if destination.status != BankAccount.Status.ACTIVE:
         raise BankError("Destination bank account is not active.")
 
+    # Check both clients. This blocks outgoing transfers from
+    # frozen clients and incoming transfers to frozen clients.
+    if client_has_active_security_freeze(source.client_id):
+        raise BankError(
+            "The sender's account is under a security restriction. "
+            "The transfer cannot be processed."
+        )
+
+    if client_has_active_security_freeze(destination.client_id):
+        raise BankError(
+            "The recipient's account is under a security restriction. "
+            "The transfer cannot be received."
+        )
+
     if source.balance < amount:
         raise BankError("Insufficient bank account balance.")
 
@@ -178,9 +200,7 @@ def transfer_between_banks(
     source.save(update_fields=["balance"])
     destination.save(update_fields=["balance"])
 
-    reference = (
-        f"TRANSFER-{source.pk}-{destination.pk}"
-    )
+    reference = f"TRANSFER-{source.pk}-{destination.pk}"
 
     outgoing = LedgerEntry.objects.create(
         entry_type=LedgerEntry.EntryType.TRANSFER_OUT,

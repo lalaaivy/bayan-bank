@@ -30,7 +30,7 @@ urlpatterns = [
         name="export_bank_transactions_excel",
     ),
 
-    # Staff banking transactions
+    # Staff and admin banking transactions
     path(
         "staff/bank-transactions/",
         bank_views.bank_transactions,
@@ -50,6 +50,13 @@ urlpatterns = [
         "staff/bank-transactions/transfer/",
         bank_views.bank_transfer,
         name="bank_transfer",
+    ),
+
+    # Admin bank account freeze/unfreeze
+    path(
+        "admin-panel/bank-accounts/<int:account_id>/toggle-status/",
+        bank_views.admin_toggle_bank_account_status,
+        name="admin_toggle_bank_account_status",
     ),
 
     # Client banking transactions

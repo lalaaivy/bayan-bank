@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Account Deactivated - Bayan Bank{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center p-4 p-md-5">
+
+                    <div class="mb-4">
+                        <i class="bi bi-shield-check text-success"
+                           style="font-size: 4rem;"></i>
+                    </div>
+
+                    <h2 class="fw-bold mb-3">
+                        Account Access Deactivated
+                    </h2>
+
+                    <p class="text-muted mb-4">
+                        Your Bayan Bank login has been successfully
+                        deactivated.
+                    </p>
+
+                    <div class="alert alert-warning text-start">
+                        <strong>What this means:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>You can no longer sign in using this account.</li>
+                            <li>Your bank and savings account records are retained.</li>
+                            <li>Your balances, loans, transactions, and financial history are not deleted.</li>
+                            <li>Any outstanding financial obligations remain valid.</li>
+                        </ul>
+                    </div>
+
+                    <h5 class="fw-semibold mt-4">
+                        Want to restore your access?
+                    </h5>
+
+                    <p class="text-muted">
+                        You may submit a reactivation request.
+                        Bayan Bank staff will review your request before
+                        restoring your login access.
+                    </p>
+
+                    <a href="{% url 'public_reactivation_request' %}"
+                       class="btn btn-primary w-100 mt-2">
+                        Request Account Reactivation
+                    </a>
+
+                    <p class="small text-muted mt-4 mb-0">
+                        Thank you for using Bayan Bank.
+                    </p>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

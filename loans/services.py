@@ -8,6 +8,7 @@ from accounts.models import Role, User
 from accounting.models import BankAccount, LedgerEntry
 from accounting.money import BankError, to_money
 from audit.services import log
+from clients.services import client_has_active_security_freeze
 from notifications.models import Notification
 from savings.models import SavingsAccount
 
@@ -57,9 +58,27 @@ def _require_role(user, allowed, message):
         raise BankError(message)
 
 
+def _require_no_security_freeze(client_id):
+    """
+    Prevent client financial activity while an active security
+    freeze exists.
+    """
+    if client_has_active_security_freeze(client_id):
+        raise BankError(
+            "Your accounts are under a security restriction. "
+            "Loan applications, disbursements, and online payments "
+            "are currently unavailable."
+        )
+
+
 def _get_loan_locked(loan_id):
     try:
-        return Loan.objects.select_for_update().get(pk=loan_id)
+        return (
+            Loan.objects
+            .select_for_update()
+            .select_related("client", "client__user")
+            .get(pk=loan_id)
+        )
     except Loan.DoesNotExist:
         raise BankError("Loan not found.")
 
@@ -251,7 +270,6 @@ def _evaluate(loan, checked_by):
     failed = []
     needs_review = []
 
-    # 1. Minimum age
     if age is None:
         needs_review.append(
             "Age: date of birth is missing. Verify the client's age."
@@ -262,14 +280,12 @@ def _evaluate(loan, checked_by):
             f"minimum age of {minimum_age}."
         )
 
-    # 2. Minimum monthly income
     if income < minimum_income:
         failed.append(
             f"Minimum income: monthly income of P{income:,.2f} "
             f"is below the required P{minimum_income:,.2f}."
         )
 
-    # 3. Monthly installment affordability
     if income <= Decimal("0.00"):
         if not any("Minimum income:" in item for item in failed):
             needs_review.append(
@@ -284,7 +300,6 @@ def _evaluate(loan, checked_by):
             f"of monthly income P{income:,.2f}."
         )
 
-    # 4. Savings requirement
     required_savings = loan.principal * min_savings_ratio
 
     if savings < required_savings:
@@ -294,7 +309,6 @@ def _evaluate(loan, checked_by):
             "of the loan amount)."
         )
 
-    # 5. Minimum credit score
     if minimum_score > 0 and score <= 0:
         needs_review.append(
             "Credit score: no usable credit score is recorded. "
@@ -307,7 +321,6 @@ def _evaluate(loan, checked_by):
             f"of {minimum_score}."
         )
 
-    # Determine eligibility result
     if len(failed) >= 2:
         result = EligibilityCheck.Result.INELIGIBLE
         remarks = (
@@ -379,7 +392,7 @@ def check_overdue_loans(client):
 
 @transaction.atomic
 def check_eligibility(loan_id, by):
-    """Allow a loan officer or admin to reassess eligibility."""
+    """Allow a loan officer to reassess eligibility."""
 
     _require_role(
         by,
@@ -411,6 +424,16 @@ def apply_for_loan(
     purpose="",
 ):
     """Create a loan application and perform its initial assessment."""
+
+    client = type(client).objects.select_for_update().get(pk=client.pk)
+
+    _require_no_security_freeze(client.pk)
+
+    if not by or not by.is_authenticated:
+        raise BankError("Authentication is required.")
+
+    if client.user_id != by.pk:
+        raise BankError("You can only apply for a loan for yourself.")
 
     try:
         principal = to_money(principal)
@@ -476,7 +499,6 @@ def apply_for_loan(
         purpose=purpose,
     )
 
-    # Perform the initial eligibility assessment.
     _evaluate(loan, None)
 
     _notify_loan_parties(
@@ -523,7 +545,6 @@ def approve_loan(loan_id, by):
     if loan.client.user_id == by.pk:
         raise BankError("You cannot approve your own loan.")
 
-    # Always perform a fresh eligibility assessment.
     latest_check = _evaluate(loan, by)
 
     if latest_check.result == EligibilityCheck.Result.INELIGIBLE:
@@ -712,6 +733,8 @@ def accept_loan_agreement(loan_id, by):
             "Only the borrower can accept this agreement."
         )
 
+    _require_no_security_freeze(loan.client_id)
+
     if loan.status != Loan.Status.APPROVED:
         raise BankError(
             "Only approved loans have an agreement to accept."
@@ -780,6 +803,9 @@ def disburse_loan(loan_id, by, bank_account_id):
 
     loan = _get_loan_locked(loan_id)
 
+    # Check the borrower before creating installments or crediting funds.
+    _require_no_security_freeze(loan.client_id)
+
     if loan.status != Loan.Status.APPROVED:
         raise BankError(
             f"Only approved loans can be disbursed "
@@ -810,7 +836,9 @@ def disburse_loan(loan_id, by, bank_account_id):
 
     try:
         account = (
-            BankAccount.objects.select_for_update()
+            BankAccount.objects
+            .select_for_update()
+            .select_related("client", "client__user")
             .get(pk=bank_account_id)
         )
     except BankAccount.DoesNotExist:
@@ -852,11 +880,9 @@ def disburse_loan(loan_id, by, bank_account_id):
         for row in rows
     ])
 
-    # Credit the regular bank account.
     account.balance += loan.principal
     account.save(update_fields=["balance"])
 
-    # Record the disbursement in the accounting ledger.
     entry = LedgerEntry.objects.create(
         entry_type=LedgerEntry.EntryType.LOAN_DISBURSEMENT,
         amount=loan.principal,
@@ -874,7 +900,6 @@ def disburse_loan(loan_id, by, bank_account_id):
         disbursed_by=by,
     )
 
-    # Activate the loan.
     loan.status = Loan.Status.ACTIVE
     loan.disbursed_at = timezone.now()
     loan.start_date = today
@@ -1045,6 +1070,8 @@ def record_payment(loan_id, amount, by):
             f"(this one is {loan.status})."
         )
 
+    # Staff-recorded repayments remain available. This workflow
+    # records a payment and does not debit the frozen bank account.
     remaining_after_payment = _allocate_payment_to_installments(
         loan,
         amount,
@@ -1149,6 +1176,8 @@ def make_online_payment(loan_id, amount, by):
             "You are not authorized to pay this loan."
         )
 
+    _require_no_security_freeze(loan.client_id)
+
     if loan.status != Loan.Status.ACTIVE:
         raise BankError(
             "Online payments are only allowed for active loans."
@@ -1156,17 +1185,16 @@ def make_online_payment(loan_id, amount, by):
 
     try:
         account = (
-            BankAccount.objects.select_for_update()
-            .get(client_id=loan.client_id, status=BankAccount.Status.ACTIVE)
+            BankAccount.objects
+            .select_for_update()
+            .get(
+                client_id=loan.client_id,
+                status=BankAccount.Status.ACTIVE,
+            )
         )
     except BankAccount.DoesNotExist:
         raise BankError(
             "You do not have a regular bank account for this payment."
-        )
-
-    if account.status != BankAccount.Status.ACTIVE:
-        raise BankError(
-            "Your bank account is not active. Please contact the bank."
         )
 
     if account.balance < amount:
@@ -1175,17 +1203,14 @@ def make_online_payment(loan_id, amount, by):
             f"P{account.balance:,.2f}."
         )
 
-    # Allocate the payment to installments first.
     remaining_after_payment = _allocate_payment_to_installments(
         loan,
         amount,
     )
 
-    # Debit the regular bank account.
     account.balance -= amount
     account.save(update_fields=["balance"])
 
-    # Record the debit in the accounting ledger.
     entry = LedgerEntry.objects.create(
         entry_type=LedgerEntry.EntryType.LOAN_PAYMENT,
         amount=amount,
@@ -1195,7 +1220,6 @@ def make_online_payment(loan_id, amount, by):
         created_by=by,
     )
 
-    # Record the loan payment.
     LoanPayment.objects.create(
         loan=loan,
         ledger_entry=entry,

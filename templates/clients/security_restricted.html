@@ -1,0 +1,284 @@
+{% extends "base_client.html" %}
+
+{% block title %}Account Temporarily Restricted - Bayan Bank{% endblock %}
+
+{% block content %}
+
+<style>
+    .restricted-container {
+        max-width: 850px;
+        margin: 45px auto;
+        padding: 20px;
+    }
+
+    .restricted-card {
+        padding: 38px;
+        border: 1px solid #e5eaf2;
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 8px 30px rgba(20, 40, 80, .08);
+        text-align: center;
+    }
+
+    .restricted-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 85px;
+        height: 85px;
+        margin: 0 auto 22px;
+        border-radius: 50%;
+        background: #fff2df;
+        color: #d58a17;
+        font-size: 38px;
+    }
+
+    .restricted-icon.serious {
+        background: #fde8e8;
+        color: #c93636;
+    }
+
+    .restricted-eyebrow {
+        margin-bottom: 8px;
+        color: #8995a8;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+
+    .restricted-card h2 {
+        margin-bottom: 14px;
+        color: #17243a;
+        font-size: 27px;
+        font-weight: 800;
+    }
+
+    .restricted-description {
+        max-width: 620px;
+        margin: 0 auto 25px;
+        color: #718096;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .restriction-details {
+        margin-top: 25px;
+        padding: 20px;
+        border-radius: 12px;
+        background: #f5f7fb;
+        text-align: left;
+    }
+
+    .restriction-details h4 {
+        margin-bottom: 15px;
+        color: #263650;
+        font-size: 15px;
+        font-weight: 800;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 11px 0;
+        border-bottom: 1px solid #e5eaf2;
+        font-size: 13px;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-row span {
+        color: #8290a5;
+    }
+
+    .detail-row strong {
+        color: #263650;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .restriction-instructions {
+        margin-top: 22px;
+        padding: 18px;
+        border-left: 4px solid #d99a26;
+        border-radius: 8px;
+        background: #fff9ed;
+        color: #72551e;
+        font-size: 13px;
+        line-height: 1.8;
+        text-align: left;
+    }
+
+    .restriction-instructions.serious {
+        border-left-color: #cc4141;
+        background: #fff3f3;
+        color: #813434;
+    }
+
+    .restricted-footer {
+        margin-top: 25px;
+        color: #8995a8;
+        font-size: 12px;
+        line-height: 1.7;
+    }
+
+    @media (max-width: 600px) {
+        .restricted-card {
+            padding: 25px 18px;
+        }
+
+        .restricted-card h2 {
+            font-size: 22px;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-row strong {
+            text-align: left;
+        }
+    }
+</style>
+
+<div class="restricted-container">
+
+    <div class="restricted-card">
+
+        {% if security_freeze.severity == "serious" %}
+
+            <div class="restricted-icon serious">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+
+            <p class="restricted-eyebrow">Security Protection</p>
+
+            <h2>Account Security Review Required</h2>
+
+            <p class="restricted-description">
+                Your Bayan Bank accounts have been temporarily
+                restricted due to a serious security concern.
+                This protective measure helps safeguard your
+                account and financial information.
+            </p>
+
+        {% else %}
+
+            <div class="restricted-icon">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+
+            <p class="restricted-eyebrow">Temporary Security Restriction</p>
+
+            <h2>Your Accounts Are Temporarily Frozen</h2>
+
+            <p class="restricted-description">
+                We detected activity that requires a temporary
+                security review. Your accounts have been frozen
+                as a precaution while this restriction is active.
+            </p>
+
+        {% endif %}
+
+        <div class="restriction-details">
+
+            <h4>
+                <i class="bi bi-info-circle"></i>
+                Restriction Details
+            </h4>
+
+            <div class="detail-row">
+                <span>Restriction Type</span>
+                <strong>
+                    {{ security_freeze.get_severity_display }}
+                </strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Status</span>
+                <strong>{{ security_freeze.get_status_display }}</strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Date Started</span>
+                <strong>
+                    {{ security_freeze.started_at|date:"M d, Y h:i A" }}
+                </strong>
+            </div>
+
+            {% if security_freeze.expires_at %}
+                <div class="detail-row">
+                    <span>Expected Automatic Release</span>
+                    <strong>
+                        {{ security_freeze.expires_at|date:"M d, Y h:i A" }}
+                    </strong>
+                </div>
+            {% else %}
+                <div class="detail-row">
+                    <span>Release Schedule</span>
+                    <strong>Manual Staff Approval Required</strong>
+                </div>
+            {% endif %}
+
+        </div>
+
+        {% if security_freeze.severity == "serious" %}
+
+            <div class="restriction-instructions serious">
+                <strong>
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Required Action
+                </strong>
+
+                <p class="mb-0 mt-2">
+                    Please visit your Bayan Bank branch personally.
+                    Bring a valid government-issued identification
+                    document. Bank personnel must verify your identity
+                    and complete the security review before your
+                    accounts can be unfrozen.
+                </p>
+            </div>
+
+        {% else %}
+
+            <div class="restriction-instructions">
+                <strong>
+                    <i class="bi bi-clock-history"></i>
+                    Temporary Restriction
+                </strong>
+
+                <p class="mb-0 mt-2">
+                    This restriction is scheduled to expire after
+                    24 hours. Your accounts will be eligible for
+                    automatic unfreezing once the scheduled
+                    expiration is processed.
+                </p>
+            </div>
+
+        {% endif %}
+
+        <div class="restricted-footer">
+            <i class="bi bi-shield-check"></i>
+
+            Your login remains active, but banking transactions
+            and account operations are unavailable while this
+            security restriction is in effect.
+
+            <br><br>
+
+            If you need assistance, please contact or visit
+            your Bayan Bank branch.
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block chatbot %}
+{% endblock %}

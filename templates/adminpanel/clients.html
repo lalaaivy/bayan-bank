@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Client Management - Bayan Bank{% endblock %}
@@ -9,14 +8,31 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div>
             <h3 class="mb-1">Client Management</h3>
-            <p class="text-muted mb-0">View client profiles and manage verification.</p>
+            <p class="text-muted mb-0">
+                View client profiles and manage their accounts and security.
+            </p>
         </div>
+
+        <a href="{% url 'admin_reactivation_requests' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-repeat me-1"></i>
+            Reactivation Requests
+        </a>
     </div>
 
     <a href="{% url 'admin_home' %}" class="btn btn-sm btn-outline-secondary mb-3">
         &larr; Back to Admin Dashboard
     </a>
 
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Search and Filter -->
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
             <form method="get" class="row g-2">
@@ -31,7 +47,7 @@
 
                 <div class="col-md-3">
                     <select class="form-select" name="status">
-                        <option value="">All statuses</option>
+                        <option value="">All verification statuses</option>
                         {% for value, label in statuses %}
                             <option value="{{ value }}" {% if value == status %}selected{% endif %}>
                                 {{ label }}
@@ -44,6 +60,7 @@
                     <button type="submit" class="btn btn-dark">
                         Filter
                     </button>
+
                     <a href="{% url 'admin_clients' %}" class="btn btn-outline-secondary">
                         Reset
                     </a>
@@ -52,6 +69,7 @@
         </div>
     </div>
 
+    <!-- Client Table -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3">
             <h6 class="mb-0">Registered Clients</h6>
@@ -64,9 +82,11 @@
                         <th>Client ID</th>
                         <th>Name</th>
                         <th>Username</th>
-                        <th>Verification Status</th>
+                        <th>Verification</th>
+                        <th>Login</th>
+                        <th>Security</th>
                         <th>Registered</th>
-                        <th style="min-width: 230px;">Actions</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
 
@@ -75,9 +95,7 @@
                         <tr>
                             <td class="fw-semibold">{{ client.client_code }}</td>
 
-                            <td>
-                                {{ client.user.get_full_name|default:"-" }}
-                            </td>
+                            <td>{{ client.user.get_full_name|default:"-" }}</td>
 
                             <td>{{ client.user.username }}</td>
 
@@ -101,11 +119,31 @@
                                 {% endif %}
                             </td>
 
-                            <td>{{ client.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if client.login_is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Deactivated</span>
+                                {% endif %}
+                            </td>
 
                             <td>
-                                <div class="d-flex flex-wrap gap-2">
+                                {% if client.active_security_freeze %}
+                                    <span class="badge bg-danger">
+                                        Frozen
+                                    </span>
+                                    <div class="small text-muted">
+                                        {{ client.active_security_freeze.get_severity_display }}
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </td>
 
+                            <td>{{ client.created_at|date:"M d, Y" }}</td>
+
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center flex-wrap gap-2">
                                     <a
                                         href="{% url 'staff_client_detail' client.pk %}"
                                         class="btn btn-sm btn-dark"
@@ -117,16 +155,25 @@
                                         href="{% url 'verify_client_detail' client.pk %}"
                                         class="btn btn-sm btn-outline-primary"
                                     >
-                                        Review Verification
+                                        Verification
                                     </a>
 
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#manageClient{{ client.pk }}"
+                                    >
+                                        <i class="bi bi-gear me-1"></i>
+                                        Manage Account
+                                    </button>
                                 </div>
                             </td>
                         </tr>
 
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 No clients found.
                             </td>
                         </tr>
@@ -135,6 +182,309 @@
             </table>
         </div>
     </div>
+
+    <!-- Client Management Modals -->
+    {% for client in clients %}
+        <div
+            class="modal fade"
+            id="manageClient{{ client.pk }}"
+            tabindex="-1"
+            aria-labelledby="manageClientLabel{{ client.pk }}"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title" id="manageClientLabel{{ client.pk }}">
+                                Manage Client Account
+                            </h5>
+                            <div class="small text-muted">
+                                {{ client.user.get_full_name|default:client.user.username }}
+                                &middot; {{ client.client_code }}
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <!-- Account Overview -->
+                        <div class="bg-light rounded p-3 mb-4">
+                            <h6 class="mb-3">Account Overview</h6>
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="small text-muted">Login Access</div>
+                                    {% if client.login_is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Deactivated</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="small text-muted">Verification</div>
+                                    <strong>{{ client.get_verification_status_display }}</strong>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="small text-muted">Security</div>
+                                    {% if client.active_security_freeze %}
+                                        <span class="badge bg-danger">Frozen</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Normal</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Login Access -->
+                        <section class="mb-4">
+                            <h6 class="fw-bold">
+                                <i class="bi bi-person-lock me-2"></i>
+                                Login Access
+                            </h6>
+                            <p class="small text-muted">
+                                Control whether this client can sign in to Bayan Bank.
+                                Deactivation does not delete financial records.
+                            </p>
+
+                            {% if client.login_is_active %}
+                                <form
+                                    method="post"
+                                    action="{% url 'admin_deactivate_client' client.pk %}"
+                                    onsubmit="return confirm('Deactivate this client login?');"
+                                >
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        Deactivate Login
+                                    </button>
+                                </form>
+                            {% else %}
+                                <div class="alert alert-secondary py-2 small mb-2">
+                                    This client's login is currently deactivated.
+                                </div>
+
+                                <p class="small mb-2">
+                                    The client must submit a reactivation request.
+                                    Staff or an administrator must review it.
+                                </p>
+
+                                {% if client.has_pending_reactivation_request %}
+                                    <a
+                                        href="{% url 'admin_reactivation_requests' %}"
+                                        class="btn btn-sm btn-warning"
+                                    >
+                                        Review Pending Request
+                                    </a>
+                                {% else %}
+                                    <a
+                                        href="{% url 'admin_reactivation_requests' %}"
+                                        class="btn btn-sm btn-outline-primary"
+                                    >
+                                        Open Reactivation Requests
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </section>
+
+                        <hr>
+
+                        <!-- Security Management -->
+                        <section class="mb-4">
+                            <h6 class="fw-bold">
+                                <i class="bi bi-shield-lock me-2"></i>
+                                Security Management
+                            </h6>
+
+                            <p class="small text-muted">
+                                A security freeze restricts financial activity on eligible
+                                bank and savings accounts without automatically disabling login.
+                            </p>
+
+                            {% if client.active_security_freeze %}
+
+                                <div class="alert alert-danger py-2">
+                                    <strong>
+                                        {{ client.active_security_freeze.get_severity_display }}
+                                        Freeze
+                                    </strong>
+
+                                    <div class="small mt-1">
+                                        Reason: {{ client.active_security_freeze.reason }}
+                                    </div>
+
+                                    <div class="small mt-1">
+                                        Started:
+                                        {{ client.active_security_freeze.started_at|date:"M d, Y H:i" }}
+                                    </div>
+
+                                    {% if client.active_security_freeze.expires_at %}
+                                        <div class="small mt-1">
+                                            Scheduled expiration:
+                                            {{ client.active_security_freeze.expires_at|date:"M d, Y H:i" }}
+                                        </div>
+                                    {% else %}
+                                        <div class="small mt-1">
+                                            Manual release required after branch verification.
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <form
+                                    method="post"
+                                    action="{% url 'admin_release_security_freeze' client.active_security_freeze.pk %}"
+                                    onsubmit="return confirm('Release this security freeze? Make sure the required review has been completed.');"
+                                >
+                                    {% csrf_token %}
+
+                                    {% if client.active_security_freeze.severity == "serious" %}
+                                        <label class="form-label small">
+                                            Branch Verification Reference
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="branch_reference"
+                                            class="form-control form-control-sm mb-2"
+                                            placeholder="Enter branch reference"
+                                            required
+                                        >
+                                    {% else %}
+                                        <label class="form-label small">
+                                            Branch Reference (Optional)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="branch_reference"
+                                            class="form-control form-control-sm mb-2"
+                                            placeholder="Optional reference"
+                                        >
+                                    {% endif %}
+
+                                    <label class="form-label small">Staff Notes</label>
+                                    <textarea
+                                        name="staff_notes"
+                                        class="form-control form-control-sm mb-2"
+                                        rows="2"
+                                        placeholder="Record the review and reason for release"
+                                    ></textarea>
+
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="bi bi-unlock me-1"></i>
+                                        Unfreeze Accounts
+                                    </button>
+                                </form>
+
+                            {% else %}
+
+                                <form
+                                    method="post"
+                                    action="{% url 'admin_freeze_client' client.pk %}"
+                                    onsubmit="return confirm('Apply a security freeze to this client?');"
+                                >
+                                    {% csrf_token %}
+
+                                    <label class="form-label small">Freeze Severity</label>
+                                    <select
+                                        name="severity"
+                                        class="form-select form-select-sm mb-2"
+                                        required
+                                    >
+                                        {% for value, label in freeze_severities %}
+                                            <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <label class="form-label small">Reason</label>
+                                    <textarea
+                                        name="reason"
+                                        class="form-control form-control-sm mb-2"
+                                        rows="3"
+                                        minlength="5"
+                                        placeholder="Describe the suspicious activity or security concern"
+                                        required
+                                    ></textarea>
+
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-shield-exclamation me-1"></i>
+                                        Apply Security Freeze
+                                    </button>
+                                </form>
+
+                                <div class="small text-muted mt-2">
+                                    <strong>Minor:</strong> Automatically expires after 24 hours.
+                                    <br>
+                                    <strong>Serious:</strong> Requires branch verification and manual release.
+                                </div>
+
+                            {% endif %}
+                        </section>
+
+                        <hr>
+
+                        <!-- Danger Zone -->
+                        <section>
+                            <h6 class="fw-bold text-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Danger Zone
+                            </h6>
+
+                            <p class="small text-muted">
+                                Delete the client profile only when no protected financial
+                                or related records exist. The associated login and audit
+                                history are retained.
+                            </p>
+
+                            <form
+                                method="post"
+                                action="{% url 'admin_delete_client' client.pk %}"
+                                onsubmit="return confirm('Attempt to delete this client profile? The operation will be blocked if protected records exist.');"
+                            >
+                                {% csrf_token %}
+
+                                <label class="form-label small">
+                                    Type DELETE to confirm
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="confirm_delete"
+                                    class="form-control form-control-sm mb-2"
+                                    placeholder="Type DELETE"
+                                    autocomplete="off"
+                                    required
+                                >
+
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    Delete Client Profile
+                                </button>
+                            </form>
+                        </section>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    {% endfor %}
 
 </div>
 {% endblock %}
