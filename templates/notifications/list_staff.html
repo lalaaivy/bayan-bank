@@ -69,7 +69,9 @@
         <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0"
              style="width: 44px; height: 44px;">
 
-          {% if notification.kind == "loan_approved" %}
+          {% if notification.kind == "admin_client_pending" or notification.kind == "client_id_uploaded" %}
+            <i class="bi bi-person-check-fill text-primary fs-5" aria-hidden="true"></i>
+          {% elif notification.kind == "loan_approved" %}
             <i class="bi bi-check-circle-fill text-success fs-5" aria-hidden="true"></i>
           {% elif notification.kind == "loan_rejected" %}
             <i class="bi bi-x-circle-fill text-danger fs-5" aria-hidden="true"></i>
@@ -91,7 +93,13 @@
           <div class="d-flex flex-wrap justify-content-between gap-2">
 
             <strong class="text-dark">
-              {{ notification.get_kind_display|default:notification.kind|title }}
+              {% if notification.kind == "admin_client_pending" %}
+                New Client Pending Verification
+              {% elif notification.kind == "client_id_uploaded" %}
+                Client ID Uploaded for Verification
+              {% else %}
+                {{ notification.get_kind_display|default:notification.kind|title }}
+              {% endif %}
             </strong>
 
             <small class="text-muted">
@@ -103,6 +111,26 @@
           <p class="text-muted mb-2 mt-1 notification-message">
             {{ notification.message }}
           </p>
+
+          {% if notification.kind == "admin_client_pending" or notification.kind == "client_id_uploaded" %}
+            <form method="post" action="{% url 'notification_open' notification.id %}" class="mb-2">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>
+                Review Client
+              </button>
+            </form>
+          {% endif %}
+
+          {% if request.user.role.name == "loan_officer" and notification.kind == "loan_application_submitted" %}
+            <form method="post" action="{% url 'notification_open' notification.id %}" class="mb-2">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>
+                Review Application
+              </button>
+            </form>
+          {% endif %}
 
           {% if notification.is_read %}
             <span class="badge bg-secondary">Read</span>

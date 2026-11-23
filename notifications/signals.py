@@ -8,7 +8,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from accounting.models import LedgerEntry
-from clients.models import Client
+from clients.models import Client, ClientDocument
 from loans.models import Loan
 from .models import Notification
 
@@ -17,20 +17,25 @@ from .models import Notification
 LARGE_TRANSACTION_THRESHOLD = Decimal("10000.00")
 
 
-def notify_admins(kind, message):
-    """Notify active Admin users only, after the business transaction commits."""
+def notify_roles(roles, kind, message):
+    """Notify active users in the specified roles after commit."""
     def create_notifications():
         User = get_user_model()
-        admin_ids = User.objects.filter(
+        recipient_ids = User.objects.filter(
             is_active=True,
-            role__name="admin",
+            role__name__in=roles,
         ).values_list("pk", flat=True)
         Notification.objects.bulk_create([
             Notification(user_id=pk, kind=kind, message=message[:255])
-            for pk in admin_ids
+            for pk in recipient_ids
         ])
 
     transaction.on_commit(create_notifications)
+
+
+def notify_admins(kind, message):
+    """Preserve existing Admin-only alerts for other banking events."""
+    notify_roles(("admin",), kind, message)
 
 
 @receiver(pre_save, sender=Client)
@@ -45,14 +50,26 @@ def remember_client_status(sender, instance, **kwargs):
 @receiver(post_save, sender=Client)
 def client_status_alert(sender, instance, created, **kwargs):
     if created and instance.verification_status == Client.VerificationStatus.PENDING:
-        notify_admins(
+        notify_roles(
+            ("staff", "admin"),
             "admin_client_pending",
-            f"New client #{instance.pk} is awaiting staff verification.",
+            f"New client #{instance.pk} ({instance.client_code}) registered and is pending verification.",
         )
     elif not created and instance._previous_verification_status != instance.verification_status:
         notify_admins(
             "admin_client_status",
             f"Client #{instance.pk} verification status changed to {instance.get_verification_status_display()}.",
+        )
+
+
+@receiver(post_save, sender=ClientDocument)
+def client_id_upload_alert(sender, instance, created, **kwargs):
+    """Alert verification staff when a client submits a new ID document."""
+    if created and instance.client.verification_status == Client.VerificationStatus.PENDING:
+        notify_roles(
+            ("staff", "admin"),
+            "client_id_uploaded",
+            f"Client #{instance.client_id} ({instance.client.client_code}) uploaded an ID for verification.",
         )
 
 

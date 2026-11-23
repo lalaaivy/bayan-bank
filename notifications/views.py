@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+import re
 
 from .models import Notification
 
@@ -143,6 +144,21 @@ def notification_open(request, notification_id):
     if not notification.is_read:
         notification.is_read = True
         notification.save(update_fields=["is_read"])
+
+    role = getattr(getattr(request.user, "role", None), "name", None)
+    if notification.kind in {"admin_client_pending", "client_id_uploaded"}:
+        match = re.search(r"Client #?(\d+)|client #?(\d+)", notification.message)
+        if match:
+            client_id = int(next(group for group in match.groups() if group))
+            if role == "staff":
+                return redirect("verify_client_detail", client_id=client_id)
+            if role == "admin":
+                return redirect("staff_client_detail", client_id=client_id)
+
+    if role == "loan_officer" and notification.kind == "loan_application_submitted":
+        match = re.search(r"Application ID:\s*(\d+)", notification.message, re.IGNORECASE)
+        if match:
+            return redirect("loan_application_detail", loan_id=int(match.group(1)))
 
     return redirect(notification_destination(notification))
 

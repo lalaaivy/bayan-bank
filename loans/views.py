@@ -1109,13 +1109,34 @@ def staff_loan_approve(request, loan_id):
 @role_required(*DECIDERS)
 @require_POST
 def staff_loan_reject(request, loan_id):
+    """Reject a pending loan only with an approved, nonempty reason."""
+    reason = (request.POST.get("reason") or "").strip()
+    allowed_reasons = {
+        "Insufficient monthly income",
+        "Insufficient savings balance",
+        "Low credit score",
+        "Incomplete or invalid documents",
+        "Failed eligibility requirements",
+        "Existing overdue loan",
+        "Unable to verify applicant information",
+    }
+
+    if not reason or len(reason) > 255:
+        messages.error(request, "Select a valid rejection reason (up to 255 characters).")
+        return redirect("staff_loan", loan_id=loan_id)
+
+    if reason not in allowed_reasons:
+        if not reason.startswith("Other: ") or not reason[7:].strip():
+            messages.error(request, "Select a valid rejection reason. Others requires an explanation.")
+            return redirect("staff_loan", loan_id=loan_id)
+
     _run(
         request,
         "Loan rejected.",
         services.reject_loan,
         loan_id,
         request.user,
-        request.POST.get("reason", "").strip(),
+        reason,
     )
 
     return redirect(

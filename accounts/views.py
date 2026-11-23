@@ -45,6 +45,7 @@ from loans.models import (
     Installment,
     Loan,
     LoanAgreement,
+    LoanDocument,
     LoanPayment,
     LoanProduct,
     LoanRule,
@@ -393,12 +394,21 @@ def notifications(request):
     return render(request, "portal/notifications.html", context)
 
 
-@role_required("client")
+@client_required
 def apply_loan(request):
-    return _demo_form(
+    """Display the real loan application form; submit via loans.portal_apply."""
+    if request.method == "POST":
+        messages.error(request, "Please submit the loan application form again.")
+        return redirect("apply_loan")
+
+    return render(
         request,
         "portal/apply_loan.html",
-        "apply_loan",
+        {
+            "products": LoanProduct.objects.filter(is_active=True).order_by("name"),
+            "document_types": LoanDocument.DocumentType.choices,
+            "client": request.client,
+        },
     )
 
 
