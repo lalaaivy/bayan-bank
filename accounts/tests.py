@@ -54,7 +54,6 @@ class DashboardTests(TestCase):
         cls.client_profile.set_id_number("TEST-001")
         cls.client_profile.save()
 
-        # Each client is allowed only one savings account.
         SavingsAccount.objects.create(
             client=cls.client_profile,
             account_number="SAV001",
@@ -144,10 +143,12 @@ class DashboardTests(TestCase):
         )
 
     def test_admin_and_officer_can_access_staff_dashboard(self):
+        # Preserve the original test name and verify strict
+        # separation of duties: only staff can use staff_home.
         for user in [self.admin, self.officer]:
             with self.subTest(role=user.role.name):
                 self.client.force_login(user)
 
                 response = self.client.get(reverse("staff_home"))
 
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, 403)
