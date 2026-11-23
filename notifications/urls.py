@@ -11,6 +11,11 @@ urlpatterns = [
         name="notification_list",
     ),
     path(
+        "<int:notification_id>/open/",
+        views.notification_open,
+        name="notification_open",
+    ),
+    path(
         "<int:notification_id>/read/",
         views.mark_notification_read,
         name="mark_notification_read",

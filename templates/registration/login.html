@@ -4,36 +4,52 @@
 {% block title %}Login - Bayan Bank{% endblock %}
 
 {% block content %}
-
 <div class="row justify-content-center py-4">
     <div class="col-md-6 col-lg-5 col-xl-4">
 
         <div class="card auth-card shadow-sm">
             <div class="card-body p-4">
-                <div class="auth-logo"><i class="bi bi-bank2" aria-hidden="true"></i></div>
-                <h3 class="text-center mb-1">Welcome back</h3>
+
+                <div class="auth-logo">
+                    <i class="bi bi-bank2" aria-hidden="true"></i>
+                </div>
+
+                <h3 class="text-center mb-1">
+                    Welcome back
+                </h3>
+
                 <p class="text-center text-muted mb-4">
                     Sign in to your account
                 </p>
 
                 {% if form.errors %}
                     <div class="alert alert-danger" role="alert">
-                        Invalid username or password. Please try again.
-                        {{ form.errors }}
+                        <i class="bi bi-exclamation-circle me-2"
+                           aria-hidden="true"></i>
+                        Invalid username or password.
                     </div>
                 {% endif %}
-                <div class="alert alert-warning" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>5 wrong passwords will lock your account for 15 minutes.
+
+                <div class="alert alert-warning small"
+                     role="note">
+                    <i class="bi bi-shield-lock me-2"
+                       aria-hidden="true"></i>
+                    5 failed attempts will temporarily lock
+                    your account.
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
 
-                    <input type="hidden" name="next" value="{{ next }}">
+                    <input type="hidden"
+                           name="next"
+                           value="{{ next }}">
 
                     <div class="mb-3">
-                        <label for="id_username" class="form-label">
-                            <i class="bi bi-person me-1" aria-hidden="true"></i>
+                        <label for="id_username"
+                               class="form-label">
+                            <i class="bi bi-person me-1"
+                               aria-hidden="true"></i>
                             Username
                         </label>
 
@@ -44,14 +60,17 @@
                             class="form-control"
                             placeholder="Enter your username"
                             autocomplete="username"
+                            value="{{ form.username.value|default_if_none:'' }}"
                             required
                             autofocus
                         >
                     </div>
 
                     <div class="mb-3">
-                        <label for="id_password" class="form-label">
-                            <i class="bi bi-lock me-1" aria-hidden="true"></i>
+                        <label for="id_password"
+                               class="form-label">
+                            <i class="bi bi-lock me-1"
+                               aria-hidden="true"></i>
                             Password
                         </label>
 
@@ -66,16 +85,17 @@
                         >
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        Login
+                    <button type="submit"
+                            class="btn btn-primary w-100">
+                        Sign In
                     </button>
                 </form>
 
-                {# GOOGLE BUTTON SPOT #}
-
                 <p class="text-center mt-4 mb-0">
                     No account yet?
-                    <a href="{% url 'register' %}">Register</a>
+                    <a href="{% url 'register' %}">
+                        Register
+                    </a>
                 </p>
 
             </div>
@@ -83,5 +103,4 @@
 
     </div>
 </div>
-
 {% endblock %}

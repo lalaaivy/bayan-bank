@@ -276,61 +276,175 @@
   {% if loan.status == "pending" and can_decide %}
     <div class="card border-0 shadow-sm rounded-3 mb-4">
       <div class="card-header bg-white py-3">
-        <h5 class="fw-bold mb-0">Loan Decision</h5>
+        <h5 class="fw-bold mb-0">
+          <i class="bi bi-clipboard-check me-2"></i>
+          Loan Decision
+        </h5>
       </div>
 
       <div class="card-body">
-        <p class="text-muted">
-          Review the application and eligibility assessment before making
-          a decision.
+        <p class="text-muted mb-3">
+          Review the loan application, supporting documents, and
+          eligibility assessment before approving or rejecting.
         </p>
 
-        <div class="d-flex flex-wrap gap-3">
+        <div class="row g-3 align-items-stretch">
 
-          <form method="post" action="{% url 'staff_loan_approve' loan.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success">
-              <i class="bi bi-check-circle me-1"></i>
-              Approve Loan
-            </button>
-          </form>
+          <!-- APPROVAL -->
+          <div class="col-lg-6">
+            <div class="border rounded-3 p-3 h-100 d-flex flex-column">
+              <h6 class="fw-bold text-success">
+                <i class="bi bi-check-circle me-1"></i>
+                Approve Application
+              </h6>
 
-          <form
-            method="post"
-            action="{% url 'staff_loan_reject' loan.pk %}"
-            class="d-flex flex-wrap gap-2">
+              <p class="small text-muted">
+                Approve this application after confirming that
+                the borrower meets the loan requirements.
+              </p>
 
-            {% csrf_token %}
+              <form
+                method="post"
+                action="{% url 'staff_loan_approve' loan.pk %}"
+                class="mt-auto"
+                id="approveLoanForm">
 
-            <input
-              type="text"
-              name="reason"
-              class="form-control"
-              placeholder="Reason for rejection"
-              maxlength="255"
-              required>
+                {% csrf_token %}
 
-            <button type="submit" class="btn btn-outline-danger">
-              <i class="bi bi-x-circle me-1"></i>
-              Reject Loan
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  class="btn btn-success w-100"
+                  id="approveLoanButton">
+                  <i class="bi bi-check-circle me-1"></i>
+                  Approve Loan
+                </button>
+              </form>
+            </div>
+          </div>
 
-        <div class="alert alert-info mb-0">
-          Only an administrator or loan officer
-          can disburse this loan.
+          <!-- REJECTION -->
+          <div class="col-lg-6">
+            <div class="border rounded-3 p-3 h-100 d-flex flex-column">
+              <h6 class="fw-bold text-danger">
+                <i class="bi bi-x-circle me-1"></i>
+                Reject Application
+              </h6>
+
+              <p class="small text-muted">
+                Select the reason for rejecting this loan application.
+              </p>
+
+              <form
+                method="post"
+                action="{% url 'staff_loan_reject' loan.pk %}"
+                id="rejectLoanForm"
+                class="d-flex flex-column flex-grow-1">
+
+                {% csrf_token %}
+
+                <div class="mb-3">
+                  <label
+                    for="rejectionReasonSelect"
+                    class="form-label fw-semibold">
+                    Rejection Reason
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <select
+                    id="rejectionReasonSelect"
+                    class="form-select"
+                    required>
+                    <option value="">
+                      Select a rejection reason
+                    </option>
+                    <option value="Insufficient monthly income">
+                      Insufficient Monthly Income
+                    </option>
+                    <option value="Insufficient savings balance">
+                      Insufficient Savings Balance
+                    </option>
+                    <option value="Low credit score">
+                      Low Credit Score
+                    </option>
+                    <option value="Incomplete or invalid documents">
+                      Incomplete or Invalid Documents
+                    </option>
+                    <option value="Failed eligibility requirements">
+                      Failed Eligibility Requirements
+                    </option>
+                    <option value="Existing overdue loan">
+                      Existing Overdue Loan
+                    </option>
+                    <option value="Unable to verify applicant information">
+                      Unable to Verify Applicant Information
+                    </option>
+                    <option value="Other">
+                      Others
+                    </option>
+                  </select>
+                </div>
+
+                <div
+                  class="mb-3 d-none"
+                  id="otherRejectionReasonContainer">
+
+                  <label
+                    for="otherRejectionReason"
+                    class="form-label fw-semibold">
+                    Explain the Rejection Reason
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <textarea
+                    id="otherRejectionReason"
+                    class="form-control"
+                    rows="3"
+                    maxlength="248"
+                    placeholder="Explain why the application is being rejected."></textarea>
+
+                  <div class="form-text">
+                    Required when Others is selected.
+                  </div>
+                </div>
+
+                <!-- Backend receives the final reason here -->
+                <input
+                  type="hidden"
+                  name="reason"
+                  id="finalRejectionReason">
+
+                <button
+                  type="submit"
+                  class="btn btn-outline-danger w-100 mt-auto"
+                  id="rejectLoanButton">
+                  <i class="bi bi-x-circle me-1"></i>
+                  Reject Loan
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-info mt-3 mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Role responsibilities:</strong>
+          Loan officers review and approve or reject loan applications.
+          Authorized staff members process disbursement after the
+          client accepts the loan agreement.
         </div>
 
         <p class="small text-muted mt-3 mb-0">
-          Ineligible applications cannot be approved. Applications requiring
-          review may be assessed by authorized decision-makers.
+          Ineligible applications cannot be approved.
+          Applications requiring review may be assessed by
+          authorized loan officers.
         </p>
       </div>
     </div>
+
   {% elif loan.status == "pending" %}
     <div class="alert alert-info mb-4">
       <i class="bi bi-info-circle me-1"></i>
-      This application is awaiting a decision from an Admin or Loan Officer.
+      This application is awaiting a decision from a Loan Officer.
     </div>
   {% endif %}
 
@@ -384,8 +498,9 @@
 
           <h6 class="fw-bold">Terms and Conditions</h6>
 
-          <div class="border rounded-3 p-3 mb-3"
-               style="white-space: pre-wrap;">{{ agreement.terms_and_conditions }}</div>
+          <div
+            class="border rounded-3 p-3 mb-3"
+            style="white-space: pre-wrap;">{{ agreement.terms_and_conditions }}</div>
 
           <a
             href="{% url 'loan_agreement_pdf' loan.pk %}"
@@ -408,8 +523,11 @@
           </p>
 
           {% if can_create_agreement %}
-            <form method="post" action="{% url 'staff_create_agreement' loan.pk %}">
+            <form
+              method="post"
+              action="{% url 'staff_create_agreement' loan.pk %}">
               {% csrf_token %}
+
               <button type="submit" class="btn btn-primary">
                 <i class="bi bi-file-earmark-plus me-1"></i>
                 Create Loan Agreement
@@ -567,7 +685,7 @@
   {% endif %}
 
   <!-- RECORD PAYMENT -->
-  {% if loan.status == "active" %}
+  {% if loan.status == "active" and can_record_payment %}
     <div class="card border-0 shadow-sm rounded-3 mb-4">
       <div class="card-header bg-white py-3">
         <h5 class="fw-bold mb-0">Record Loan Payment</h5>
@@ -763,4 +881,100 @@
   </div>
 
 </div>
+
+{% if loan.status == "pending" and can_decide %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const rejectionForm = document.getElementById("rejectLoanForm");
+  const reasonSelect = document.getElementById("rejectionReasonSelect");
+  const otherContainer = document.getElementById(
+    "otherRejectionReasonContainer"
+  );
+  const otherInput = document.getElementById("otherRejectionReason");
+  const finalReasonInput = document.getElementById(
+    "finalRejectionReason"
+  );
+  const rejectButton = document.getElementById("rejectLoanButton");
+
+  const approveForm = document.getElementById("approveLoanForm");
+  const approveButton = document.getElementById("approveLoanButton");
+
+  function updateRejectionFields() {
+    const isOther = reasonSelect.value === "Other";
+
+    otherContainer.classList.toggle("d-none", !isOther);
+    otherInput.required = isOther;
+
+    if (!isOther) {
+      otherInput.value = "";
+    }
+
+    finalReasonInput.value = "";
+  }
+
+  reasonSelect.addEventListener("change", updateRejectionFields);
+
+  rejectionForm.addEventListener("submit", function (event) {
+    const selectedReason = reasonSelect.value;
+    let finalReason = "";
+
+    if (!selectedReason) {
+      event.preventDefault();
+      reasonSelect.reportValidity();
+      return;
+    }
+
+    if (selectedReason === "Other") {
+      const explanation = otherInput.value.trim();
+
+      if (!explanation) {
+        event.preventDefault();
+        otherInput.setCustomValidity(
+          "Please explain the rejection reason."
+        );
+        otherInput.reportValidity();
+        return;
+      }
+
+      otherInput.setCustomValidity("");
+      finalReason = "Other: " + explanation;
+    } else {
+      finalReason = selectedReason;
+    }
+
+    if (finalReason.length > 255) {
+      event.preventDefault();
+      otherInput.setCustomValidity(
+        "The rejection reason must not exceed 255 characters."
+      );
+      otherInput.reportValidity();
+      return;
+    }
+
+    finalReasonInput.value = finalReason;
+
+    rejectButton.disabled = true;
+    rejectButton.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-2"></span>' +
+      'Rejecting...';
+  });
+
+  otherInput.addEventListener("input", function () {
+    otherInput.setCustomValidity("");
+  });
+
+  if (approveForm && approveButton) {
+    approveForm.addEventListener("submit", function () {
+      approveButton.disabled = true;
+      approveButton.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2"></span>' +
+        'Approving...';
+    });
+  }
+
+  updateRejectionFields();
+});
+</script>
+{% endif %}
+
 {% endblock %}

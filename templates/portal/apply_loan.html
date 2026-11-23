@@ -1,36 +1,74 @@
 {% extends "base_client.html" %}
 {% block title %}Apply for a Loan - Bayan Bank{% endblock %}
-
 {% block content %}
-<h3 class="mb-4">Apply for a Loan</h3>
-<a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
-<div class="card shadow-sm">
-  <div class="card-body">
-    <form method="post">
+<div class="container py-3">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{% url 'portal_loans' %}" class="btn btn-outline-secondary">&larr; Back</a>
+    <h3 class="mb-0">Apply for a Loan</h3>
+  </div>
+  {% if client.verification_status != 'active' %}
+    <div class="alert alert-warning">Your account must be verified and Active before you can apply for a loan.</div>
+  {% elif not products %}
+    <div class="alert alert-info">No loan products are currently available.</div>
+  {% else %}
+  <div class="card shadow-sm border-0 rounded-4"><div class="card-body p-4">
+    <form method="post" action="{% url 'portal_apply' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="mb-3">
-        <label class="form-label">Loan Product</label>
-        <select class="form-select">
-          <option>Personal Loan</option>
-          <option>Business Loan</option>
-          <option>Emergency Loan</option>
+        <label for="product" class="form-label fw-semibold">Loan Product</label>
+        <select name="product" id="product" class="form-select" required>
+          <option value="">Select a loan product</option>
+          {% for p in products %}
+          <option value="{{ p.pk }}" data-min="{{ p.min_amount }}" data-max="{{ p.max_amount }}" data-min-months="{{ p.min_months }}" data-max-months="{{ p.max_months }}">{{ p.name }} ({{ p.annual_rate }}% annual interest)</option>
+          {% endfor %}
+        </select>
+        <div id="product_limits" class="form-text">Choose a product to see its limits.</div>
+      </div>
+      <div class="mb-3">
+        <label for="principal" class="form-label fw-semibold">Amount (₱)</label>
+        <input type="number" name="principal" id="principal" class="form-control" min="0.01" step="0.01" placeholder="10000" required>
+      </div>
+      <div class="mb-3">
+        <label for="term_months" class="form-label fw-semibold">Term (months)</label>
+        <input type="number" name="term_months" id="term_months" class="form-control" min="1" step="1" placeholder="12" required>
+      </div>
+      <div class="mb-3">
+        <label for="purpose" class="form-label fw-semibold">Purpose</label>
+        <textarea name="purpose" id="purpose" class="form-control" rows="3" maxlength="1000" required></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="document_type" class="form-label fw-semibold">Supporting Document Type</label>
+        <select name="document_type" id="document_type" class="form-select" required>
+          {% for value, label in document_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
         </select>
       </div>
       <div class="mb-3">
-        <label class="form-label">Amount (&#8369;)</label>
-        <input type="number" class="form-control" placeholder="10000">
+        <label for="documents" class="form-label fw-semibold">Supporting Documents</label>
+        <input type="file" name="documents" id="documents" class="form-control" accept=".pdf,.jpg,.jpeg,.png" multiple required>
+        <div class="form-text">Upload 1–5 PDF, JPG, JPEG, or PNG files. Maximum 5 MB per file.</div>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Term (months)</label>
-        <input type="number" class="form-control" placeholder="12">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Purpose</label>
-        <textarea class="form-control" rows="3"></textarea>
-      </div>
-      <button type="submit" class="btn btn-dark">Submit Application</button>
-      <a href="{% url 'portal_home' %}" class="btn btn-outline-dark">Cancel</a>
+      <button type="submit" class="btn btn-primary">Submit Application</button>
+      <a href="{% url 'portal_loans' %}" class="btn btn-outline-secondary">Cancel</a>
     </form>
-  </div>
+  </div></div>
+  {% endif %}
 </div>
+<script>
+(function () {
+  const product = document.getElementById('product');
+  const limits = document.getElementById('product_limits');
+  const principal = document.getElementById('principal');
+  const term = document.getElementById('term_months');
+  if (!product) return;
+  product.addEventListener('change', function () {
+    const opt = product.options[product.selectedIndex];
+    if (!opt.value) { limits.textContent = 'Choose a product to see its limits.'; return; }
+    const min = opt.dataset.min, max = opt.dataset.max;
+    const minMonths = opt.dataset.minMonths, maxMonths = opt.dataset.maxMonths;
+    principal.min = min; principal.max = max;
+    term.min = minMonths; term.max = maxMonths;
+    limits.textContent = `Amount: ₱${min}–₱${max}; term: ${minMonths}–${maxMonths} months.`;
+  });
+})();
+</script>
 {% endblock %}

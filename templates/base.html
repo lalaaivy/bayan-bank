@@ -294,38 +294,6 @@
     {% endif %}
   </nav>
 
-  {% if request.user.is_authenticated %}
-  <div class="sidebar-user">
-    <span class="user-avatar">
-      {{ request.user.get_full_name|default:request.user.username|first|upper }}
-    </span>
-
-    <div class="sidebar-user-info">
-      <strong>
-        {{ request.user.get_full_name|default:request.user.username }}
-      </strong>
-
-      {% with role=request.user.role.name %}
-      <span class="badge role-badge role-badge-{{ role }}">
-        {% if role == "loan_officer" %}
-          Loan Officer
-        {% else %}
-          {{ role|title }}
-        {% endif %}
-      </span>
-      {% endwith %}
-    </div>
-
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit"
-              class="sidebar-logout"
-              aria-label="Logout">
-        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-      </button>
-    </form>
-  </div>
-  {% endif %}
 
 </aside>
 {% endif %}
@@ -389,13 +357,24 @@
       {% endif %}
     </a>
 
-    <div class="topbar-user">
-      <span class="topbar-user-name">
-        {{ request.user.get_full_name|default:request.user.username }}
-      </span>
-      <span class="user-avatar">
-        {{ request.user.get_full_name|default:request.user.username|first|upper }}
-      </span>
+    <div class="dropdown">
+      <button class="btn border-0 d-flex align-items-center gap-2 dropdown-toggle"
+              type="button" id="staffAccountMenu" data-bs-toggle="dropdown"
+              aria-expanded="false" aria-label="Account menu">
+        <span class="topbar-user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        <span class="user-avatar">{{ request.user.get_full_name|default:request.user.username|first|upper }}</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="staffAccountMenu">
+        <li><h6 class="dropdown-header">{{ request.user.get_full_name|default:request.user.username }}</h6></li>
+        <li><span class="dropdown-item-text text-muted small">{{ request.user.role.name|title }}</span></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Log out</button>
+          </form>
+        </li>
+      </ul>
     </div>
     {% endif %}
 
