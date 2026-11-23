@@ -1,0 +1,27 @@
+{
+    "id": "/",
+    "name": "Bayan Bank",
+    "short_name": "Bayan Bank",
+    "description": "Bayan Bank online banking application.",
+    "lang": "en-PH",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#F7F0E5",
+    "theme_color": "#00485C",
+    "icons": [
+        {
+            "src": "/static/images/bayan-bank-icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/static/images/bayan-bank-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

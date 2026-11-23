@@ -6,6 +6,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- Bayan Bank PWA -->
+  <meta name="theme-color" content="#00485C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bayan Bank">
+
+  <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+  <link rel="icon" type="image/png" sizes="192x192"
+        href="{% static 'images/bayan-bank-icon-192.png' %}">
+  <link rel="apple-touch-icon"
+        href="{% static 'images/bayan-bank-icon-192.png' %}">
+
   <title>{% block title %}Bayan Bank{% endblock %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -165,154 +178,135 @@
       }
     }
 
-/* =========================================
-   BAYAN BANK - STAFF & OFFICER THEME
-========================================= */
+    /* =========================================
+       BAYAN BANK - STAFF & OFFICER THEME
+    ========================================= */
 
-:root {
-    --bank-teal: #00485C;
-    --bank-yellow: #FDBE1A;
-    --bank-background: #F1F2EE;
-    --bank-white: #FFFFFF;
-    --bank-text: #12202B;
-    --bank-muted: #7A8590;
-}
-
-/* PAGE BACKGROUND */
-
-body {
-    background: var(--bank-background);
-    color: var(--bank-text);
-    font-family: "Plus Jakarta Sans", sans-serif;
-}
-
-/* SIDEBAR */
-
-.sidebar {
-    background: var(--bank-teal) !important;
-    color: #FFFFFF;
-    border: none !important;
-}
-
-.sidebar-header {
-    background: transparent;
-}
-
-.brand-link {
-    color: #FFFFFF !important;
-    font-weight: 800;
-}
-
-.brand-mark {
-    background: var(--bank-yellow) !important;
-    color: var(--bank-teal) !important;
-}
-
-/* SIDEBAR LINKS */
-
-.sidebar .sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 5px 0;
-    padding: 13px 14px;
-    border-radius: 13px;
-    color: rgba(255, 255, 255, 0.78) !important;
-    text-decoration: none;
-    transition: background .2s ease, color .2s ease;
-}
-
-.sidebar .sidebar-link:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #FFFFFF !important;
-}
-
-.sidebar .sidebar-link.active {
-    background: var(--bank-yellow) !important;
-    color: var(--bank-teal) !important;
-    font-weight: 800;
-}
-
-/* SIDEBAR USER AREA */
-
-.sidebar-user {
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.sidebar-user-info strong {
-    color: #FFFFFF;
-}
-
-.sidebar-logout {
-    background: rgba(253, 190, 26, 0.14);
-    color: var(--bank-yellow);
-    border: none;
-    border-radius: 12px;
-}
-
-.sidebar-logout:hover {
-    background: var(--bank-yellow);
-    color: var(--bank-teal);
-}
-
-/* TOP BAR */
-
-.topbar {
-    background: #FFFFFF !important;
-    color: var(--bank-text);
-    border-bottom: 1px solid #E8EAE5;
-    box-shadow: none;
-}
-
-.topbar-title {
-    color: var(--bank-text);
-    font-weight: 800;
-}
-
-.topbar-user-name {
-    color: var(--bank-text);
-}
-
-/* MAIN WORKSPACE */
-
-.desktop-main {
-    background: var(--bank-background);
-}
-
-.content-main {
-    background: var(--bank-background);
-}
-
-/* PAGE HEADINGS */
-
-.page-heading {
-    color: var(--bank-text);
-}
-
-.page-breadcrumb .breadcrumb-item a {
-    color: var(--bank-teal);
-    text-decoration: none;
-}
-
-.page-breadcrumb .breadcrumb-item.active {
-    color: var(--bank-muted);
-}
-
-/* NOTIFICATION BADGES */
-
-.sidebar-notification-count,
-.topbar-notification-count {
-    background: #E8503A;
-}
-
-/* MOBILE SIDEBAR */
-
-@media (max-width: 991.98px) {
-    .sidebar {
-        background: var(--bank-teal) !important;
+    :root {
+      --bank-teal: #00485C;
+      --bank-yellow: #FDBE1A;
+      --bank-background: #F1F2EE;
+      --bank-white: #FFFFFF;
+      --bank-text: #12202B;
+      --bank-muted: #7A8590;
     }
-}
 
+    body {
+      background: var(--bank-background);
+      color: var(--bank-text);
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+
+    .sidebar {
+      background: var(--bank-teal) !important;
+      color: #FFFFFF;
+      border: none !important;
+    }
+
+    .sidebar-header {
+      background: transparent;
+    }
+
+    .brand-link {
+      color: #FFFFFF !important;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      background: var(--bank-yellow) !important;
+      color: var(--bank-teal) !important;
+    }
+
+    .sidebar .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 5px 0;
+      padding: 13px 14px;
+      border-radius: 13px;
+      color: rgba(255, 255, 255, 0.78) !important;
+      text-decoration: none;
+      transition: background .2s ease, color .2s ease;
+    }
+
+    .sidebar .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF !important;
+    }
+
+    .sidebar .sidebar-link.active {
+      background: var(--bank-yellow) !important;
+      color: var(--bank-teal) !important;
+      font-weight: 800;
+    }
+
+    .sidebar-user {
+      border-top: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .sidebar-user-info strong {
+      color: #FFFFFF;
+    }
+
+    .sidebar-logout {
+      background: rgba(253, 190, 26, 0.14);
+      color: var(--bank-yellow);
+      border: none;
+      border-radius: 12px;
+    }
+
+    .sidebar-logout:hover {
+      background: var(--bank-yellow);
+      color: var(--bank-teal);
+    }
+
+    .topbar {
+      background: #FFFFFF !important;
+      color: var(--bank-text);
+      border-bottom: 1px solid #E8EAE5;
+      box-shadow: none;
+    }
+
+    .topbar-title {
+      color: var(--bank-text);
+      font-weight: 800;
+    }
+
+    .topbar-user-name {
+      color: var(--bank-text);
+    }
+
+    .desktop-main {
+      background: var(--bank-background);
+    }
+
+    .content-main {
+      background: var(--bank-background);
+    }
+
+    .page-heading {
+      color: var(--bank-text);
+    }
+
+    .page-breadcrumb .breadcrumb-item a {
+      color: var(--bank-teal);
+      text-decoration: none;
+    }
+
+    .page-breadcrumb .breadcrumb-item.active {
+      color: var(--bank-muted);
+    }
+
+    .sidebar-notification-count,
+    .topbar-notification-count {
+      background: #E8503A;
+    }
+
+    @media (max-width: 991.98px) {
+      .sidebar {
+        background: var(--bank-teal) !important;
+      }
+    }
   </style>
 </head>
 
@@ -442,7 +436,6 @@ body {
       {% endwith %}
     {% endif %}
   </nav>
-
 
 </aside>
 {% endif %}
@@ -596,6 +589,22 @@ body {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Bayan Bank PWA Service Worker -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("{% url 'service_worker' %}", {
+        scope: "/"
+      }).catch(function (error) {
+        console.error(
+          "Bayan Bank service worker registration failed:",
+          error
+        );
+      });
+    });
+  }
+</script>
 
 {% block scripts %}{% endblock %}
 

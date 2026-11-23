@@ -1,10 +1,21 @@
-
 {% load static %}
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="theme-color" content="#00485C">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Bayan Bank">
+
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    <link rel="icon" type="image/png" sizes="192x192"
+          href="{% static 'images/bayan-bank-icon-192.png' %}">
+    <link rel="apple-touch-icon"
+          href="{% static 'images/bayan-bank-icon-192.png' %}">
 
     <title>{% block title %}Bayan Bank{% endblock %}</title>
 
@@ -21,13 +32,10 @@
         :root {
             --teal: #00485C;
             --yellow: #FDBE1A;
-
             --cream: #F7F0E5;
             --cream-light: #FFF9F0;
-
             --text: #172B32;
             --muted: #7A8590;
-
             --border: rgba(0, 0, 0, 0.05);
             --shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
         }
@@ -52,13 +60,10 @@
             bottom: 16px;
             left: 16px;
             z-index: 1040;
-
             width: 240px;
             padding: 24px 16px;
-
             display: flex;
             align-items: stretch;
-
             background: var(--teal);
             border: none;
             border-radius: 24px;
@@ -68,7 +73,6 @@
         .client-sidebar-content {
             width: 100%;
             height: 100%;
-
             display: flex;
             flex-direction: column;
             align-items: stretch;
@@ -78,10 +82,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
-
             margin: 0 0 40px;
             padding: 0 8px;
-
             color: var(--cream-light);
             font-size: 1.15rem;
             font-weight: 800;
@@ -91,11 +93,9 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-
             width: 40px;
             height: 40px;
             flex-shrink: 0;
-
             border-radius: 13px;
             background: var(--yellow);
             color: var(--teal);
@@ -106,11 +106,9 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-
             width: 100%;
             margin: 0;
             padding: 0;
-
             list-style: none;
         }
 
@@ -118,17 +116,13 @@
             display: flex;
             align-items: center;
             gap: 12px;
-
             width: 100%;
             padding: 14px;
-
             border-radius: 13px;
-
             color: rgba(255, 249, 240, 0.85);
             font-size: 0.92rem;
             font-weight: 600;
             text-decoration: none;
-
             transition: background .2s ease, color .2s ease;
         }
 
@@ -169,16 +163,13 @@
         .client-topbar {
             position: relative;
             z-index: 1100;
-
             display: flex;
             align-items: center;
             justify-content: flex-end;
-
             width: 100%;
             min-height: 76px;
             padding: 14px 32px;
             margin: 0;
-
             background: var(--cream);
             border: none;
             box-shadow: none;
@@ -214,20 +205,16 @@
 
         .notification-link {
             position: relative;
-
             display: inline-flex;
             align-items: center;
             justify-content: center;
-
             width: 40px;
             height: 40px;
-
             border: 1px solid var(--border);
             border-radius: 50%;
             background: var(--cream-light);
             color: var(--teal);
             text-decoration: none;
-
             box-shadow: var(--shadow);
             transition: background .2s ease;
         }
@@ -245,15 +232,12 @@
             position: absolute;
             top: 3px;
             right: 3px;
-
             width: 10px;
             height: 10px;
             min-width: 10px;
-
             border: 2px solid var(--cream-light);
             border-radius: 50%;
             background: var(--teal);
-
             color: transparent;
             font-size: 0;
         }
@@ -268,19 +252,15 @@
             display: flex;
             align-items: center;
             gap: 9px;
-
             height: 42px;
             padding: 4px 14px 4px 4px;
-
             border: 1px solid var(--border);
             border-radius: 999px;
             background: var(--cream-light);
             color: var(--text);
-
             font-size: 0.85rem;
             font-weight: 600;
             text-decoration: none;
-
             box-shadow: var(--shadow);
         }
 
@@ -292,11 +272,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-
             width: 34px;
             height: 34px;
             flex: 0 0 34px;
-
             border-radius: 50%;
             background: var(--yellow);
             color: var(--teal);
@@ -322,18 +300,14 @@
         .client-topbar .dropdown-menu {
             position: absolute !important;
             z-index: 2000 !important;
-
             width: max-content;
             min-width: 210px;
             max-width: calc(100vw - 32px);
-
             margin-top: 10px !important;
             padding: 8px 0;
-
             border: 1px solid var(--border);
             border-radius: 14px;
             background: var(--cream-light);
-
             box-shadow: var(--shadow);
         }
 
@@ -358,10 +332,8 @@
             width: 100%;
             max-width: none;
             min-height: calc(100vh - 76px);
-
             margin: 0;
             padding: 24px 40px;
-
             background: var(--cream);
         }
 
@@ -369,7 +341,6 @@
             display: flex;
             align-items: center;
             gap: 14px;
-
             margin-bottom: 24px;
         }
 
@@ -384,14 +355,11 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-
             width: 42px;
             height: 42px;
             flex-shrink: 0;
-
             border: 1px solid var(--border);
             border-radius: 12px;
-
             background: var(--cream-light);
             color: var(--teal);
             text-decoration: none;
@@ -414,7 +382,6 @@
                 height: 0;
                 padding: 0;
                 overflow: visible;
-
                 background: transparent;
                 box-shadow: none;
             }
@@ -425,16 +392,12 @@
                 bottom: 16px;
                 left: 16px;
                 z-index: 1050;
-
                 display: flex !important;
                 flex-direction: column;
-
                 width: min(260px, calc(100vw - 32px));
                 height: auto;
-
                 padding: 24px 16px;
                 overflow-y: auto;
-
                 border-radius: 24px;
                 background: var(--teal);
                 box-shadow: var(--shadow);
@@ -454,10 +417,8 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-
                 padding: 7px;
                 margin-right: auto;
-
                 border-color: var(--border);
             }
 
@@ -535,7 +496,6 @@
                     Bayan Bank
                 </a>
 
-                <!-- NAVIGATION LINKS -->
                 <ul class="client-sidebar-nav">
 
                     <li>
@@ -596,7 +556,6 @@
         <!-- MAIN WORKSPACE -->
         <div class="client-workspace">
 
-            <!-- TOP BAR -->
             <header class="client-topbar navbar navbar-light">
 
                 <div class="client-topbar-left">
@@ -615,7 +574,6 @@
 
                 <ul class="navbar-nav align-items-center">
 
-                    <!-- NOTIFICATIONS -->
                     <li class="nav-item">
                         <a
                             href="{% url 'notification_list' %}"
@@ -637,7 +595,6 @@
                         </a>
                     </li>
 
-                    <!-- ACCOUNT DROPDOWN -->
                     <li class="nav-item dropdown">
 
                         <a
@@ -715,7 +672,6 @@
                 </ul>
             </header>
 
-            <!-- PAGE CONTENT -->
             <main class="client-main">
 
                 {% if request.resolver_match.url_name != 'portal_home' %}
@@ -762,7 +718,6 @@
 
                 {% endif %}
 
-                <!-- DJANGO MESSAGES -->
                 {% for message in messages %}
                     <div
                         class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show"
@@ -788,6 +743,18 @@
     {% block chatbot %}{% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker.register("{% url 'service_worker' %}", {
+                    scope: "/"
+                }).catch(function (error) {
+                    console.error("Bayan Bank service worker registration failed:", error);
+                });
+            });
+        }
+    </script>
 
     {% block scripts %}{% endblock %}
 
