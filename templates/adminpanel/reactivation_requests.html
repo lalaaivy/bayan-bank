@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Reactivation Requests - Bayan Bank{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold mb-1">Account Reactivation Requests</h3>
+            <p class="text-muted mb-0">
+                Review client requests to restore their Bayan Bank login access.
+            </p>
+        </div>
+
+        <a href="{% url 'admin_clients' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Clients
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- STATUS FILTER -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row align-items-end g-3">
+
+                <div class="col-md-4">
+                    <label for="status" class="form-label fw-semibold">
+                        Filter by Status
+                    </label>
+
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Requests</option>
+
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}"
+                                {% if selected_status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel me-1"></i>
+                        Apply Filter
+                    </button>
+
+                    <a href="{% url 'admin_reactivation_requests' %}"
+                       class="btn btn-outline-secondary">
+                        Clear
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- REQUEST LIST -->
+    {% if requests %}
+        <div class="row g-4">
+
+            {% for item in requests %}
+                <div class="col-12">
+
+                    <div class="card border-0 shadow-sm">
+
+                        <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+
+                            <div>
+                                <span class="fw-bold">
+                                    {{ item.client.user.get_full_name|default:item.client.user.username }}
+                                </span>
+
+                                <div class="small text-muted">
+                                    Client ID: {{ item.client.client_id|default:item.client.pk }}
+                                    &bull;
+                                    Username: {{ item.client.user.username }}
+                                </div>
+                            </div>
+
+                            {% if item.status == "pending" %}
+                                <span class="badge bg-warning text-dark">
+                                    Pending Review
+                                </span>
+                            {% elif item.status == "approved" %}
+                                <span class="badge bg-success">
+                                    Approved
+                                </span>
+                            {% elif item.status == "rejected" %}
+                                <span class="badge bg-danger">
+                                    Rejected
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    {{ item.get_status_display }}
+                                </span>
+                            {% endif %}
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="row g-3 mb-3">
+
+                                <div class="col-md-6">
+                                    <div class="small text-muted mb-1">Request Date</div>
+                                    <div>
+                                        {{ item.requested_at|date:"F d, Y - h:i A" }}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="small text-muted mb-1">Reviewed By</div>
+                                    <div>
+                                        {% if item.reviewed_by %}
+                                            {{ item.reviewed_by.get_full_name|default:item.reviewed_by.username }}
+                                        {% else %}
+                                            <span class="text-muted">Not yet reviewed</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="small text-muted mb-1">Client's Reason</div>
+                                <div class="p-3 bg-light rounded">
+                                    {{ item.reason|default:"No reason provided."|linebreaksbr }}
+                                </div>
+                            </div>
+
+                            {% if item.staff_notes %}
+                                <div class="mb-3">
+                                    <div class="small text-muted mb-1">Staff Notes</div>
+                                    <div class="p-3 bg-light rounded">
+                                        {{ item.staff_notes|linebreaksbr }}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if item.branch_reference %}
+                                <div class="mb-3">
+                                    <div class="small text-muted mb-1">Branch Reference</div>
+                                    {{ item.branch_reference }}
+                                </div>
+                            {% endif %}
+
+                            {% if item.status == "pending" %}
+
+                                <hr>
+
+                                <h6 class="fw-bold mb-3">
+                                    <i class="bi bi-clipboard-check me-1"></i>
+                                    Review This Request
+                                </h6>
+
+                                <form method="post"
+                                      action="{% url 'admin_review_reactivation_request' item.pk %}">
+
+                                    {% csrf_token %}
+
+                                    <div class="row g-3">
+
+                                        <div class="col-md-6">
+                                            <label for="branch_reference_{{ item.pk }}" class="form-label">
+                                                Branch Reference
+                                                <span class="text-danger">*</span>
+                                            </label>
+
+                                            <input type="text"
+                                                   id="branch_reference_{{ item.pk }}"
+                                                   name="branch_reference"
+                                                   class="form-control"
+                                                   placeholder="Required for approval">
+                                            <div class="form-text">
+                                                Required when approving the request.
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="staff_notes_{{ item.pk }}" class="form-label">
+                                                Staff Notes
+                                            </label>
+
+                                            <input type="text"
+                                                   id="staff_notes_{{ item.pk }}"
+                                                   name="staff_notes"
+                                                   class="form-control"
+                                                   placeholder="Optional review notes">
+                                        </div>
+
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-2 mt-3">
+
+                                        <button type="submit"
+                                                name="decision"
+                                                value="approve"
+                                                class="btn btn-success"
+                                                onclick="return confirm('Approve this request and reactivate the client login?');">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Approve & Reactivate
+                                        </button>
+
+                                        <button type="submit"
+                                                name="decision"
+                                                value="reject"
+                                                class="btn btn-danger"
+                                                onclick="return confirm('Reject this reactivation request?');">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            Reject Request
+                                        </button>
+
+                                    </div>
+
+                                </form>
+
+                            {% else %}
+
+                                <div class="small text-muted mt-3">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    Reviewed:
+                                    {% if item.reviewed_at %}
+                                        {{ item.reviewed_at|date:"F d, Y - h:i A" }}
+                                    {% else %}
+                                        Not available
+                                    {% endif %}
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+
+                <h5 class="fw-bold mt-3">No Reactivation Requests Found</h5>
+
+                <p class="text-muted mb-0">
+                    There are currently no requests matching your selected filter.
+                </p>
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

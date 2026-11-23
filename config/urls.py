@@ -8,6 +8,15 @@ handler403 = "accounts.views.permission_denied"
 
 
 urlpatterns = [
+    # Main application routes first.
+    # Ensures /staff/ opens the staff dashboard.
+    path("", include("accounts.urls")),
+
+    # Client routes.
+    # Keep before Django Admin for custom admin-related URLs.
+    path("", include("clients.urls")),
+
+    # Django Administration
     path("admin/", admin.site.urls),
 
     # PWA
@@ -22,9 +31,7 @@ urlpatterns = [
         name="offline",
     ),
 
-    # Main applications
-    path("", include("accounts.urls")),
-    path("", include("clients.urls")),
+    # Other applications
     path("", include("savings.urls")),
     path("", include("loans.urls")),
     path("", include("accounting.urls")),

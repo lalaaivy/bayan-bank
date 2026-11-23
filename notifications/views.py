@@ -1,4 +1,3 @@
-
 import re
 
 from django.contrib.auth.decorators import login_required
@@ -94,7 +93,17 @@ def _is_client_notification(kind):
     return (
         "client" in kind
         or "verification" in kind
+        or "reactivation" in kind
+        or "security" in kind
     )
+
+
+def _is_security_notification(kind):
+    return "security" in kind
+
+
+def _is_reactivation_notification(kind):
+    return "reactivation" in kind
 
 
 def _is_payment_notification(kind):
@@ -138,6 +147,15 @@ def notification_destination(notification):
     # ----------------------------------------------
 
     if role == "client":
+        if _is_security_notification(kind):
+            return _safe_reverse("portal_home")
+
+        if _is_reactivation_notification(kind):
+            return (
+                _safe_reverse("portal_home")
+                or _safe_reverse("home")
+            )
+
         if _is_loan_notification(kind) or _is_payment_notification(kind):
             return _safe_reverse("portal_loans") or _safe_reverse(
                 "my_loans"
@@ -184,6 +202,27 @@ def notification_destination(notification):
     # ----------------------------------------------
 
     if role == "staff":
+        if _is_reactivation_notification(kind):
+            return (
+                _safe_reverse("admin_reactivation_requests")
+                or _safe_reverse("admin_clients")
+                or _safe_reverse("staff_clients")
+            )
+
+        if _is_security_notification(kind):
+            if client_id is not None:
+                url = _safe_reverse(
+                    "staff_client_detail",
+                    client_id=client_id,
+                )
+                if url:
+                    return url
+
+            return (
+                _safe_reverse("admin_clients")
+                or _safe_reverse("staff_clients")
+            )
+
         if client_id is not None and _is_client_notification(kind):
             url = _safe_reverse(
                 "verify_client_detail",
@@ -224,6 +263,13 @@ def notification_destination(notification):
     # ----------------------------------------------
 
     if role == "admin":
+        if _is_reactivation_notification(kind):
+            return (
+                _safe_reverse("admin_reactivation_requests")
+                or _safe_reverse("admin_clients")
+                or _safe_reverse("staff_clients")
+            )
+
         if client_id is not None and _is_client_notification(kind):
             url = _safe_reverse(
                 "staff_client_detail",
@@ -231,6 +277,12 @@ def notification_destination(notification):
             )
             if url:
                 return url
+
+        if _is_security_notification(kind):
+            return (
+                _safe_reverse("admin_clients")
+                or _safe_reverse("staff_clients")
+            )
 
         if loan_id is not None:
             url = _safe_reverse(

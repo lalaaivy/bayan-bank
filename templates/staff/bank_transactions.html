@@ -1,290 +1,368 @@
-
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}Bank Transactions - Bayan Bank{% endblock %}
+{% block title %}Regular Account Transactions - Bayan Bank{% endblock %}
 
 {% block content %}
 {% include "includes/staff_ui_styles.html" %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
-    <h3 class="mb-1">Bank Transactions</h3>
+    <h3 class="mb-1">Regular Account Transactions</h3>
     <p class="text-muted mb-0">
-      View regular bank accounts and transaction history. Staff may process deposits, withdrawals, and transfers.
+      Search for a client's regular bank account and manage account transactions and status.
     </p>
   </div>
 
-  <a href="{% url 'staff_home' %}"
-     class="btn btn-outline-secondary">
+  <a href="{% url 'staff_home' %}" class="btn btn-outline-secondary">
     Back to Dashboard
   </a>
 </div>
 
-<!-- BANK ACCOUNTS -->
-
-<div class="card shadow-sm mb-4">
-  <div class="card-header">
-    Regular Bank Accounts
-  </div>
-
-  <div class="table-responsive">
-    <table class="table align-middle mb-0">
-      <thead>
-        <tr>
-          <th>Account Number</th>
-          <th>Client</th>
-          <th>Status</th>
-          <th class="text-end">Balance</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for account in accounts %}
-        <tr>
-          <td>{{ account.account_number }}</td>
-          <td>{{ account.client }}</td>
-          <td>{{ account.get_status_display }}</td>
-          <td class="text-end">
-            ₱ {{ account.balance|floatformat:2|intcomma }}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4"
-              class="text-center text-muted py-4">
-            No regular bank accounts available.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-{% if can_cash %}
-<!-- TRANSACTION FORMS -->
-
-<div class="row g-3 mb-4">
-
-  <!-- DEPOSIT -->
-  <div class="col-lg-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-header">Deposit</div>
-      <div class="card-body">
-
-        <form method="post"
-              action="{% url 'bank_deposit' %}">
-          {% csrf_token %}
-
-          <label class="form-label">Bank Account</label>
-          <select name="account"
-                  class="form-select mb-3"
-                  required>
-            <option value="">Select account</option>
-            {% for account in accounts %}
-              {% if account.status == "active" %}
-              <option value="{{ account.pk }}">
-                {{ account.account_number }}
-              </option>
-              {% endif %}
-            {% endfor %}
-          </select>
-
-          <label class="form-label">Amount (₱)</label>
-          <input type="number"
-                 name="amount"
-                 class="form-control mb-3"
-                 min="0.01"
-                 step="0.01"
-                 required>
-
-          <button type="submit"
-                  class="btn btn-success w-100">
-            Deposit
-          </button>
-        </form>
-
-      </div>
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-  </div>
-
-  <!-- WITHDRAWAL -->
-  <div class="col-lg-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-header">Withdrawal</div>
-      <div class="card-body">
-
-        <form method="post"
-              action="{% url 'bank_withdraw' %}">
-          {% csrf_token %}
-
-          <label class="form-label">Bank Account</label>
-          <select name="account"
-                  class="form-select mb-3"
-                  required>
-            <option value="">Select account</option>
-            {% for account in accounts %}
-              {% if account.status == "active" %}
-              <option value="{{ account.pk }}">
-                {{ account.account_number }}
-              </option>
-              {% endif %}
-            {% endfor %}
-          </select>
-
-          <label class="form-label">Amount (₱)</label>
-          <input type="number"
-                 name="amount"
-                 class="form-control mb-3"
-                 min="0.01"
-                 step="0.01"
-                 required>
-
-          <button type="submit"
-                  class="btn btn-warning w-100">
-            Withdraw
-          </button>
-        </form>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- TRANSFER -->
-  <div class="col-lg-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-header">Bank Transfer</div>
-      <div class="card-body">
-
-        <form method="post"
-              action="{% url 'bank_transfer' %}">
-          {% csrf_token %}
-
-          <label class="form-label">From Account</label>
-          <select name="source"
-                  class="form-select mb-3"
-                  required>
-            <option value="">Select source</option>
-            {% for account in accounts %}
-              {% if account.status == "active" %}
-              <option value="{{ account.pk }}">
-                {{ account.account_number }}
-              </option>
-              {% endif %}
-            {% endfor %}
-          </select>
-
-          <label class="form-label">To Account</label>
-          <select name="destination"
-                  class="form-select mb-3"
-                  required>
-            <option value="">Select destination</option>
-            {% for account in accounts %}
-              {% if account.status == "active" %}
-              <option value="{{ account.pk }}">
-                {{ account.account_number }}
-              </option>
-              {% endif %}
-            {% endfor %}
-          </select>
-
-          <label class="form-label">Amount (₱)</label>
-          <input type="number"
-                 name="amount"
-                 class="form-control mb-3"
-                 min="0.01"
-                 step="0.01"
-                 required>
-
-          <button type="submit"
-                  class="btn btn-primary w-100">
-            Transfer
-          </button>
-        </form>
-
-      </div>
-    </div>
-  </div>
-
-</div>
-
+  {% endfor %}
 {% endif %}
-<!-- TRANSACTION HISTORY -->
 
+<!-- SEARCH AND FILTER -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header">
-    Recent Transactions
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-8">
+        <label for="accountSearch" class="form-label">Search Client or Account Number</label>
+        <input
+          type="search"
+          id="accountSearch"
+          class="form-control"
+          placeholder="Enter client name or account number..."
+        >
+      </div>
+
+      <div class="col-md-4">
+        <label for="statusFilter" class="form-label">Account Status</label>
+        <select id="statusFilter" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="frozen">Frozen</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGULAR BANK ACCOUNTS -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Regular Bank Accounts</span>
+    <span class="badge bg-primary" id="accountCount">
+      {{ accounts|length }} Accounts
+    </span>
   </div>
 
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Account</th>
-          <th>Transaction</th>
-          <th>Reference</th>
-          <th class="text-end">Amount</th>
-          <th class="text-end">Balance After</th>
+          <th>Account Number</th>
+          <th>Client Name</th>
+          <th>Status</th>
+          <th class="text-end">Balance</th>
+          <th class="text-center">Action</th>
         </tr>
       </thead>
 
-      <tbody>
-        {% for entry in transactions %}
-        <tr>
-          <td>
-            {{ entry.created_at|date:"M d, Y h:i A" }}
-          </td>
+      <tbody id="accountTableBody">
+        {% for account in accounts %}
+        <tr
+          class="account-row"
+          data-search="{{ account.account_number|lower }} {{ account.client|lower }}"
+          data-status="{{ account.status|lower }}"
+        >
+          <td class="fw-semibold">{{ account.account_number }}</td>
+
+          <td>{{ account.client }}</td>
 
           <td>
-            {{ entry.bank_account.account_number }}
-          </td>
-
-          <td>
-            {{ entry.get_entry_type_display }}
-          </td>
-
-          <td>
-            {% if entry.loan_id %}
-              Loan #{{ entry.loan_id }}
-            {% elif entry.reference %}
-              {{ entry.reference }}
+            {% if account.status == "active" %}
+              <span class="badge bg-success">Active</span>
+            {% elif account.status == "frozen" %}
+              <span class="badge bg-warning text-dark">Frozen</span>
             {% else %}
-              -
+              <span class="badge bg-secondary">Closed</span>
             {% endif %}
           </td>
 
-          <td class="text-end">
-            {% if entry.entry_type == "withdrawal" or entry.entry_type == "transfer_out" %}
-              <span class="text-danger">
-                - ₱ {{ entry.amount|floatformat:2|intcomma }}
-              </span>
-            {% else %}
-              <span class="text-success">
-                + ₱ {{ entry.amount|floatformat:2|intcomma }}
-              </span>
-            {% endif %}
+          <td class="text-end fw-semibold">
+            ₱ {{ account.balance|floatformat:2|intcomma }}
           </td>
 
-          <td class="text-end">
-            {% if entry.balance_after != None %}
-              ₱ {{ entry.balance_after|floatformat:2|intcomma }}
-            {% else %}
-              -
-            {% endif %}
+          <td>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+
+              {% if can_cash %}
+                {% if account.status == "active" %}
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#transaction-{{ account.pk }}"
+                    aria-expanded="false"
+                    aria-controls="transaction-{{ account.pk }}"
+                  >
+                    <i class="bi bi-arrow-left-right me-1"></i>
+                    Transact
+                  </button>
+                {% else %}
+                  <button class="btn btn-secondary btn-sm" disabled>
+                    Unavailable
+                  </button>
+                {% endif %}
+              {% endif %}
+
+              {% if request.user.role.name == "admin" %}
+                {% if account.status == "active" or account.status == "frozen" %}
+                  <form
+                    method="post"
+                    action="{% url 'admin_toggle_bank_account_status' account.pk %}"
+                    onsubmit="return confirm('Are you sure you want to {% if account.status == "active" %}freeze{% else %}unfreeze{% endif %} this bank account?');"
+                  >
+                    {% csrf_token %}
+
+                    {% if account.status == "active" %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-lock me-1"></i>Freeze
+                      </button>
+                    {% else %}
+                      <button type="submit" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-unlock me-1"></i>Unfreeze
+                      </button>
+                    {% endif %}
+                  </form>
+                {% else %}
+                  <button class="btn btn-sm btn-secondary" disabled>
+                    Closed
+                  </button>
+                {% endif %}
+              {% endif %}
+
+              {% if not can_cash and request.user.role.name != "admin" %}
+                <span class="text-muted small">View Only</span>
+              {% endif %}
+
+            </div>
           </td>
         </tr>
+
+        {% if can_cash and account.status == "active" %}
+        <tr class="transaction-panel-row">
+          <td colspan="5" class="p-0 border-0">
+            <div class="collapse" id="transaction-{{ account.pk }}">
+              <div class="card card-body border-0 rounded-0 bg-light">
+
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                  <div>
+                    <h5 class="mb-1">Account Transactions</h5>
+                    <div class="text-muted small">
+                      {{ account.client }} · {{ account.account_number }}
+                    </div>
+                  </div>
+                  <span class="badge bg-success">Active Account</span>
+                </div>
+
+                <div class="row g-3">
+
+                  <!-- DEPOSIT -->
+                  <div class="col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                      <div class="card-header text-success fw-semibold">
+                        <i class="bi bi-plus-circle me-1"></i>Deposit
+                      </div>
+
+                      <div class="card-body">
+                        <form method="post" action="{% url 'bank_deposit' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="account" value="{{ account.pk }}">
+
+                          <div class="mb-3">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" class="form-control"
+                                   value="{{ account.account_number }}" readonly>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">Amount (₱)</label>
+                            <input type="number" name="amount" class="form-control"
+                                   min="0.01" step="0.01"
+                                   placeholder="Enter amount" required>
+                          </div>
+
+                          <button type="submit" class="btn btn-success w-100">
+                            Deposit Funds
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- WITHDRAWAL -->
+                  <div class="col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                      <div class="card-header text-warning fw-semibold">
+                        <i class="bi bi-dash-circle me-1"></i>Withdrawal
+                      </div>
+
+                      <div class="card-body">
+                        <form method="post" action="{% url 'bank_withdraw' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="account" value="{{ account.pk }}">
+
+                          <div class="mb-3">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" class="form-control"
+                                   value="{{ account.account_number }}" readonly>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">Amount (₱)</label>
+                            <input type="number" name="amount" class="form-control"
+                                   min="0.01" step="0.01"
+                                   placeholder="Enter amount" required>
+                          </div>
+
+                          <button type="submit" class="btn btn-warning w-100">
+                            Withdraw Funds
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- TRANSFER -->
+                  <div class="col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                      <div class="card-header text-primary fw-semibold">
+                        <i class="bi bi-arrow-left-right me-1"></i>Bank Transfer
+                      </div>
+
+                      <div class="card-body">
+                        <form method="post" action="{% url 'bank_transfer' %}">
+                          {% csrf_token %}
+
+                          <div class="mb-3">
+                            <label class="form-label">From Account</label>
+                            <input type="hidden" name="source" value="{{ account.pk }}">
+                            <input type="text" class="form-control"
+                                   value="{{ account.account_number }}" readonly>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">To Account</label>
+                            <select name="destination" class="form-select" required>
+                              <option value="">Select destination</option>
+                              {% for destination in accounts %}
+                                {% if destination.status == "active" and destination.pk != account.pk %}
+                                  <option value="{{ destination.pk }}">
+                                    {{ destination.account_number }} - {{ destination.client }}
+                                  </option>
+                                {% endif %}
+                              {% endfor %}
+                            </select>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label">Amount (₱)</label>
+                            <input type="number" name="amount" class="form-control"
+                                   min="0.01" step="0.01"
+                                   placeholder="Enter amount" required>
+                          </div>
+
+                          <button type="submit" class="btn btn-primary w-100">
+                            Transfer Funds
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+
         {% empty %}
         <tr>
-          <td colspan="6"
-              class="text-center text-muted py-4">
-            No transactions recorded yet.
+          <td colspan="5" class="text-center text-muted py-4">
+            No regular bank accounts available.
           </td>
         </tr>
         {% endfor %}
+
+        <tr id="noSearchResults" style="display: none;">
+          <td colspan="5" class="text-center text-muted py-4">
+            No matching bank accounts found.
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const searchInput = document.getElementById("accountSearch");
+  const statusFilter = document.getElementById("statusFilter");
+  const accountRows = document.querySelectorAll(".account-row");
+  const noResults = document.getElementById("noSearchResults");
+  const accountCount = document.getElementById("accountCount");
+
+  function filterAccounts() {
+    const searchValue = searchInput.value.trim().toLowerCase();
+    const selectedStatus = statusFilter.value.toLowerCase();
+    let visibleCount = 0;
+
+    accountRows.forEach(function (row) {
+      const searchData = row.dataset.search || "";
+      const status = row.dataset.status || "";
+
+      const visible =
+        searchData.includes(searchValue) &&
+        (!selectedStatus || status === selectedStatus);
+
+      row.style.display = visible ? "" : "none";
+
+      const panelRow = row.nextElementSibling;
+
+      if (panelRow && panelRow.classList.contains("transaction-panel-row")) {
+        if (!visible) {
+          const panel = panelRow.querySelector(".collapse");
+
+          if (panel && panel.classList.contains("show") && window.bootstrap) {
+            bootstrap.Collapse.getOrCreateInstance(panel, {
+              toggle: false
+            }).hide();
+          }
+        }
+
+        panelRow.style.display = visible ? "" : "none";
+      }
+
+      if (visible) visibleCount++;
+    });
+
+    noResults.style.display = visibleCount === 0 ? "" : "none";
+    accountCount.textContent = visibleCount + " Accounts";
+  }
+
+  searchInput.addEventListener("input", filterAccounts);
+  statusFilter.addEventListener("change", filterAccounts);
+});
+</script>
 
 {% endblock %}

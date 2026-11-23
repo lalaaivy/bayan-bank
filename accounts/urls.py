@@ -9,6 +9,7 @@ from loans import views as loan_views
 from savings import views as savings_views
 
 from . import views
+from .auth_forms import BayanAuthenticationForm
 from .role_dashboard import role_dashboard
 
 
@@ -22,9 +23,15 @@ def restrict_post_to(*allowed_roles):
         @wraps(view_func)
         def wrapped(request, *args, **kwargs):
             if request.method == "POST":
-                role = getattr(getattr(request.user, "role", None), "name", None)
+                role = getattr(
+                    getattr(request.user, "role", None),
+                    "name",
+                    None,
+                )
                 if role not in allowed_roles:
-                    raise PermissionDenied("Your role cannot perform this action.")
+                    raise PermissionDenied(
+                        "Your role cannot perform this action."
+                    )
             return view_func(request, *args, **kwargs)
         return wrapped
     return decorator
@@ -34,16 +41,30 @@ def staff_only(view_func):
     """Restrict both viewing and processing of operational staff-only pages."""
     @wraps(view_func)
     def wrapped(request, *args, **kwargs):
-        role = getattr(getattr(request.user, "role", None), "name", None)
+        role = getattr(
+            getattr(request.user, "role", None),
+            "name",
+            None,
+        )
         if role != "staff":
-            raise PermissionDenied("This operation is restricted to staff.")
+            raise PermissionDenied(
+                "This operation is restricted to staff."
+            )
         return view_func(request, *args, **kwargs)
     return wrapped
 
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("login/", auth_views.LoginView.as_view(), name="login"),
+
+    # Authentication
+    path(
+        "login/",
+        auth_views.LoginView.as_view(
+            authentication_form=BayanAuthenticationForm,
+        ),
+        name="login",
+    ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 
     # Dashboards
@@ -68,7 +89,7 @@ urlpatterns = [
     path("register/", views.register, name="register"),
     path("register/complete-profile/", views.complete_profile, name="complete_profile"),
 
-    # Client Management: Staff and Admin may update credit scores
+    # Client Management
     path("staff/clients/", views.staff_clients, name="staff_clients"),
     path(
         "staff/clients/<int:client_id>/",
@@ -77,7 +98,7 @@ urlpatterns = [
     ),
     path("staff/clients/add/", views.staff_add_client, name="staff_add_client"),
 
-    # Client Verification: only Staff may submit decisions
+    # Client Verification
     path("staff/clients/verify/", views.verify_clients, name="verify_clients"),
     path(
         "staff/clients/verify/<int:client_id>/",
@@ -96,22 +117,34 @@ urlpatterns = [
     ),
 
     # Payments and Savings
-    path("staff/payments/", restrict_post_to("staff")(payments_views.staff_payments), name="staff_payments"),
-    path("staff/payments/record/", payments_views.staff_record_payment, name="staff_record_payment"),
+    path(
+        "staff/payments/",
+        restrict_post_to("staff")(payments_views.staff_payments),
+        name="staff_payments",
+    ),
+    path(
+        "staff/payments/record/",
+        payments_views.staff_record_payment,
+        name="staff_record_payment",
+    ),
     path("staff/payments/history/", views.staff_payment_history, name="staff_payment_history"),
     path("staff/payments/receipt/", views.staff_receipt, name="staff_receipt"),
-    path("staff/savings/", restrict_post_to("staff")(views.staff_savings), name="staff_savings"),
-
-    # Loan Release: only Staff
-    path("staff/loans/release/", staff_only(views.release_loans), name="release_loans"),
-    path("staff/loans/release/confirm/", staff_only(views.confirm_loan_release), name="confirm_loan_release"),
-
-    # Loan Officer: only Loan Officers may approve/reject
     path(
-    "officer/applications/",
-    loan_views.loan_applications,
-    name="loan_applications",
+        "staff/savings/",
+        restrict_post_to("staff")(views.staff_savings),
+        name="staff_savings",
     ),
+
+    # Loan Release
+    path("staff/loans/release/", staff_only(views.release_loans), name="release_loans"),
+    path(
+        "staff/loans/release/confirm/",
+        staff_only(views.confirm_loan_release),
+        name="confirm_loan_release",
+    ),
+
+    # Loan Officer
+    path("officer/applications/", loan_views.loan_applications, name="loan_applications"),
     path(
         "officer/applications/<int:loan_id>/",
         restrict_post_to("loan_officer")(views.loan_application_detail),

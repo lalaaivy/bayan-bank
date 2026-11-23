@@ -64,6 +64,12 @@ from .forms import (
 )
 from .models import Role, User
 
+from clients.models import (
+    Client,
+    ClientDocument,
+    ReactivationRequest,
+    SecurityFreeze,
+)
 
 @login_required
 def home(request):
@@ -94,7 +100,8 @@ def portal_home(request):
     )
 
     savings_account = SavingsAccount.objects.filter(
-        client=client, status=BankAccount.Status.ACTIVE
+    client=client,
+    status=SavingsAccount.Status.ACTIVE,
     ).first()
 
     accounts = SavingsAccount.objects.filter(
@@ -304,7 +311,7 @@ def _demo_form(request, template, destination):
 
 # ---------- client portal ----------
 
-@role_required("client")
+@client_required
 def loan_detail(request):
     return render(request, "portal/loan_detail.html")
 
@@ -354,7 +361,7 @@ def upload_id(request):
     )
 
 
-@role_required("client")
+@client_required
 def accept_agreement(request):
     return _demo_form(
         request,
@@ -453,7 +460,7 @@ def edit_client_profile(request):
     )
 
 
-@role_required("client")
+@client_required
 def change_password(request):
     return _demo_form(
         request,
@@ -1566,7 +1573,7 @@ def admin_clients(request):
         .order_by("-created_at")
     )
 
-    status = request.GET.get("status", "")
+    status = request.GET.get("status", "").strip()
 
     if status in Client.VerificationStatus.values:
         clients = clients.filter(verification_status=status)
@@ -1580,17 +1587,55 @@ def admin_clients(request):
             | Q(user__last_name__icontains=q)
         )
 
+    # Limit the list before retrieving related security information.
+    client_list = list(clients[:200])
+    client_ids = [client.pk for client in client_list]
+
+    # Find active security freezes for the displayed clients.
+    active_freezes = (
+        SecurityFreeze.objects.filter(
+            client_id__in=client_ids,
+            status=SecurityFreeze.Status.ACTIVE,
+        )
+        .order_by("-started_at")
+    )
+
+    freezes_by_client = {}
+
+    for freeze in active_freezes:
+        freezes_by_client.setdefault(freeze.client_id, freeze)
+
+    # Find clients with a pending reactivation request.
+    pending_request_client_ids = set(
+        ReactivationRequest.objects.filter(
+            client_id__in=client_ids,
+            status=ReactivationRequest.Status.PENDING,
+        ).values_list("client_id", flat=True)
+    )
+
+    # Attach display information to each client.
+    for client in client_list:
+        client.active_security_freeze = freezes_by_client.get(
+            client.pk
+        )
+
+        client.has_pending_reactivation_request = (
+            client.pk in pending_request_client_ids
+        )
+
+        client.login_is_active = client.user.is_active
+
     return render(
         request,
         "adminpanel/clients.html",
         {
-            "clients": clients[:200],
+            "clients": client_list,
             "status": status,
             "q": q,
             "statuses": Client.VerificationStatus.choices,
+            "freeze_severities": SecurityFreeze.Severity.choices,
         },
     )
-
 
 @role_required("admin")
 def admin_loan_products(request):

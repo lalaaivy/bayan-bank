@@ -372,6 +372,11 @@
             <i class="bi bi-wallet2"></i>Savings Accounts
           </a>
 
+          <a class="sidebar-link{% if request.resolver_match.url_name == 'bank_transactions' %} active{% endif %}"
+             href="{% url 'bank_transactions' %}">
+            <i class="bi bi-bank"></i>Regular Account Transactions
+          </a>
+
           <a class="sidebar-link{% if request.resolver_match.url_name == 'release_loans' or request.resolver_match.url_name == 'confirm_loan_release' %} active{% endif %}"
              href="{% url 'release_loans' %}">
             <i class="bi bi-send"></i>Release Loans
@@ -421,6 +426,11 @@
             <i class="bi bi-wallet2"></i>Savings Accounts
           </a>
 
+          <a class="sidebar-link{% if request.resolver_match.url_name == 'bank_transactions' %} active{% endif %}"
+             href="{% url 'bank_transactions' %}">
+            <i class="bi bi-bank"></i>Regular Account Transactions
+          </a>
+
           <a class="sidebar-link{% if request.resolver_match.url_name == 'admin_reports' %} active{% endif %}"
              href="{% url 'admin_reports' %}">
             <i class="bi bi-bar-chart"></i>Reports
@@ -464,6 +474,7 @@
       {% elif request.resolver_match.url_name == 'verify_clients' or request.resolver_match.url_name == 'verify_client_detail' %}Verification
       {% elif request.resolver_match.url_name == 'staff_payments' or request.resolver_match.url_name == 'staff_payment_history' or request.resolver_match.url_name == 'staff_receipt' %}Payments
       {% elif request.resolver_match.url_name == 'staff_savings_accounts' or request.resolver_match.url_name == 'staff_account' %}Savings Accounts
+      {% elif request.resolver_match.url_name == 'bank_transactions' %}Regular Account Transactions
       {% elif request.resolver_match.url_name == 'staff_savings' %}Savings Transactions
       {% elif request.resolver_match.url_name == 'release_loans' or request.resolver_match.url_name == 'confirm_loan_release' %}Release Loans
       {% elif request.resolver_match.url_name == 'loan_applications' or request.resolver_match.url_name == 'loan_application_detail' %}Applications
@@ -550,6 +561,7 @@
             {% elif request.resolver_match.url_name == 'staff_payment_history' %}Payment History
             {% elif request.resolver_match.url_name == 'staff_receipt' %}Payment Receipt
             {% elif request.resolver_match.url_name == 'staff_savings_accounts' or request.resolver_match.url_name == 'staff_account' %}Savings Accounts
+            {% elif request.resolver_match.url_name == 'bank_transactions' %}Regular Account Transactions
             {% elif request.resolver_match.url_name == 'staff_savings' %}Savings Transactions
             {% elif request.resolver_match.url_name == 'release_loans' or request.resolver_match.url_name == 'confirm_loan_release' %}Release Loans
             {% elif request.resolver_match.url_name == 'loan_applications' or request.resolver_match.url_name == 'loan_application_detail' %}Applications

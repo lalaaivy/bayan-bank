@@ -1,6 +1,6 @@
-
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import role_required
@@ -11,6 +11,7 @@ from accounting.services import (
     withdraw_from_bank,
     transfer_between_banks,
 )
+from audit.services import log
 
 
 VIEW_ROLES = ("admin", "staff")
@@ -41,6 +42,43 @@ def bank_transactions(request):
             "can_cash": request.user.role.name in CASHIER_ROLES,
         },
     )
+
+
+@role_required("admin")
+@require_POST
+def admin_toggle_bank_account_status(request, account_id):
+    with transaction.atomic():
+        account = get_object_or_404(
+            BankAccount.objects.select_for_update(),
+            pk=account_id,
+        )
+
+        if account.status == BankAccount.Status.ACTIVE:
+            account.status = BankAccount.Status.FROZEN
+            action = "freeze_bank_account"
+            status_message = "frozen"
+
+        elif account.status == BankAccount.Status.FROZEN:
+            account.status = BankAccount.Status.ACTIVE
+            action = "unfreeze_bank_account"
+            status_message = "unfrozen"
+
+        else:
+            messages.error(
+                request,
+                "Closed bank accounts cannot be frozen or unfrozen.",
+            )
+            return redirect("bank_transactions")
+
+        account.save(update_fields=["status"])
+        log(request.user, action, account)
+
+    messages.success(
+        request,
+        f"Bank account {account.account_number} successfully {status_message}.",
+    )
+
+    return redirect("bank_transactions")
 
 
 @role_required(*CASHIER_ROLES)

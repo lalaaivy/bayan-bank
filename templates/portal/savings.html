@@ -1,45 +1,24 @@
-
 {% extends "base_client.html" %}
 {% block title %}My Savings - Bayan Bank{% endblock %}
 
 {% block content %}
 <style>
-    body.client-app {
-        background: #F1F2EE;
-    }
-
-    .client-main {
-        padding-top: 60px;
-    }
-
-    .client-main > .d-flex.mb-3 {
-        margin-bottom: 18px !important;
-    }
-
+    body.client-app { background: #F1F2EE; }
+    .client-main { padding-top: 60px; }
+    .client-main > .d-flex.mb-3 { margin-bottom: 18px !important; }
     .client-main > .row.g-3 {
         --bs-gutter-x: 14px;
         --bs-gutter-y: 14px;
     }
-
-    .client-main > .row.mb-4 {
-        margin-bottom: 14px !important;
-    }
-
+    .client-main > .row.mb-4 { margin-bottom: 14px !important; }
     .client-main .card {
         border: 0;
         border-radius: 28px;
         background: #fff;
         box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06) !important;
     }
-
-    .client-main > .card.mb-4 {
-        margin-bottom: 14px !important;
-    }
-
-    .client-main .card-body {
-        padding: 20px !important;
-    }
-
+    .client-main > .card.mb-4 { margin-bottom: 14px !important; }
+    .client-main .card-body { padding: 20px !important; }
     .client-main .card-header {
         padding: 20px;
         border: 0;
@@ -48,66 +27,53 @@
         color: #12202B;
         font-weight: 700;
     }
-
     .client-main .border.rounded {
         border-color: #E1E5EC !important;
         border-radius: 20px !important;
         background: rgba(0, 72, 92, 0.04);
     }
-
-    .client-main .btn {
-        border-radius: 999px;
-    }
-
+    .client-main .btn { border-radius: 999px; }
     .client-main .btn-primary,
     .client-main .btn-dark {
         border-color: #00485C;
         background: #00485C;
         color: #fff;
     }
-
     .client-main .btn-primary:hover,
     .client-main .btn-dark:hover {
         border-color: #00323F;
         background: #00323F;
         color: #fff;
     }
-
     .client-main .btn-success {
         border-color: #0A6B3C;
         background: #0A6B3C;
         color: #fff;
     }
-
     .client-main .btn-outline-danger {
         border-color: #E8503A;
         color: #E8503A;
     }
-
     .client-main .btn-outline-danger:hover {
         border-color: #E8503A;
         background: #E8503A;
         color: #fff;
     }
-
     .client-main .form-control,
     .client-main .form-select {
         border: 1px solid #E1E5EC;
         border-radius: 16px;
     }
-
     .client-main .form-control:focus,
     .client-main .form-select:focus {
         border-color: #00485C;
         box-shadow: 0 0 0 0.22rem rgba(0, 72, 92, 0.12);
     }
-
     .client-main .table > :not(caption) > * > * {
         border-right: 0;
         border-left: 0;
         border-bottom-color: #E1E5EC;
     }
-
     .client-main .table thead th {
         background: transparent;
         color: #7A8590;
@@ -116,65 +82,83 @@
         letter-spacing: 0.05em;
         text-transform: uppercase;
     }
-
-    .client-main .badge {
-        border-radius: 999px;
-    }
-
+    .client-main .badge { border-radius: 999px; }
     .client-main .badge.bg-success {
         background: #DDEFE5 !important;
         color: #0A6B3C !important;
     }
-
     .client-main .badge.bg-primary {
         background: rgba(0, 72, 92, 0.1) !important;
         color: #00485C !important;
     }
-
     .client-main .badge.bg-warning {
         background: #FFF3CC !important;
         color: #725400 !important;
     }
-
     .client-main .badge.bg-secondary {
         background: #F1F3F6 !important;
         color: #596273 !important;
     }
-
-    .client-main .text-success {
-        color: #0A6B3C !important;
-    }
-
-    .client-main .text-danger {
-        color: #E8503A !important;
-    }
-
-    .client-main .alert {
-        border: 0;
-        border-radius: 18px;
-    }
-
+    .client-main .text-success { color: #0A6B3C !important; }
+    .client-main .text-danger { color: #E8503A !important; }
+    .client-main .alert { border: 0; border-radius: 18px; }
     .client-main .alert-info {
         background: rgba(0, 72, 92, 0.08);
         color: #00485C;
     }
-
     .client-main .alert-success {
         background: #DDEFE5;
         color: #0A6B3C;
     }
-
     .client-main .alert-warning {
         background: #FFF3CC;
         color: #725400;
     }
-
     .client-main .alert-danger {
         background: #FBE4DF;
         color: #E8503A;
     }
+    .service-icon {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        background: rgba(0, 72, 92, 0.09);
+        color: #00485C;
+        font-size: 1.25rem;
+    }
+    .savings-breakdown {
+        border-top: 1px solid #E1E5EC;
+        margin-top: 16px;
+        padding-top: 14px;
+    }
+    .savings-breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 7px 0;
+        font-size: 0.9rem;
+    }
+    .withdrawal-amount {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #12202B;
+    }
+    .withdrawal-detail {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 7px 0;
+        border-bottom: 1px solid #E1E5EC;
+        font-size: 0.9rem;
+    }
+    .withdrawal-detail:last-child { border-bottom: 0; }
 </style>
 
+<!-- PAGE HEADER -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <h3 class="mb-0">My Savings</h3>
 
@@ -184,18 +168,18 @@
         </a>
 
         {% if request.client.verification_status == "active" and not accounts %}
-        <form method="post" action="{% url 'portal_open_account' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-circle me-1"></i>
-                Open Savings Account
-            </button>
-        </form>
+            <form method="post" action="{% url 'portal_open_account' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Open Savings Account
+                </button>
+            </form>
         {% endif %}
     </div>
 </div>
 
-<!-- Account Balances -->
+<!-- ACCOUNT BALANCES -->
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
@@ -207,11 +191,9 @@
                         Account {{ bank_account.account_number }}
                         ({{ bank_account.get_status_display }})
                     </div>
-
                     <div class="fs-3 fw-bold">
                         ₱ {{ bank_account.balance|floatformat:2 }}
                     </div>
-
                     <div class="text-muted small">Available Balance</div>
                 {% else %}
                     <div class="fs-5 text-muted">No bank account available</div>
@@ -238,7 +220,49 @@
                         ₱ {{ account.balance|floatformat:2 }}
                     </div>
 
-                    <div class="text-muted small">Current Savings Balance</div>
+                    <div class="text-muted small">
+                        Total Savings Account Balance
+                    </div>
+
+                    <div class="savings-breakdown">
+                        <div class="savings-breakdown-item">
+                            <span class="text-muted">Tracked Deposit Principal</span>
+                            <strong>
+                                ₱ {{ account.tracked_deposit_balance|floatformat:2 }}
+                            </strong>
+                        </div>
+                        <div class="savings-breakdown-item">
+                            <span class="text-muted">Unallocated / Unreconciled Balance</span>
+                            <strong>
+                                ₱ {{ account.unallocated_balance|floatformat:2 }}
+                            </strong>
+                        </div>
+                    </div>
+
+                    {% if account.unallocated_balance > 0 %}
+                        <div class="alert alert-warning small mt-3 mb-0">
+                            <strong>
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Balance reconciliation required
+                            </strong>
+                            <p class="mb-0 mt-1">
+                                Part of your savings balance is not currently
+                                associated with an individual term deposit.
+                                Your existing balance has not been changed.
+                            </p>
+                        </div>
+                    {% elif account.has_balance_discrepancy %}
+                        <div class="alert alert-danger small mt-3 mb-0">
+                            Your tracked deposit principal exceeds the recorded
+                            savings balance. Please contact the bank.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success small mt-3 mb-0">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Your savings balance is fully represented by tracked
+                            deposit principal.
+                        </div>
+                    {% endif %}
                 {% empty %}
                     <div class="fs-5 text-muted">No savings account yet</div>
                     <small class="text-muted">
@@ -251,18 +275,350 @@
 </div>
 
 {% if not accounts %}
-<div class="alert alert-info">
-    You do not have a savings account yet.
+    <div class="alert alert-info">
+        You do not have a savings account yet.
+        {% if request.client.verification_status == "active" %}
+            Open a savings account to start saving and earning interest.
+        {% else %}
+            Complete your account verification before opening a savings account.
+        {% endif %}
+    </div>
+{% endif %}
 
-    {% if request.client.verification_status == "active" %}
-        Open a savings account to start saving and earning interest.
-    {% else %}
-        Complete your account verification before opening a savings account.
-    {% endif %}
+<!-- BRANCH SERVICES -->
+<div class="card shadow-sm mb-4" id="branch-services">
+    <div class="card-header">
+        <i class="bi bi-bank me-2"></i>
+        Savings Services
+    </div>
+
+    <div class="card-body">
+        <p class="text-muted small">
+            Physical cash deposits are processed at a Bayan Bank branch.
+            Savings withdrawals can be requested online and transferred
+            to your regular bank account after staff approval.
+        </p>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="service-icon">
+                            <i class="bi bi-cash-coin"></i>
+                        </span>
+                        <h6 class="mb-0 text-success">Deposit Money</h6>
+                    </div>
+
+                    <p class="small text-muted">
+                        Visit a branch and ask authorized staff to record
+                        your physical cash deposit.
+                    </p>
+
+                    <div class="small fw-semibold mb-2">
+                        Available savings terms:
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge bg-primary">3 Months</span>
+                        <span class="badge bg-primary">6 Months</span>
+                        <span class="badge bg-primary">12 Months</span>
+                    </div>
+
+                    <div class="alert alert-info small mb-0">
+                        Every branch cash deposit becomes a separate locked
+                        term deposit. Interest is credited upon maturity.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="service-icon">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </span>
+                        <h6 class="mb-0 text-danger">Withdraw Money</h6>
+                    </div>
+
+                    <p class="small text-muted">
+                        Request any amount up to your total savings account
+                        balance. You do not need to select an individual
+                        deposit or wait for a deposit to mature.
+                    </p>
+
+                    <div class="alert alert-info small mb-0">
+                        Staff approval immediately transfers the approved
+                        amount from your savings account to your regular
+                        bank account. Both balances and the transaction
+                        ledger are updated.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACCOUNT-WIDE SAVINGS WITHDRAWAL -->
+{% for account in accounts %}
+<div class="card shadow-sm mb-4" id="cash-withdrawal-{{ account.pk }}">
+    <div class="card-header">
+        <i class="bi bi-wallet2 me-2"></i>
+        Savings Withdrawal
+    </div>
+
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <div class="small text-muted">Savings Account</div>
+                <div class="fw-semibold">{{ account.account_number }}</div>
+            </div>
+            <div class="text-end">
+                <div class="small text-muted">Current Savings Balance</div>
+                <div class="fs-4 fw-bold">
+                    ₱ {{ account.balance|floatformat:2 }}
+                </div>
+            </div>
+        </div>
+
+        {% with latest_cash=account.latest_cash_withdrawal_request %}
+
+            {% if latest_cash %}
+                <div class="border rounded p-3 mb-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div class="fw-bold">
+                            Latest Withdrawal Request #{{ latest_cash.pk }}
+                        </div>
+
+                        {% if latest_cash.status == "completed" %}
+                            <span class="badge bg-success">Completed</span>
+                        {% elif latest_cash.status == "approved" %}
+                            <span class="badge bg-primary">Legacy Approved</span>
+                        {% elif latest_cash.status == "rejected" %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="small text-muted">Requested Amount</div>
+                    <div class="withdrawal-amount mb-3">
+                        ₱{{ latest_cash.amount|floatformat:2 }}
+                    </div>
+
+                    <div class="withdrawal-detail">
+                        <span class="text-muted">Request Date</span>
+                        <strong>
+                            {{ latest_cash.requested_at|date:"M d, Y H:i" }}
+                        </strong>
+                    </div>
+
+                    {% if latest_cash.status == "pending" %}
+                        <div class="alert alert-info small mt-3 mb-0">
+                            <strong>
+                                <i class="bi bi-clock me-1"></i>
+                                Awaiting Staff Review
+                            </strong>
+                            <p class="mb-0 mt-1">
+                                Your withdrawal request is waiting for staff
+                                approval. No money has been transferred yet.
+                                Once approved, the requested amount will be
+                                transferred to your regular bank account.
+                            </p>
+                        </div>
+
+                    {% elif latest_cash.status == "completed" %}
+                        <div class="withdrawal-detail">
+                            <span class="text-muted">Transfer Date</span>
+                            <strong>
+                                {% if latest_cash.paid_at %}
+                                    {{ latest_cash.paid_at|date:"M d, Y H:i" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="withdrawal-detail">
+                            <span class="text-muted">Transfer Reference</span>
+                            <strong>
+                                {{ latest_cash.branch_reference|default:"—" }}
+                            </strong>
+                        </div>
+
+                        <div class="withdrawal-detail">
+                            <span class="text-muted">Processed By</span>
+                            <strong>
+                                {{ latest_cash.paid_by|default:"Bank Staff" }}
+                            </strong>
+                        </div>
+
+                        <div class="alert alert-success small mt-3 mb-0">
+                            <strong>
+                                <i class="bi bi-check-circle me-1"></i>
+                                Withdrawal Successfully Transferred
+                            </strong>
+                            <p class="mb-0 mt-1">
+                                ₱{{ latest_cash.amount|floatformat:2 }}
+                                has been transferred from your savings
+                                account to your regular bank account.
+                            </p>
+                        </div>
+
+                    {% elif latest_cash.status == "approved" %}
+                        <div class="alert alert-warning small mt-3 mb-0">
+                            This request has an approval status from the
+                            previous withdrawal workflow. It has not been
+                            automatically transferred under the new workflow.
+                            Please contact bank staff for assistance.
+                        </div>
+
+                    {% elif latest_cash.status == "rejected" %}
+                        <div class="alert alert-danger small mt-3 mb-0">
+                            <strong>Your withdrawal request was rejected.</strong>
+                            {% if latest_cash.staff_notes %}
+                                <p class="mb-0 mt-1">
+                                    Staff note:
+                                    {{ latest_cash.staff_notes|linebreaksbr }}
+                                </p>
+                            {% else %}
+                                <p class="mb-0 mt-1">
+                                    Please contact the bank if you need
+                                    clarification.
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if account.has_pending_cash_withdrawal %}
+                <div class="alert alert-warning small">
+                    You already have a pending withdrawal request.
+                    Please wait for staff to review it before submitting
+                    another request.
+                </div>
+            {% else %}
+                {% if account.status == "active" and account.balance > 0 %}
+                    <form method="post"
+                          action="{% url 'portal_request_cash_withdrawal' account.pk %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label"
+                                   for="cash-amount-{{ account.pk }}">
+                                Withdrawal Amount (₱)
+                            </label>
+                            <input
+                                id="cash-amount-{{ account.pk }}"
+                                name="amount"
+                                type="number"
+                                class="form-control"
+                                min="0.01"
+                                max="{{ account.balance }}"
+                                step="0.01"
+                                placeholder="Enter amount to withdraw"
+                                required
+                            >
+                            <div class="form-text">
+                                Minimum: ₱0.01.
+                                Maximum: ₱{{ account.balance|floatformat:2 }}.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"
+                                   for="cash-reason-{{ account.pk }}">
+                                Reason for Withdrawal
+                            </label>
+                            <textarea
+                                id="cash-reason-{{ account.pk }}"
+                                name="reason"
+                                class="form-control"
+                                rows="2"
+                                maxlength="2000"
+                                placeholder="Optional reason for your withdrawal request."
+                            ></textarea>
+                        </div>
+
+                        <div class="alert alert-info small">
+                            Submitting this request does not immediately
+                            deduct your savings balance. Staff must approve
+                            the request first. Upon approval, the requested
+                            amount is transferred to your regular bank account.
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-send me-1"></i>
+                            Submit Withdrawal Request
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-secondary mb-0">
+                        {% if account.status != "active" %}
+                            Your savings account is not active.
+                            Withdrawals are unavailable.
+                        {% else %}
+                            Your savings account has no available balance
+                            to withdraw.
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endfor %}
+
+<!-- WITHDRAWAL REQUEST HISTORY -->
+{% if cash_withdrawal_requests %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <i class="bi bi-clock-history me-2"></i>
+        Savings Withdrawal History
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Request</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Transfer Reference</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cash_withdrawal_requests %}
+                    <tr>
+                        <td>#{{ item.pk }}</td>
+                        <td>{{ item.requested_at|date:"M d, Y H:i" }}</td>
+                        <td class="fw-semibold">
+                            ₱{{ item.amount|floatformat:2 }}
+                        </td>
+                        <td>
+                            {% if item.status == "completed" %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif item.status == "approved" %}
+                                <span class="badge bg-primary">Legacy Approved</span>
+                            {% elif item.status == "rejected" %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ item.branch_reference|default:"—" }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
-<!-- Individual Savings Deposits -->
+<!-- INDIVIDUAL SAVINGS DEPOSITS -->
 {% if accounts %}
 <div class="card shadow-sm mb-4">
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -275,28 +631,32 @@
 
     <div class="card-body">
         <p class="text-muted small">
-            Every transfer into savings creates a separate locked deposit.
-            Each deposit has its own term, annual interest rate, and maturity date.
-            You may add more deposits while existing deposits are still locked.
+            Each deposit has its own term and maturity date. Savings
+            withdrawals are requested against your total savings account
+            balance, not against individual deposits.
         </p>
 
         {% for deposit in deposits %}
             <div class="border rounded p-3 mb-3">
-
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                     <div>
-                        <div class="fw-semibold">
-                            Deposit #{{ deposit.pk }}
-                        </div>
+                        <div class="fw-semibold">Deposit #{{ deposit.pk }}</div>
                         <small class="text-muted">
                             Created {{ deposit.deposited_at|date:"M d, Y" }}
                         </small>
+                        <div class="mt-1">
+                            {% if deposit.source == "branch_cash" %}
+                                <span class="badge bg-secondary">Branch Cash Deposit</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Online Transfer Deposit</span>
+                            {% endif %}
+                        </div>
                     </div>
 
                     {% if deposit.is_released %}
-                        <span class="badge bg-success">Released</span>
+                        <span class="badge bg-success">Fully Released</span>
                     {% elif deposit.is_matured %}
-                        <span class="badge bg-primary">Matured - Pending Release</span>
+                        <span class="badge bg-primary">Matured</span>
                     {% else %}
                         <span class="badge bg-warning text-dark">Locked</span>
                     {% endif %}
@@ -304,53 +664,44 @@
 
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <div class="small text-muted">Principal Amount</div>
+                        <div class="small text-muted">Original Principal</div>
                         <div class="fw-bold">
-                            ₱ {{ deposit.amount|floatformat:2 }}
+                            ₱{{ deposit.amount|floatformat:2 }}
                         </div>
                     </div>
-
+                    <div class="col-md-4">
+                        <div class="small text-muted">Remaining Tracked Principal</div>
+                        <div class="fw-bold">
+                            ₱{{ deposit.available_principal|floatformat:2 }}
+                        </div>
+                    </div>
                     <div class="col-md-4">
                         <div class="small text-muted">Lock-in Period</div>
-                        <div class="fw-semibold">
-                            {{ deposit.term_months }} Months
-                        </div>
+                        <div class="fw-semibold">{{ deposit.term_months }} Months</div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="small text-muted">Annual Interest Rate</div>
-                        <div class="fw-semibold">
-                            {{ deposit.annual_rate }}%
-                        </div>
+                        <div class="fw-semibold">{{ deposit.annual_rate }}%</div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="small text-muted">Maturity Date</div>
                         <div class="fw-semibold">
                             {{ deposit.maturity_date|date:"M d, Y" }}
                         </div>
                     </div>
-
                     <div class="col-md-4">
-                        <div class="small text-muted">Interest Earned</div>
-                        <div class="fw-semibold text-success">
-                            {% if deposit.is_released %}
-                                ₱ {{ deposit.interest_amount|floatformat:2 }}
-                            {% else %}
-                                Calculated upon release
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="small text-muted">Total Released</div>
-                        <div class="fw-semibold">
-                            {% if deposit.is_released %}
-                                ₱ {{ deposit.total_release|floatformat:2 }}
-                            {% else %}
-                                Not yet released
-                            {% endif %}
-                        </div>
+                        <div class="small text-muted">Earned Interest</div>
+                        {% if deposit.is_matured and not deposit.is_released %}
+                            <div class="fw-semibold text-success">
+                                ₱{{ deposit.interest_amount|floatformat:2 }}
+                            </div>
+                        {% elif deposit.is_released %}
+                            <div class="fw-semibold">Released</div>
+                        {% else %}
+                            <div class="fw-semibold text-muted">
+                                Credited upon maturity
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -359,116 +710,143 @@
 
                     {% if deposit.is_matured %}
                         <div class="alert alert-success py-2 small">
-                            This deposit has reached its maturity date.
-                            You may release the principal and calculated interest
-                            to your regular bank account.
+                            This deposit has matured. Its eligible interest
+                            is calculated according to the deposit's terms.
                         </div>
-
-                        <form method="post"
-                              action="{% url 'portal_release_matured' deposit.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-success btn-sm">
-                                <i class="bi bi-unlock me-1"></i>
-                                Release to Regular Account
-                            </button>
-                        </form>
-
                     {% else %}
-                        <div class="alert alert-warning py-2 small mb-3">
-                            <i class="bi bi-lock me-1"></i>
-                            This deposit is still locked until
-                            {{ deposit.maturity_date|date:"M d, Y" }}.
-                            Early withdrawal requires staff approval at a branch.
+                        <div class="alert alert-warning py-2 small">
+                            This deposit is still locked until its maturity
+                            date. Interest is credited upon maturity.
                         </div>
-
-                        {% with requests=deposit.early_withdrawal_requests.all %}
-                            {% with latest_request=requests|first %}
-
-                                {% if latest_request and latest_request.status == "pending" %}
-                                    <div class="alert alert-info py-2 small mb-0">
-                                        Your early-withdrawal request is awaiting staff review.
-                                        Submitted {{ latest_request.requested_at|date:"M d, Y H:i" }}.
-                                    </div>
-
-                                {% elif latest_request and latest_request.status == "approved" %}
-                                    <div class="alert alert-success py-2 small mb-0">
-                                        Your early-withdrawal request was approved.
-                                    </div>
-
-                                {% elif latest_request and latest_request.status == "rejected" %}
-                                    <div class="alert alert-danger py-2 small mb-3">
-                                        Your previous early-withdrawal request was rejected.
-                                        {% if latest_request.staff_notes %}
-                                            <br>Staff note: {{ latest_request.staff_notes }}
-                                        {% endif %}
-                                    </div>
-
-                                    <form method="post"
-                                          action="{% url 'portal_request_early_withdrawal' deposit.pk %}">
-                                        {% csrf_token %}
-                                        <label class="form-label small" for="reason-{{ deposit.pk }}">
-                                            Reason for early withdrawal
-                                        </label>
-                                        <textarea
-                                            id="reason-{{ deposit.pk }}"
-                                            name="reason"
-                                            class="form-control form-control-sm mb-2"
-                                            rows="2"
-                                            maxlength="2000"
-                                            required
-                                            placeholder="Explain why you need to withdraw this deposit early."
-                                        ></textarea>
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            Request Early Withdrawal Again
-                                        </button>
-                                    </form>
-
-                                {% else %}
-                                    <form method="post"
-                                          action="{% url 'portal_request_early_withdrawal' deposit.pk %}">
-                                        {% csrf_token %}
-                                        <label class="form-label small" for="reason-{{ deposit.pk }}">
-                                            Reason for early withdrawal
-                                        </label>
-                                        <textarea
-                                            id="reason-{{ deposit.pk }}"
-                                            name="reason"
-                                            class="form-control form-control-sm mb-2"
-                                            rows="2"
-                                            maxlength="2000"
-                                            required
-                                            placeholder="Explain why you need to withdraw this deposit early."
-                                        ></textarea>
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            Request Early Withdrawal
-                                        </button>
-                                    </form>
-                                {% endif %}
-
-                            {% endwith %}
-                        {% endwith %}
                     {% endif %}
 
+                    <!-- MATURED SAVINGS TRANSFER -->
+                    {% if deposit.is_matured %}
+                        <hr>
+                        <h6 class="mb-2">
+                            <i class="bi bi-arrow-left-right me-1"></i>
+                            Transfer to Regular Bank Account
+                        </h6>
+
+                        <div class="alert alert-info py-2 small">
+                            This is a separate request to transfer this
+                            matured deposit to your regular bank account.
+                            Staff approval is required.
+                        </div>
+
+                        {% if deposit.pending_transfer_request %}
+                            <div class="alert alert-warning py-2 small mb-0">
+                                Your transfer request is awaiting staff approval.
+                            </div>
+                        {% else %}
+                            {% with latest_transfer=deposit.latest_transfer_request %}
+                                {% if latest_transfer and latest_transfer.status == "approved" %}
+                                    <div class="alert alert-success py-2 small">
+                                        Your previous transfer request was approved.
+                                    </div>
+                                {% elif latest_transfer and latest_transfer.status == "rejected" %}
+                                    <div class="alert alert-danger py-2 small">
+                                        Your previous transfer request was rejected.
+                                        {% if latest_transfer.notes %}
+                                            <br>Staff note: {{ latest_transfer.notes }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <form method="post"
+                                      action="{% url 'portal_request_savings_transfer' deposit.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-bank me-1"></i>
+                                        Request Transfer to Regular Account
+                                    </button>
+                                </form>
+                            {% endwith %}
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- EARLY WITHDRAWAL TO REGULAR ACCOUNT -->
+                    {% if not deposit.is_matured %}
+                        <hr>
+                        <h6 class="mb-2">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            Early Withdrawal to Regular Account
+                        </h6>
+
+                        <p class="small text-muted">
+                            This is separate from the account-wide savings
+                            withdrawal request. If approved, the eligible
+                            deposit principal is transferred to your regular
+                            bank account.
+                        </p>
+
+                        {% with latest_early=deposit.early_withdrawal_requests.all|first %}
+                            {% if deposit.pending_early_withdrawal %}
+                                <div class="alert alert-info py-2 small">
+                                    Your early-withdrawal request is awaiting staff review.
+                                </div>
+                            {% else %}
+                                {% if latest_early and latest_early.status == "approved" %}
+                                    <div class="alert alert-success py-2 small">
+                                        Your early-withdrawal request was approved.
+                                    </div>
+                                {% elif latest_early and latest_early.status == "rejected" %}
+                                    <div class="alert alert-danger py-2 small">
+                                        Your previous early-withdrawal request was rejected.
+                                        {% if latest_early.staff_notes %}
+                                            <br>Staff note: {{ latest_early.staff_notes }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <form method="post"
+                                      action="{% url 'portal_request_early_withdrawal' deposit.pk %}">
+                                    {% csrf_token %}
+                                    <label class="form-label small"
+                                           for="early-reason-{{ deposit.pk }}">
+                                        Reason for Early Withdrawal
+                                    </label>
+                                    <textarea
+                                        id="early-reason-{{ deposit.pk }}"
+                                        name="reason"
+                                        class="form-control form-control-sm mb-2"
+                                        rows="2"
+                                        maxlength="2000"
+                                        required
+                                        placeholder="Explain why you need to withdraw this deposit early."
+                                    ></textarea>
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Request Early Withdrawal
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
                 {% else %}
                     <hr>
                     <div class="small text-muted">
-                        Released on {{ deposit.released_at|date:"M d, Y H:i" }}.
+                        This deposit has been fully released.
+                        {% if deposit.released_at %}
+                            Final release date:
+                            {{ deposit.released_at|date:"M d, Y H:i" }}.
+                        {% endif %}
                     </div>
                 {% endif %}
-
             </div>
         {% empty %}
             <div class="text-center text-muted py-4">
                 <i class="bi bi-piggy-bank fs-2 d-block mb-2"></i>
                 You have not made any savings deposits yet.
-                Transfer money from your regular bank account to create your first deposit.
+                Visit a branch for a physical cash deposit or transfer money
+                from your regular bank account.
             </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
 
-<!-- Transfer Money -->
+<!-- TRANSFER MONEY FROM REGULAR ACCOUNT TO SAVINGS -->
 {% if accounts and bank_account %}
 <div class="card shadow-sm mb-4" id="transfer">
     <div class="card-header">
@@ -479,7 +857,8 @@
     <div class="card-body">
         <p class="text-muted small">
             Transfer money from your regular Bayan Bank account into savings.
-            Choose a lock-in period for this deposit. Each transfer is tracked separately.
+            Choose a 3-, 6-, or 12-month lock-in period. Each transfer creates
+            a separate locked savings deposit.
         </p>
 
         {% for account in accounts %}
@@ -489,17 +868,16 @@
                         <div class="small text-muted">From: Regular Bank Account</div>
                         <div class="fw-semibold">{{ bank_account.account_number }}</div>
                         <div class="text-muted small">
-                            Available: ₱ {{ bank_account.balance|floatformat:2 }}
+                            Available: ₱{{ bank_account.balance|floatformat:2 }}
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-6">
                     <div class="border rounded p-3 h-100">
                         <div class="small text-muted">To: Savings Account</div>
                         <div class="fw-semibold">{{ account.account_number }}</div>
                         <div class="text-muted small">
-                            Current balance: ₱ {{ account.balance|floatformat:2 }}
+                            Current balance: ₱{{ account.balance|floatformat:2 }}
                         </div>
                     </div>
                 </div>
@@ -552,10 +930,9 @@
 
                 <div class="col-12">
                     <div class="alert alert-info small mb-0">
-                        <i class="bi bi-info-circle me-1"></i>
-                        The principal and its interest will be released to your regular
-                        bank account when this deposit matures. Early withdrawal requires
-                        staff approval and forfeits interest.
+                        A transfer creates a separate locked savings deposit.
+                        A withdrawal to your regular account requires a
+                        separate request and staff approval.
                     </div>
                 </div>
 
@@ -597,57 +974,9 @@
 </div>
 {% endif %}
 
-<!-- Branch Services -->
-<div class="card shadow-sm mb-4" id="branch-services">
-    <div class="card-header">
-        <i class="bi bi-bank me-2"></i>
-        Branch Services
-    </div>
-
-    <div class="card-body">
-        <p class="text-muted">
-            Cash deposits and cash withdrawals are processed in person at a Bayan Bank
-            branch by authorized staff.
-        </p>
-
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="border rounded p-3 h-100">
-                    <h6 class="text-success">
-                        <i class="bi bi-arrow-down-left-circle me-1"></i>
-                        Deposit Money
-                    </h6>
-                    <p class="small text-muted mb-0">
-                        Visit a branch and deposit cash into your regular bank account.
-                        Once the deposit is recorded, you can transfer the available
-                        funds online into your savings account and select a savings term.
-                    </p>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="border rounded p-3 h-100">
-                    <h6 class="text-danger">
-                        <i class="bi bi-arrow-up-right-circle me-1"></i>
-                        Early Withdrawal
-                    </h6>
-                    <p class="small text-muted mb-0">
-                        Savings deposits cannot be withdrawn freely before maturity.
-                        Submit an early-withdrawal request through this page. An
-                        authorized staff member must review and approve the request.
-                        Early withdrawal forfeits interest.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Account Activity -->
+<!-- RECENT ACCOUNT ACTIVITY -->
 <div class="card shadow-sm">
-    <div class="card-header">
-        Recent Account Activity
-    </div>
+    <div class="card-header">Recent Account Activity</div>
 
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -660,12 +989,10 @@
                     <th class="text-end">Balance</th>
                 </tr>
             </thead>
-
             <tbody>
                 {% for entry in recent_entries %}
                     <tr>
                         <td>{{ entry.created_at|date:"M d, Y H:i" }}</td>
-
                         <td>
                             {% if entry.bank_account %}
                                 {{ entry.bank_account.account_number }}
@@ -677,21 +1004,18 @@
                                 —
                             {% endif %}
                         </td>
-
                         <td>{{ entry.get_entry_type_display }}</td>
-
                         <td class="text-end">
                             {% if entry.entry_type == "deposit" or entry.entry_type == "transfer_in" or entry.entry_type == "loan_disbursement" or entry.entry_type == "interest_credit" %}
                                 <span class="text-success">+</span>
                             {% else %}
                                 <span class="text-danger">-</span>
                             {% endif %}
-                            ₱ {{ entry.amount|floatformat:2 }}
+                            ₱{{ entry.amount|floatformat:2 }}
                         </td>
-
                         <td class="text-end">
                             {% if entry.balance_after is not None %}
-                                ₱ {{ entry.balance_after|floatformat:2 }}
+                                ₱{{ entry.balance_after|floatformat:2 }}
                             {% else %}
                                 —
                             {% endif %}
@@ -708,4 +1032,5 @@
         </table>
     </div>
 </div>
+
 {% endblock %}

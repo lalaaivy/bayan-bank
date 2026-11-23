@@ -67,6 +67,30 @@ class Notification(models.Model):
         BANK_TRANSFER_IN = "bank_transfer_in", "Bank Transfer Received"
         BANK_TRANSFER_OUT = "bank_transfer_out", "Bank Transfer Sent"
 
+        # Security freeze notifications
+        SECURITY_FREEZE = (
+            "security_freeze",
+            "Security Freeze",
+        )
+        SECURITY_UNFREEZE = (
+            "security_unfreeze",
+            "Security Freeze Released",
+        )
+
+        # Reactivation request notifications
+        REACTIVATION_REQUESTED = (
+            "reactivation_requested",
+            "Reactivation Requested",
+        )
+        REACTIVATION_APPROVED = (
+            "reactivation_approved",
+            "Reactivation Approved",
+        )
+        REACTIVATION_REJECTED = (
+            "reactivation_rejected",
+            "Reactivation Rejected",
+        )
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
