@@ -3,6 +3,7 @@ import secrets
 from datetime import timedelta
 from decimal import Decimal
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -37,6 +38,7 @@ def make_client(
         id_number_encrypted=b"x",
         id_number_hash=f"hash-{name}",
         verification_status=status,
+        date_of_birth=timezone.localdate() - timedelta(days=25 * 365),
         monthly_income=Decimal(income),
         credit_score=score,
     )
@@ -213,16 +215,17 @@ class EligibilityTests(TestCase):
 
         loan = self.apply(client)
 
-        loan_services.approve_loan(
-            loan.pk,
-            self.officer,
-        )
+        with self.assertRaises(BankError):
+            loan_services.approve_loan(
+                loan.pk,
+                self.officer,
+            )
 
         loan.refresh_from_db()
 
         self.assertEqual(
             loan.status,
-            Loan.Status.APPROVED,
+            Loan.Status.PENDING,
         )
 
 
@@ -250,6 +253,7 @@ class LoanApplicationRuleTests(TestCase):
                 "principal": "12000",
                 "term_months": "12",
                 "purpose": "Personal and household expenses",
+                "documents": SimpleUploadedFile("proof.pdf", b"%%PDF-1.4 test document", content_type="application/pdf"),
             },
         )
 
@@ -341,7 +345,7 @@ class LoanApplicationRuleTests(TestCase):
 
         loan_services.disburse_loan(
             loan.pk,
-            self.officer,
+            self.staff,
             bank_account.pk,
         )
 

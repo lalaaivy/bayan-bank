@@ -1,10 +1,9 @@
-
 from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
-from django.test import TestCase
+from cryptography.fernet import Fernet
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import Role
@@ -13,6 +12,7 @@ from loans.agreement_pdf import generate_agreement_pdf
 from loans.models import Loan, LoanAgreement, LoanProduct
 
 
+@override_settings(FIELD_KEY=Fernet.generate_key().decode())
 class LoanAgreementPDFTests(TestCase):
 
     @classmethod
@@ -131,7 +131,13 @@ class LoanAgreementPDFTests(TestCase):
     def test_unauthenticated_user_cannot_download_pdf(self):
         response = self.client.get(self.pdf_url)
 
-        self.assertEqual(response.status_code, 403)
+        # Unauthenticated visitors are redirected to login.
+        self.assertEqual(response.status_code, 302)
+        self.assertNotEqual(
+            response.get("Content-Type"),
+            "application/pdf",
+        )
+        self.assertIn("next=", response["Location"])
 
     def test_missing_agreement_returns_404(self):
         self.client.force_login(self.borrower_user)

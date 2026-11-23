@@ -15,7 +15,10 @@ CENT = Decimal("0.01")
 
 
 class Command(BaseCommand):
-    help = "Mark overdue installments, apply one-time penalties, and notify clients."
+    help = (
+        "Mark overdue installments, apply one-time penalties, "
+        "and notify clients."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -60,32 +63,18 @@ class Command(BaseCommand):
                     continue
 
                 fields = []
-                newly_overdue = False
 
                 newly_overdue = (
-                    installment.status != Installment.Status.OVERDUE
+                    installment.status
+                    != Installment.Status.OVERDUE
                 )
 
                 if newly_overdue:
                     installment.status = Installment.Status.OVERDUE
                     fields.append("status")
                     overdue_count += 1
-                    newly_overdue = True
 
-                    loan = installment.loan
-
-                    Notification.objects.create(
-                        user=loan.client.user,
-                        kind=Notification.Kind.INSTALLMENT_OVERDUE,
-                        message=(
-                            f"Your installment #{installment.number} "
-                            f"for loan #{loan.pk} is overdue. "
-                            f"Outstanding amount: P{unpaid:,.2f}."
-                        ),
-                    )
-
-                    notification_count += 1
-
+                # Apply the penalty only once.
                 if installment.penalty_amount == 0:
                     penalty = (
                         unpaid * PENALTY_RATE
@@ -102,18 +91,21 @@ class Command(BaseCommand):
                 if fields:
                     installment.save(update_fields=fields)
 
+                # Send only one notification when the
+                # installment first becomes overdue.
                 if newly_overdue:
-                    outstanding = (
+                    outstanding = max(
                         installment.total_due
-                        - installment.amount_paid
+                        - installment.amount_paid,
+                        Decimal("0.00"),
                     )
 
                     Notification.objects.create(
                         user=installment.loan.client.user,
-                        kind="loan_overdue",
+                        kind=Notification.Kind.INSTALLMENT_OVERDUE,
                         message=(
-                            f"Loan #{installment.loan_id}, "
-                            f"installment #{installment.number} "
+                            f"Your installment #{installment.number} "
+                            f"for loan #{installment.loan_id} "
                             f"is overdue. Outstanding amount: "
                             f"PHP {outstanding:,.2f}."
                         )[:255],

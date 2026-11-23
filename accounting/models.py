@@ -12,11 +12,12 @@ class BankAccount(models.Model):
         FROZEN = "frozen", "Frozen"
         CLOSED = "closed", "Closed"
 
-    client = models.OneToOneField(
+    client = models.ForeignKey(
         "clients.Client",
         on_delete=models.PROTECT,
-        related_name="bank_account",
+        related_name="bank_accounts",
     )
+
     account_number = models.CharField(
         max_length=20,
         unique=True,
@@ -28,11 +29,13 @@ class BankAccount(models.Model):
         decimal_places=2,
         default=0,
     )
+
     status = models.CharField(
         max_length=10,
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+
     opened_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -68,10 +71,12 @@ class LedgerEntry(models.Model):
         max_length=20,
         choices=EntryType.choices,
     )
+
     amount = models.DecimalField(
         max_digits=14,
         decimal_places=2,
     )
+
     balance_after = models.DecimalField(
         max_digits=14,
         decimal_places=2,
@@ -94,6 +99,7 @@ class LedgerEntry(models.Model):
         on_delete=models.PROTECT,
         related_name="ledger_entries",
     )
+
     loan = models.ForeignKey(
         "loans.Loan",
         null=True,
@@ -101,15 +107,18 @@ class LedgerEntry(models.Model):
         on_delete=models.PROTECT,
         related_name="ledger_entries",
     )
+
     reference = models.CharField(
         max_length=100,
         blank=True,
     )
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="+",
     )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -158,6 +167,7 @@ class LedgerEntry(models.Model):
 
 
 class ReportExport(models.Model):
+
     class ReportType(models.TextChoices):
         TRANSACTION = "transaction", "Transaction Statement"
         LOAN = "loan", "Loan Statement"
@@ -171,6 +181,7 @@ class ReportExport(models.Model):
         choices=ReportType.choices,
         default=ReportType.TRANSACTION,
     )
+
     file_format = models.CharField(
         max_length=10,
         choices=Format.choices,
@@ -194,6 +205,7 @@ class ReportExport(models.Model):
         blank=True,
         related_name="report_exports",
     )
+
     loan = models.ForeignKey(
         "loans.Loan",
         on_delete=models.PROTECT,
@@ -201,14 +213,18 @@ class ReportExport(models.Model):
         blank=True,
         related_name="report_exports",
     )
+
     date_from = models.DateField()
     date_to = models.DateField()
+
     generated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="generated_reports",
     )
+
     generated_at = models.DateTimeField(auto_now_add=True)
+
     filename = models.CharField(max_length=255)
 
     class Meta:

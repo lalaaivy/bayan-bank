@@ -83,7 +83,7 @@ def portal_home(request):
     client = request.client
 
     bank_account = BankAccount.objects.filter(
-        client=client
+        client=client, status=BankAccount.Status.ACTIVE
     ).first()
 
     bank_balance = (
@@ -93,7 +93,7 @@ def portal_home(request):
     )
 
     savings_account = SavingsAccount.objects.filter(
-        client=client
+        client=client, status=BankAccount.Status.ACTIVE
     ).first()
 
     accounts = SavingsAccount.objects.filter(
@@ -188,7 +188,7 @@ def staff_home(request):
     return render(request, "staff/home.html", context)
 
 
-@role_required("loan_officer", "admin")
+@role_required("loan_officer")
 def officer_home(request):
     return render(request, "officer/home.html")
 
@@ -632,7 +632,7 @@ def staff_client_detail(request, client_id):
     )
 
     bank_account = BankAccount.objects.filter(
-        client=client
+        client=client, status=BankAccount.Status.ACTIVE
     ).first()
 
     savings_accounts = (
@@ -674,15 +674,6 @@ def staff_client_detail(request, client_id):
         request,
         "staff/client_detail.html",
         context,
-    )
-
-
-@role_required("staff", "admin")
-def staff_payments(request):
-    return _demo_form(
-        request,
-        "staff/payments.html",
-        "staff_receipt",
     )
 
 
@@ -810,7 +801,8 @@ def verify_client_detail(request, client_id):
 
                     if approved:
                         bank_account = BankAccount.objects.filter(
-                            client=locked_client
+                            client=locked_client,
+                            status__in=[BankAccount.Status.ACTIVE, BankAccount.Status.FROZEN],
                         ).first()
 
                         if bank_account is None:

@@ -1,11 +1,11 @@
-
 from datetime import timedelta
 from decimal import Decimal
 from io import StringIO
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import TestCase
+from cryptography.fernet import Fernet
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import Role
@@ -14,6 +14,7 @@ from loans.models import Installment, Loan, LoanProduct
 from notifications.models import Notification
 
 
+@override_settings(FIELD_KEY=Fernet.generate_key().decode())
 class OverdueProcessingTests(TestCase):
 
     @classmethod
@@ -111,7 +112,7 @@ class OverdueProcessingTests(TestCase):
         self.assertTrue(
             Notification.objects.filter(
                 user=self.user,
-                kind="loan_overdue",
+                kind=Notification.Kind.INSTALLMENT_OVERDUE,
             ).exists()
         )
 
@@ -122,7 +123,7 @@ class OverdueProcessingTests(TestCase):
         self.assertEqual(
             Notification.objects.filter(
                 user=self.user,
-                kind="loan_overdue",
+                kind=Notification.Kind.INSTALLMENT_OVERDUE,
             ).count(),
             1,
         )

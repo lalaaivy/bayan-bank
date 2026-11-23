@@ -1,4 +1,3 @@
-
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,7 +10,7 @@ from .models import Loan, LoanPayment
 from .services import record_payment
 
 
-VIEWERS = ("admin", "staff", "loan_officer")
+VIEWERS = ("admin", "staff")
 CASHIERS = ("staff",)
 
 

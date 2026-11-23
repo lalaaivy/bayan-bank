@@ -1,10 +1,10 @@
-
 from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import TestCase
+from cryptography.fernet import Fernet
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import Role
@@ -18,6 +18,7 @@ from savings.interest import (
 from savings.models import SavingsAccount, SavingsInterestPosting
 
 
+@override_settings(FIELD_KEY=Fernet.generate_key().decode())
 class SavingsInterestTests(TestCase):
 
     @classmethod
@@ -93,7 +94,7 @@ class SavingsInterestTests(TestCase):
 
         entry = LedgerEntry.objects.get(
             savings_account=self.account,
-            entry_type=LedgerEntry.EntryType.INTEREST,
+            entry_type=LedgerEntry.EntryType.INTEREST_CREDIT,
         )
 
         self.assertEqual(entry.amount, Decimal("20.00"))
@@ -116,7 +117,7 @@ class SavingsInterestTests(TestCase):
         self.assertEqual(posting.posted_by, self.admin_user)
         self.assertEqual(
             posting.ledger_entry.entry_type,
-            LedgerEntry.EntryType.INTEREST,
+            LedgerEntry.EntryType.INTEREST_CREDIT,
         )
 
     def test_prevents_duplicate_monthly_posting(self):

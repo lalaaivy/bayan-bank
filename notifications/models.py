@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.db import models
 
@@ -45,6 +44,10 @@ class Notification(models.Model):
             "savings_released",
             "Savings Deposit Released",
         )
+        SAVINGS_INTEREST = (
+            "savings_interest",
+            "Savings Interest Credited",
+        )
         EARLY_WITHDRAWAL_REQUESTED = (
             "early_wd_requested",
             "Early Withdrawal Requested",
@@ -57,6 +60,12 @@ class Notification(models.Model):
             "early_wd_rejected",
             "Early Withdrawal Rejected",
         )
+
+        # Bank account notifications
+        BANK_DEPOSIT = "bank_deposit", "Bank Deposit"
+        BANK_WITHDRAWAL = "bank_withdrawal", "Bank Withdrawal"
+        BANK_TRANSFER_IN = "bank_transfer_in", "Bank Transfer Received"
+        BANK_TRANSFER_OUT = "bank_transfer_out", "Bank Transfer Sent"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

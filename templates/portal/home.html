@@ -1,3 +1,4 @@
+
 {% extends "base_client.html" %}
 {% load humanize %}
 
@@ -5,70 +6,566 @@
 
 {% block content %}
 
-<div class="dashboard-page">
+<style>
+  .client-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #17243a;
+  }
 
-  <!-- Welcome Section -->
+  .dashboard-welcome {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 25px;
+  }
+
+  .dashboard-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 55px;
+    height: 55px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #e5edff;
+    color: #1245ae;
+    font-size: 19px;
+    font-weight: 800;
+  }
+
+  .dashboard-eyebrow {
+    margin-bottom: 5px;
+    color: #8290a5;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .dashboard-welcome h2 {
+    margin-bottom: 5px;
+    font-size: 25px;
+    font-weight: 800;
+  }
+
+  .verification-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #65738b;
+    font-size: 12px;
+  }
+
+  .status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #8b95a5;
+  }
+
+  .status-dot.active { background: #16a36a; }
+  .status-dot.pending { background: #e5a000; }
+  .status-dot.rejected { background: #dc3545; }
+
+  .dashboard-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 17px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+  }
+
+  .dashboard-alert i {
+    font-size: 21px;
+  }
+
+  .dashboard-section {
+    margin-bottom: 28px;
+  }
+
+  .dashboard-section h3,
+  .dashboard-panel h3 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 800;
+  }
+
+  .dashboard-section-heading {
+    margin-bottom: 16px;
+  }
+
+  .account-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .account-card {
+    min-width: 0;
+    padding: 24px;
+    border-radius: 17px;
+    box-shadow: 0 6px 20px rgba(22, 42, 80, .08);
+  }
+
+  .regular-account {
+    background: linear-gradient(135deg, #1049b9, #07358f);
+    color: white;
+  }
+
+  .savings-account {
+    background: linear-gradient(135deg, #ffda36, #ffc914);
+    color: #1c2a42;
+  }
+
+  .account-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .account-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .account-card h2 {
+    margin: 0;
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+
+  .account-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .25);
+    font-size: 22px;
+  }
+
+  .account-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 25px;
+  }
+
+  .account-details div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .account-details span {
+    font-size: 11px;
+    opacity: .75;
+  }
+
+  .account-details strong {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .account-note {
+    margin-top: 24px;
+    font-size: 12px;
+  }
+
+  .account-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, .25);
+    font-size: 12px;
+  }
+
+  .account-card-footer a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .25);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .interest-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 17px;
+    padding: 20px;
+    margin-bottom: 28px;
+    border: 1px solid #e8edf5;
+    border-radius: 15px;
+    background: white;
+  }
+
+  .interest-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    background: #e5f7ef;
+    color: #119765;
+    font-size: 23px;
+  }
+
+  .interest-information {
+    flex: 1;
+  }
+
+  .interest-information span {
+    color: #748198;
+    font-size: 12px;
+  }
+
+  .interest-information h3 {
+    margin: 4px 0;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .interest-information small {
+    color: #8994a7;
+  }
+
+  .interest-link {
+    color: #1649ae;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .quick-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 13px;
+  }
+
+  .dashboard-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 17px;
+    border: 1px solid #e8edf5;
+    border-radius: 13px;
+    background: white;
+    color: #253550;
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+
+  .dashboard-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 18px rgba(20, 50, 100, .08);
+    color: #1245ae;
+  }
+
+  .dashboard-action .action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 43px;
+    height: 43px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    font-size: 19px;
+  }
+
+  .action-blue { background: #e9f0ff; color: #2057c0; }
+  .action-green { background: #e5f7ee; color: #16885d; }
+  .action-orange { background: #fff1df; color: #d7831a; }
+
+  .dashboard-action strong {
+    display: block;
+    font-size: 13px;
+  }
+
+  .dashboard-action small {
+    display: block;
+    margin-top: 4px;
+    color: #8a95a8;
+    font-size: 11px;
+  }
+
+  .dashboard-lower-grid {
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .dashboard-panel {
+    min-width: 0;
+    padding: 21px;
+    border: 1px solid #e8edf5;
+    border-radius: 15px;
+    background: white;
+  }
+
+  .panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 17px;
+  }
+
+  .panel-heading a {
+    color: #1649ae;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .dashboard-transaction {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 14px 0;
+    border-top: 1px solid #edf0f5;
+  }
+
+  .transaction-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 50%;
+  }
+
+  .transaction-in {
+    background: #e6f7ee;
+    color: #16945e;
+  }
+
+  .transaction-out {
+    background: #fff0ef;
+    color: #d64b4b;
+  }
+
+  .transaction-information {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .transaction-information strong {
+    display: block;
+    font-size: 12px;
+  }
+
+  .transaction-information small {
+    display: block;
+    margin-top: 3px;
+    color: #929bad;
+    font-size: 10px;
+  }
+
+  .transaction-value {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .transaction-value.positive { color: #16945e; }
+  .transaction-value.negative { color: #d64b4b; }
+
+  .loan-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: #f2f5fb;
+  }
+
+  .loan-total strong {
+    color: #1649ae;
+    font-size: 22px;
+  }
+
+  .loan-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 0;
+    border-top: 1px solid #edf0f5;
+  }
+
+  .loan-product-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #edf2ff;
+    color: #2859bd;
+  }
+
+  .loan-information {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .loan-information strong {
+    display: block;
+    font-size: 12px;
+  }
+
+  .loan-information small {
+    display: block;
+    margin-top: 4px;
+    color: #929bad;
+    font-size: 10px;
+  }
+
+  .loan-status {
+    padding: 5px 8px;
+    border-radius: 20px;
+    background: #eef2f8;
+    color: #596a83;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .empty-state {
+    padding: 25px 10px;
+    color: #8793a7;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .empty-state i {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 26px;
+  }
+
+  .dashboard-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 20px 0;
+  }
+
+  .dashboard-footer-links a {
+    color: #77849a;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  @media (max-width: 900px) {
+    .quick-action-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .account-grid,
+    .dashboard-lower-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="client-dashboard">
+
+  <!-- Welcome -->
   <section class="dashboard-welcome">
-    <div class="welcome-user">
-      <div class="dashboard-avatar">
-        {% if request.user.first_name %}
-          {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
-        {% else %}
-          {{ request.user.username|first|upper }}
-        {% endif %}
-      </div>
-
-      <div>
-        <p class="welcome-eyebrow">WELCOME BACK</p>
-        <h2>Hey, {{ request.user.first_name|default:request.user.username }}!</h2>
-
-        <div class="verification-status">
-          {% if client.verification_status == "active" %}
-            <span class="status-dot active"></span>
-            <span>Verified Account</span>
-          {% elif client.verification_status == "rejected" %}
-            <span class="status-dot rejected"></span>
-            <span>Verification Rejected</span>
-          {% elif client.verification_status == "pending" %}
-            <span class="status-dot pending"></span>
-            <span>Verification Pending</span>
-          {% else %}
-            <span class="status-dot"></span>
-            <span>{{ client.get_verification_status_display }}</span>
-          {% endif %}
-        </div>
-      </div>
+    <div class="dashboard-avatar">
+      {% if request.user.first_name %}
+        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+      {% else %}
+        {{ request.user.username|first|upper }}
+      {% endif %}
     </div>
 
-    <a href="{% url 'client_profile' %}" class="welcome-profile-link">
-      <i class="bi bi-person-circle"></i>
-      <span>My Profile</span>
-    </a>
+    <div>
+      <p class="dashboard-eyebrow">Welcome Back</p>
+
+      <h2>
+        Hey, {{ request.user.first_name|default:request.user.username }}!
+      </h2>
+
+      <div class="verification-status">
+        {% if client.verification_status == "active" %}
+          <span class="status-dot active"></span>
+          Verified Account
+        {% elif client.verification_status == "rejected" %}
+          <span class="status-dot rejected"></span>
+          Verification Rejected
+        {% elif client.verification_status == "pending" %}
+          <span class="status-dot pending"></span>
+          Verification Pending
+        {% else %}
+          <span class="status-dot"></span>
+          {{ client.get_verification_status_display }}
+        {% endif %}
+      </div>
+    </div>
   </section>
 
   <!-- Verification Alerts -->
   {% if client.verification_status == "rejected" %}
     <div class="dashboard-alert alert-danger">
       <i class="bi bi-exclamation-circle-fill"></i>
+
       <div>
         <strong>Your ID verification was rejected.</strong>
+
         {% if latest_document and latest_document.remark %}
-          <p class="mb-2">Reason: {{ latest_document.remark }}</p>
+          <p>Reason: {{ latest_document.remark }}</p>
         {% endif %}
-        <a href="{% url 'upload_id' %}">Upload your ID again</a>
+
+        <a href="{% url 'upload_id' %}">
+          Upload your ID again
+        </a>
       </div>
     </div>
+
   {% elif client.verification_status == "pending" %}
     <div class="dashboard-alert alert-warning">
       <i class="bi bi-hourglass-split"></i>
+
       <div>
         {% if latest_document %}
           <strong>Your ID is currently under review.</strong>
-          <p class="mb-0">Our staff will update your verification status soon.</p>
+          <p class="mb-0">
+            Our staff will update your verification status soon.
+          </p>
         {% else %}
           <strong>Your account needs ID verification.</strong>
-          <p class="mb-2">Upload your identification document to access banking features.</p>
-          <a href="{% url 'upload_id' %}">Upload Identification</a>
+          <p>
+            Upload your identification document to access banking features.
+          </p>
+          <a href="{% url 'upload_id' %}">
+            Upload Identification
+          </a>
         {% endif %}
       </div>
     </div>
@@ -76,21 +573,26 @@
 
   <!-- Account Overview -->
   <section class="dashboard-section">
-    <div class="section-heading">
-      <div>
-        <p class="section-eyebrow">YOUR FINANCES</p>
-        <h3>Account Overview</h3>
-      </div>
+
+    <div class="dashboard-section-heading">
+      <p class="dashboard-eyebrow">Your Finances</p>
+      <h3>Account Overview</h3>
     </div>
 
     <div class="account-grid">
 
       <!-- Regular Bank Account -->
       <article class="account-card regular-account">
+
         <div class="account-card-top">
           <div>
-            <span class="account-label">REGULAR BANK ACCOUNT</span>
-            <h2>₱{{ bank_balance|floatformat:2|intcomma }}</h2>
+            <span class="account-label">
+              REGULAR BANK ACCOUNT
+            </span>
+
+            <h2>
+              ₱{{ bank_balance|floatformat:2|intcomma }}
+            </h2>
           </div>
 
           <div class="account-icon">
@@ -104,6 +606,7 @@
               <span>Account Number</span>
               <strong>{{ bank_account.account_number }}</strong>
             </div>
+
             <div>
               <span>Account Status</span>
               <strong>{{ bank_account.get_status_display }}</strong>
@@ -111,24 +614,37 @@
           </div>
         {% else %}
           <p class="account-note">
-            Your regular bank account will be created after ID verification.
+            Your regular bank account will be created
+            after ID verification.
           </p>
         {% endif %}
 
         <div class="account-card-footer">
-          <span><i class="bi bi-shield-check"></i> Your primary bank account</span>
-          <a href="{% url 'client_bank_page' %}" aria-label="View bank transactions">
+          <span>
+            <i class="bi bi-shield-check"></i>
+            Your primary bank account
+          </span>
+
+          <a href="{% url 'client_bank_page' %}"
+             aria-label="View bank transactions">
             <i class="bi bi-arrow-up-right"></i>
           </a>
         </div>
+
       </article>
 
       <!-- Savings Account -->
       <article class="account-card savings-account">
+
         <div class="account-card-top">
           <div>
-            <span class="account-label">SAVINGS ACCOUNT</span>
-            <h2>₱{{ balance|floatformat:2|intcomma }}</h2>
+            <span class="account-label">
+              SAVINGS ACCOUNT
+            </span>
+
+            <h2>
+              ₱{{ balance|floatformat:2|intcomma }}
+            </h2>
           </div>
 
           <div class="account-icon">
@@ -143,6 +659,7 @@
                 <span>Account Number</span>
                 <strong>{{ account.account_number }}</strong>
               </div>
+
               <div>
                 <span>Account Status</span>
                 <strong>{{ account.get_status_display }}</strong>
@@ -156,11 +673,17 @@
         {% endif %}
 
         <div class="account-card-footer">
-          <span><i class="bi bi-graph-up-arrow"></i> Earn interest on savings</span>
-          <a href="{% url 'portal_savings' %}" aria-label="View savings details">
+          <span>
+            <i class="bi bi-graph-up-arrow"></i>
+            Earn interest on savings
+          </span>
+
+          <a href="{% url 'portal_savings' %}"
+             aria-label="View savings details">
             <i class="bi bi-arrow-up-right"></i>
           </a>
         </div>
+
       </article>
 
     </div>
@@ -168,79 +691,83 @@
 
   <!-- Interest Summary -->
   <section class="interest-summary">
+
     <div class="interest-icon">
       <i class="bi bi-piggy-bank"></i>
     </div>
 
     <div class="interest-information">
       <span>Total Interest Earned</span>
-      <h3>₱{{ total_interest|floatformat:2|intcomma }}</h3>
+
+      <h3>
+        ₱{{ total_interest|floatformat:2|intcomma }}
+      </h3>
 
       {% if latest_interest %}
-        <small>Last credited {{ latest_interest.posted_at|date:"M d, Y" }}</small>
+        <small>
+          Last credited
+          {{ latest_interest.posted_at|date:"M d, Y" }}
+        </small>
       {% else %}
         <small>No interest credited yet.</small>
       {% endif %}
     </div>
 
-    <a href="{% url 'savings_history' %}" class="interest-link">
-      Interest History <i class="bi bi-arrow-right"></i>
+    <a href="{% url 'savings_history' %}"
+       class="interest-link">
+      Interest History
+      <i class="bi bi-arrow-right"></i>
     </a>
+
   </section>
 
   <!-- Quick Actions -->
   <section class="dashboard-section">
-    <div class="section-heading">
-      <div>
-        <p class="section-eyebrow">BANKING SERVICES</p>
-        <h3>Quick Actions</h3>
-      </div>
+
+    <div class="dashboard-section-heading">
+      <p class="dashboard-eyebrow">Banking Services</p>
+      <h3>Quick Actions</h3>
     </div>
 
     <div class="quick-action-grid">
 
-      <a href="{% url 'client_bank_page' %}" class="dashboard-action">
+      <a href="{% url 'client_bank_page' %}"
+         class="dashboard-action">
+
         <span class="action-icon action-blue">
           <i class="bi bi-arrow-left-right"></i>
         </span>
+
         <span>
           <strong>Transfer Money</strong>
           <small>Send money from your regular account</small>
         </span>
-        <i class="bi bi-chevron-right action-chevron"></i>
       </a>
 
-      <a href="{% url 'portal_savings' %}#deposit-info" class="dashboard-action">
+      <a href="{% url 'portal_savings' %}#deposit-info"
+         class="dashboard-action">
+
         <span class="action-icon action-green">
           <i class="bi bi-plus-circle"></i>
         </span>
+
         <span>
           <strong>Add to Savings</strong>
           <small>Deposit money into your savings account</small>
         </span>
-        <i class="bi bi-chevron-right action-chevron"></i>
       </a>
 
-      <a href="{% url 'my_loans' %}" class="dashboard-action">
-        <span class="action-icon action-purple">
-          <i class="bi bi-credit-card"></i>
-        </span>
-        <span>
-          <strong>My Loans</strong>
-          <small>View applications and loan payments</small>
-        </span>
-        <i class="bi bi-chevron-right action-chevron"></i>
-      </a>
+      <a href="{% url 'apply_loan' %}"
+         class="dashboard-action">
 
-      <a href="{% url 'apply_loan' %}" class="dashboard-action">
         <span class="action-icon action-orange">
           <i class="bi bi-file-earmark-plus"></i>
         </span>
+
         <span>
           <strong>Apply for a Loan</strong>
           <small>Explore available loan products</small>
         </span>
-        <i class="bi bi-chevron-right action-chevron"></i>
       </a>
 
     </div>
@@ -251,827 +778,145 @@
 
     <!-- Recent Transactions -->
     <section class="dashboard-panel">
+
       <div class="panel-heading">
         <div>
-          <p class="section-eyebrow">ACCOUNT ACTIVITY</p>
+          <p class="dashboard-eyebrow">Account Activity</p>
           <h3>Recent Transactions</h3>
         </div>
-        <a href="{% url 'savings_history' %}">View All</a>
+
+        <a href="{% url 'client_bank_page' %}">
+          View All
+        </a>
       </div>
 
-      <div class="transaction-list">
-        {% for transaction in recent_transactions %}
-          <div class="dashboard-transaction">
+      {% for transaction in recent_transactions %}
+        <div class="dashboard-transaction">
 
-            {% if transaction.entry_type == "transfer_in" or transaction.entry_type == "deposit" or transaction.entry_type == "interest_credit" or transaction.entry_type == "loan_disbursement" %}
-              <span class="transaction-icon transaction-in">
-                <i class="bi bi-arrow-down-left"></i>
-              </span>
-            {% else %}
-              <span class="transaction-icon transaction-out">
-                <i class="bi bi-arrow-up-right"></i>
-              </span>
-            {% endif %}
+          {% if transaction.entry_type == "transfer_in" or transaction.entry_type == "deposit" or transaction.entry_type == "interest_credit" or transaction.entry_type == "loan_disbursement" %}
+            <span class="transaction-icon transaction-in">
+              <i class="bi bi-arrow-down-left"></i>
+            </span>
+          {% else %}
+            <span class="transaction-icon transaction-out">
+              <i class="bi bi-arrow-up-right"></i>
+            </span>
+          {% endif %}
 
-            <div class="transaction-information">
-              <strong>{{ transaction.get_entry_type_display }}</strong>
-              <small>{{ transaction.created_at|date:"M d, Y · h:i A" }}</small>
+          <div class="transaction-information">
+            <strong>
+              {{ transaction.get_entry_type_display }}
+            </strong>
 
-              <small>
-                {% if transaction.bank_account %}
-                  Bank Account
-                {% elif transaction.savings_account %}
-                  Savings Account
-                {% elif transaction.loan %}
-                  Loan #{{ transaction.loan.pk }}
-                {% else %}
-                  Account transaction
-                {% endif %}
-              </small>
-            </div>
+            <small>
+              {{ transaction.created_at|date:"M d, Y · h:i A" }}
+            </small>
 
-            {% if transaction.entry_type == "transfer_out" or transaction.entry_type == "withdrawal" or transaction.entry_type == "loan_payment" %}
-              <strong class="transaction-value negative">
-                -₱{{ transaction.amount|floatformat:2|intcomma }}
-              </strong>
-            {% else %}
-              <strong class="transaction-value positive">
-                +₱{{ transaction.amount|floatformat:2|intcomma }}
-              </strong>
-            {% endif %}
-
+            <small>
+              {% if transaction.bank_account %}
+                Bank Account
+              {% elif transaction.savings_account %}
+                Savings Account
+              {% elif transaction.loan %}
+                Loan #{{ transaction.loan.pk }}
+              {% else %}
+                Account Transaction
+              {% endif %}
+            </small>
           </div>
-        {% empty %}
-          <div class="empty-state">
-            <i class="bi bi-receipt"></i>
-            <strong>No transactions yet</strong>
-            <p>Your account activity will appear here.</p>
-          </div>
-        {% endfor %}
-      </div>
+
+          {% if transaction.entry_type == "transfer_out" or transaction.entry_type == "withdrawal" or transaction.entry_type == "loan_payment" %}
+            <strong class="transaction-value negative">
+              -₱{{ transaction.amount|floatformat:2|intcomma }}
+            </strong>
+          {% else %}
+            <strong class="transaction-value positive">
+              +₱{{ transaction.amount|floatformat:2|intcomma }}
+            </strong>
+          {% endif %}
+
+        </div>
+
+      {% empty %}
+        <div class="empty-state">
+          <i class="bi bi-receipt"></i>
+          <strong>No transactions yet</strong>
+          <p>Your account activity will appear here.</p>
+        </div>
+      {% endfor %}
+
     </section>
 
     <!-- My Loans -->
     <section class="dashboard-panel">
+
       <div class="panel-heading">
         <div>
-          <p class="section-eyebrow">BORROWING</p>
+          <p class="dashboard-eyebrow">Borrowing</p>
           <h3>My Loans</h3>
         </div>
-        <a href="{% url 'my_loans' %}">View All</a>
-      </div>
 
-      <div class="loan-summary">
-        <div class="loan-total">
-          <span>Total Loan Applications</span>
-          <strong>{{ loans|length }}</strong>
-        </div>
-
-        {% for loan in loans|slice:":4" %}
-          <div class="loan-item">
-            <div class="loan-product-icon">
-              <i class="bi bi-cash-stack"></i>
-            </div>
-
-            <div class="loan-information">
-              <strong>{{ loan.product.name }}</strong>
-              <small>Applied {{ loan.applied_at|date:"M d, Y" }}</small>
-            </div>
-
-            <span class="loan-status">{{ loan.get_status_display }}</span>
-          </div>
-        {% empty %}
-          <div class="empty-state">
-            <i class="bi bi-credit-card"></i>
-            <strong>No loan applications</strong>
-            <p>You haven't submitted a loan application yet.</p>
-          </div>
-        {% endfor %}
-
-        <a href="{% url 'my_loans' %}" class="loan-action-button">
-          Manage My Loans <i class="bi bi-arrow-right"></i>
+        <a href="{% url 'my_loans' %}">
+          View All
         </a>
       </div>
+
+      <div class="loan-total">
+        <span>Total Loan Applications</span>
+        <strong>{{ loans|length }}</strong>
+      </div>
+
+      {% for loan in loans|slice:":4" %}
+        <div class="loan-item">
+
+          <div class="loan-product-icon">
+            <i class="bi bi-cash-stack"></i>
+          </div>
+
+          <div class="loan-information">
+            <strong>{{ loan.product.name }}</strong>
+            <small>
+              Applied {{ loan.applied_at|date:"M d, Y" }}
+            </small>
+          </div>
+
+          <span class="loan-status">
+            {{ loan.get_status_display }}
+          </span>
+
+        </div>
+
+      {% empty %}
+        <div class="empty-state">
+          <i class="bi bi-credit-card"></i>
+          <strong>No loan applications</strong>
+          <p>
+            You haven't submitted a loan application yet.
+          </p>
+        </div>
+      {% endfor %}
+
     </section>
 
   </div>
 
   <!-- Additional Account Links -->
   <section class="dashboard-footer-links">
-    <a href="{% url 'client_profile' %}">
-      <i class="bi bi-person"></i> Profile Settings
-    </a>
 
     <a href="{% url 'change_password' %}">
-      <i class="bi bi-lock"></i> Change Password
+      <i class="bi bi-lock"></i>
+      Change Password
     </a>
 
     {% if client.verification_status == "pending" or client.verification_status == "rejected" %}
       <a href="{% url 'upload_id' %}">
-        <i class="bi bi-person-vcard"></i> Upload ID
+        <i class="bi bi-person-vcard"></i>
+        Upload ID
       </a>
     {% endif %}
 
-    <a href="{% url 'accept_agreement' %}">
-      <i class="bi bi-file-earmark-text"></i> Loan Agreement
-    </a>
   </section>
 
 </div>
-
-<style>
-/* =========================================
-   BAYAN BANK CLIENT DASHBOARD
-   Dashboard-specific styles only.
-   Global layout is controlled by base_client.html.
-========================================= */
-
-body.client-app {
-  background: #f3f6fc;
-  color: #17243a;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-.dashboard-page {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Welcome */
-
-.dashboard-welcome {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.welcome-user {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.dashboard-avatar {
-  width: 54px;
-  height: 54px;
-  min-width: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #e5edff;
-  color: #1245ae;
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.welcome-eyebrow,
-.section-eyebrow {
-  margin: 0 0 5px;
-  color: #8490a5;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1.2px;
-}
-
-.dashboard-welcome h2 {
-  margin: 0 0 5px;
-  color: #17243a;
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.verification-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #65738b;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #8792a5;
-}
-
-.status-dot.active { background: #16a36a; }
-.status-dot.pending { background: #e5a000; }
-.status-dot.rejected { background: #dc3545; }
-
-.welcome-profile-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 15px;
-  border: 1px solid #e3e9f2;
-  border-radius: 10px;
-  background: #fff;
-  color: #31435e;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.welcome-profile-link:hover {
-  background: #edf3ff;
-  color: #1245ae;
-}
-
-/* Verification Alerts */
-
-.dashboard-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 13px;
-  padding: 15px 18px;
-  margin-bottom: 24px;
-  border-radius: 12px;
-  font-size: 13px;
-}
-
-.dashboard-alert > i {
-  font-size: 19px;
-}
-
-.dashboard-alert p {
-  margin-top: 5px;
-}
-
-.dashboard-alert a {
-  font-weight: 700;
-}
-
-/* Sections */
-
-.dashboard-section {
-  margin-bottom: 28px;
-}
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.section-heading h3,
-.panel-heading h3 {
-  margin: 0;
-  color: #1a2941;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-/* Account Cards */
-
-.account-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.account-card {
-  position: relative;
-  overflow: hidden;
-  min-width: 0;
-  padding: 23px;
-  border-radius: 17px;
-  box-shadow: 0 7px 20px rgba(22, 42, 80, 0.08);
-}
-
-.regular-account {
-  background: linear-gradient(135deg, #1049b9, #07358f);
-  color: #fff;
-}
-
-.savings-account {
-  background: linear-gradient(135deg, #ffda36, #ffc914);
-  color: #1c2a42;
-}
-
-.account-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 15px;
-}
-
-.account-label {
-  display: block;
-  margin-bottom: 9px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  opacity: 0.78;
-}
-
-.account-card h2 {
-  margin: 0;
-  font-size: clamp(25px, 3vw, 34px);
-  font-weight: 800;
-  letter-spacing: -1px;
-  overflow-wrap: anywhere;
-}
-
-.account-icon {
-  width: 45px;
-  height: 45px;
-  min-width: 45px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 13px;
-  background: rgba(255,255,255,0.2);
-  font-size: 21px;
-}
-
-.savings-account .account-icon {
-  background: rgba(255,255,255,0.55);
-  color: #147b52;
-}
-
-.account-details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 25px;
-  margin-top: 25px;
-}
-
-.account-details div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.account-details span {
-  font-size: 10px;
-  opacity: 0.7;
-}
-
-.account-details strong {
-  font-size: 12px;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.account-note {
-  min-height: 40px;
-  margin: 24px 0 0;
-  font-size: 12px;
-  opacity: 0.85;
-}
-
-.account-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 22px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.2);
-  font-size: 11px;
-}
-
-.account-card-footer span {
-  opacity: 0.85;
-}
-
-.account-card-footer a {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  color: inherit;
-  text-decoration: none;
-}
-
-.savings-account .account-card-footer {
-  border-color: rgba(30,50,80,0.15);
-}
-
-/* Interest Summary */
-
-.interest-summary {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 21px;
-  margin-bottom: 30px;
-  border: 1px solid #e8edf5;
-  border-radius: 15px;
-  background: #fff;
-}
-
-.interest-icon {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 13px;
-  background: #e5f7ef;
-  color: #119765;
-  font-size: 23px;
-}
-
-.interest-information {
-  flex-grow: 1;
-}
-
-.interest-information span {
-  display: block;
-  color: #748198;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.interest-information h3 {
-  margin: 3px 0;
-  color: #17243a;
-  font-size: 21px;
-  font-weight: 800;
-}
-
-.interest-information small {
-  color: #8994a7;
-  font-size: 10px;
-}
-
-.interest-link {
-  color: #1649ae;
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-/* Quick Actions */
-
-.quick-action-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.dashboard-action {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  min-width: 0;
-  padding: 15px;
-  border: 1px solid #e8edf5;
-  border-radius: 13px;
-  background: #fff;
-  color: #253550;
-  text-decoration: none;
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-
-.dashboard-action:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 18px rgba(20, 50, 100, 0.08);
-  color: #1245ae;
-}
-
-.action-icon {
-  width: 43px;
-  height: 43px;
-  min-width: 43px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  font-size: 19px;
-}
-
-.action-blue { background: #e9f0ff; color: #2057c0; }
-.action-green { background: #e5f7ee; color: #16885d; }
-.action-purple { background: #f0eaff; color: #7951c8; }
-.action-orange { background: #fff1df; color: #d7831a; }
-
-.dashboard-action > span:nth-child(2) {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex-grow: 1;
-}
-
-.dashboard-action strong {
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.dashboard-action small {
-  margin-top: 3px;
-  color: #8a95a8;
-  font-size: 10px;
-}
-
-.action-chevron {
-  color: #a3adbd;
-  font-size: 12px;
-}
-
-/* Transactions and Loans */
-
-.dashboard-lower-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 18px;
-  align-items: start;
-}
-
-.dashboard-panel {
-  min-width: 0;
-  padding: 21px;
-  border: 1px solid #e8edf5;
-  border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(25, 45, 80, 0.035);
-}
-
-.panel-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 17px;
-}
-
-.panel-heading a {
-  color: #1649ae;
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.transaction-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.dashboard-transaction {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 13px 0;
-  border-top: 1px solid #edf0f5;
-}
-
-.transaction-icon {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 16px;
-}
-
-.transaction-in {
-  background: #e6f7ee;
-  color: #16945e;
-}
-
-.transaction-out {
-  background: #fff0ef;
-  color: #d64b4b;
-}
-
-.transaction-information {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.transaction-information strong {
-  color: #263650;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.transaction-information small {
-  margin-top: 3px;
-  color: #929bad;
-  font-size: 9px;
-}
-
-.transaction-value {
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.transaction-value.positive { color: #16945e; }
-.transaction-value.negative { color: #d64b4b; }
-
-/* Loan Summary */
-
-.loan-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 13px;
-  margin-bottom: 8px;
-  border-radius: 10px;
-  background: #f2f5fb;
-}
-
-.loan-total span {
-  color: #64738b;
-  font-size: 11px;
-}
-
-.loan-total strong {
-  color: #1649ae;
-  font-size: 20px;
-}
-
-.loan-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 13px 0;
-  border-top: 1px solid #edf0f5;
-}
-
-.loan-product-icon {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: #edf2ff;
-  color: #2859bd;
-}
-
-.loan-information {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.loan-information strong {
-  font-size: 11px;
-  color: #263650;
-}
-
-.loan-information small {
-  margin-top: 3px;
-  color: #929bad;
-  font-size: 9px;
-}
-
-.loan-status {
-  padding: 5px 8px;
-  border-radius: 20px;
-  background: #eef2f8;
-  color: #596a83;
-  font-size: 9px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.loan-action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px;
-  margin-top: 12px;
-  border-radius: 9px;
-  background: #1049b9;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.loan-action-button:hover {
-  background: #07358f;
-  color: #fff;
-}
-
-/* Empty States */
-
-.empty-state {
-  padding: 30px 12px;
-  text-align: center;
-  color: #8793a7;
-}
-
-.empty-state > i {
-  display: block;
-  margin-bottom: 10px;
-  color: #b1bed1;
-  font-size: 28px;
-}
-
-.empty-state strong {
-  display: block;
-  color: #35445d;
-  font-size: 12px;
-}
-
-.empty-state p {
-  margin: 5px 0 0;
-  font-size: 10px;
-}
-
-/* Footer Links */
-
-.dashboard-footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  padding: 22px 0 10px;
-}
-
-.dashboard-footer-links a {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #77849a;
-  font-size: 10px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.dashboard-footer-links a:hover {
-  color: #1649ae;
-}
-
-/* Responsive Dashboard */
-
-@media (max-width: 768px) {
-  .account-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-lower-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-panel {
-    width: 100%;
-  }
-}
-
-@media (max-width: 520px) {
-  .dashboard-welcome h2 {
-    font-size: 20px;
-  }
-
-  .welcome-profile-link span {
-    display: none;
-  }
-
-  .welcome-profile-link {
-    padding: 10px;
-  }
-
-  .quick-action-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .interest-summary {
-    flex-wrap: wrap;
-  }
-
-  .interest-link {
-    width: 100%;
-    padding-left: 64px;
-  }
-
-  .account-card {
-    padding: 19px;
-  }
-
-  .dashboard-panel {
-    padding: 16px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dashboard-action {
-    transition: none;
-  }
-}
-</style>
 
 {% endblock %}

@@ -39,9 +39,9 @@ from .models import (
 # --------------------------------------------------
 
 STAFF = ("admin", "staff", "loan_officer")
-DECIDERS = ("admin", "loan_officer")
-DISBURSERS = ("admin", "staff")
-PAYMENT_TAKERS = ("admin", "staff")
+DECIDERS = ("loan_officer",)
+DISBURSERS = ("staff",)
+PAYMENT_TAKERS = ("staff",)
 
 
 # --------------------------------------------------
@@ -213,7 +213,7 @@ def portal_loans(request):
             )
 
     bank_account = BankAccount.objects.filter(
-        client=request.client
+        client=request.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     return render(
@@ -991,7 +991,7 @@ def staff_loan(request, loan_id):
     ).first()
 
     bank_account = BankAccount.objects.filter(
-        client=loan.client
+        client=loan.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     disbursement = (
@@ -1128,7 +1128,7 @@ def staff_loan_reject(request, loan_id):
 # STAFF: CREATE LOAN AGREEMENT
 # ==========================================
 
-@role_required(*STAFF)
+@role_required(*DECIDERS)
 @require_POST
 def staff_create_agreement(request, loan_id):
     loan = get_object_or_404(
