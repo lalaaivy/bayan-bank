@@ -384,18 +384,37 @@
    BAYAN BANK CLIENT DASHBOARD
    Dashboard-specific styles only.
    Global layout is controlled by base_client.html.
+   Colors are set once below, change them here.
 ========================================= */
 
+:root {
+  --teal: #00485C;
+  --teal-dark: #00323F;
+  --teal-soft: #DCEBEF;
+  --yellow: #FDBE1A;
+  --yellow-light: #FFCB45;
+  --yellow-soft: #FFF3CC;
+  --green: #0A6B3C;
+  --green-soft: #DDEFE5;
+  --coral: #E8503A;
+  --coral-soft: #FBE4DF;
+  --red-dark: #A5191F;
+  --page-bg: #F1F2EE;
+  --ink: #12202B;
+  --muted: #7A8590;
+  --card-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
+}
+
 body.client-app {
-  background: #f3f6fc;
-  color: #17243a;
+  background: var(--page-bg);
+  color: var(--ink);
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .dashboard-page {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 /* Welcome */
@@ -405,7 +424,8 @@ body.client-app {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 28px;
+  padding-right: 225px;
+  margin-bottom: 18px;
 }
 
 .welcome-user {
@@ -415,15 +435,15 @@ body.client-app {
 }
 
 .dashboard-avatar {
-  width: 54px;
-  height: 54px;
-  min-width: 54px;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #e5edff;
-  color: #1245ae;
+  background: var(--teal);
+  color: #fff;
   font-size: 17px;
   font-weight: 800;
 }
@@ -431,7 +451,7 @@ body.client-app {
 .welcome-eyebrow,
 .section-eyebrow {
   margin: 0 0 5px;
-  color: #8490a5;
+  color: var(--muted);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1.2px;
@@ -439,18 +459,22 @@ body.client-app {
 
 .dashboard-welcome h2 {
   margin: 0 0 5px;
-  color: #17243a;
-  font-size: 24px;
+  color: var(--ink);
+  font-size: 26px;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .verification-status {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #65738b;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #fff;
+  color: #4B5963;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .status-dot {
@@ -460,27 +484,31 @@ body.client-app {
   background: #8792a5;
 }
 
-.status-dot.active { background: #16a36a; }
-.status-dot.pending { background: #e5a000; }
-.status-dot.rejected { background: #dc3545; }
+.status-dot.active { background: var(--green); }
+.status-dot.pending { background: var(--yellow); }
+.status-dot.rejected { background: var(--coral); }
 
 .welcome-profile-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 15px;
-  border: 1px solid #e3e9f2;
-  border-radius: 10px;
+  height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
   background: #fff;
-  color: #31435e;
+  box-shadow: var(--card-shadow);
+  color: var(--ink);
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  transition: transform .18s ease, background .18s ease;
 }
 
 .welcome-profile-link:hover {
-  background: #edf3ff;
-  color: #1245ae;
+  background: var(--teal);
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 /* Verification Alerts */
@@ -489,11 +517,14 @@ body.client-app {
   display: flex;
   align-items: flex-start;
   gap: 13px;
-  padding: 15px 18px;
+  padding: 16px 20px;
   margin-bottom: 24px;
-  border-radius: 12px;
+  border-radius: 22px;
   font-size: 13px;
 }
+
+.dashboard-alert.alert-danger { background: var(--coral-soft); color: var(--red-dark); }
+.dashboard-alert.alert-warning { background: var(--yellow-soft); color: #6B5200; }
 
 .dashboard-alert > i {
   font-size: 19px;
@@ -504,28 +535,31 @@ body.client-app {
 }
 
 .dashboard-alert a {
-  font-weight: 700;
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
 }
 
 /* Sections */
 
 .dashboard-section {
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .section-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .section-heading h3,
 .panel-heading h3 {
   margin: 0;
-  color: #1a2941;
-  font-size: 18px;
+  color: var(--ink);
+  font-size: 19px;
   font-weight: 800;
+  letter-spacing: -0.3px;
 }
 
 /* Account Cards */
@@ -533,26 +567,27 @@ body.client-app {
 .account-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 .account-card {
   position: relative;
   overflow: hidden;
   min-width: 0;
-  padding: 23px;
-  border-radius: 17px;
-  box-shadow: 0 7px 20px rgba(22, 42, 80, 0.08);
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 30px;
+  box-shadow: var(--card-shadow);
 }
 
 .regular-account {
-  background: linear-gradient(135deg, #1049b9, #07358f);
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
   color: #fff;
 }
 
 .savings-account {
-  background: linear-gradient(135deg, #ffda36, #ffc914);
-  color: #1c2a42;
+  background: linear-gradient(135deg, var(--yellow-light), var(--yellow));
+  color: var(--ink);
 }
 
 .account-card-top {
@@ -573,27 +608,27 @@ body.client-app {
 
 .account-card h2 {
   margin: 0;
-  font-size: clamp(25px, 3vw, 34px);
+  font-size: clamp(27px, 3.2vw, 38px);
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -1.2px;
   overflow-wrap: anywhere;
 }
 
 .account-icon {
-  width: 45px;
-  height: 45px;
-  min-width: 45px;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 13px;
+  border-radius: 50%;
   background: rgba(255,255,255,0.2);
-  font-size: 21px;
+  font-size: 20px;
 }
 
 .savings-account .account-icon {
-  background: rgba(255,255,255,0.55);
-  color: #147b52;
+  background: rgba(255,255,255,0.6);
+  color: var(--teal);
 }
 
 .account-details {
@@ -622,7 +657,7 @@ body.client-app {
 
 .account-note {
   min-height: 40px;
-  margin: 24px 0 0;
+  margin: 14px 0 0;
   font-size: 12px;
   opacity: 0.85;
 }
@@ -632,7 +667,7 @@ body.client-app {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 22px;
+  margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,0.2);
   font-size: 11px;
@@ -643,19 +678,30 @@ body.client-app {
 }
 
 .account-card-footer a {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255,255,255,0.45);
   border-radius: 50%;
-  background: rgba(255,255,255,0.2);
+  background: transparent;
   color: inherit;
   text-decoration: none;
+  transition: background .18s ease, color .18s ease;
+}
+
+.account-card-footer a:hover {
+  background: #fff;
+  color: var(--teal);
 }
 
 .savings-account .account-card-footer {
-  border-color: rgba(30,50,80,0.15);
+  border-color: rgba(18,32,43,0.15);
+}
+
+.savings-account .account-card-footer a {
+  border-color: rgba(18,32,43,0.35);
 }
 
 /* Interest Summary */
@@ -664,23 +710,24 @@ body.client-app {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px 21px;
-  margin-bottom: 30px;
-  border: 1px solid #e8edf5;
-  border-radius: 15px;
-  background: #fff;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 28px;
+  background: rgba(255,255,255,0.85);
+  box-shadow: var(--card-shadow);
 }
 
 .interest-icon {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 13px;
-  background: #e5f7ef;
-  color: #119765;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
   font-size: 23px;
 }
 
@@ -690,29 +737,38 @@ body.client-app {
 
 .interest-information span {
   display: block;
-  color: #748198;
+  color: var(--muted);
   font-size: 11px;
   font-weight: 700;
 }
 
 .interest-information h3 {
   margin: 3px 0;
-  color: #17243a;
-  font-size: 21px;
+  color: var(--ink);
+  font-size: 22px;
   font-weight: 800;
 }
 
 .interest-information small {
-  color: #8994a7;
+  color: var(--muted);
   font-size: 10px;
 }
 
 .interest-link {
-  color: #1649ae;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: var(--teal-soft);
+  color: var(--teal);
   font-size: 11px;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
+  transition: background .18s ease, color .18s ease;
+}
+
+.interest-link:hover {
+  background: var(--teal);
+  color: #fff;
 }
 
 /* Quick Actions */
@@ -720,44 +776,45 @@ body.client-app {
 .quick-action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .dashboard-action {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 14px;
   min-width: 0;
-  padding: 15px;
-  border: 1px solid #e8edf5;
-  border-radius: 13px;
-  background: #fff;
-  color: #253550;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 24px;
+  background: rgba(255,255,255,0.85);
+  box-shadow: var(--card-shadow);
+  color: var(--ink);
   text-decoration: none;
   transition: transform .18s ease, box-shadow .18s ease;
 }
 
 .dashboard-action:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 18px rgba(20, 50, 100, 0.08);
-  color: #1245ae;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(18, 32, 43, 0.1);
+  color: var(--teal);
 }
 
 .action-icon {
-  width: 43px;
-  height: 43px;
-  min-width: 43px;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 50%;
   font-size: 19px;
 }
 
-.action-blue { background: #e9f0ff; color: #2057c0; }
-.action-green { background: #e5f7ee; color: #16885d; }
-.action-purple { background: #f0eaff; color: #7951c8; }
-.action-orange { background: #fff1df; color: #d7831a; }
+.action-blue { background: var(--teal-soft); color: var(--teal); }
+.action-green { background: var(--green-soft); color: var(--green); }
+.action-purple { background: var(--yellow-soft); color: #8A6400; }
+.action-orange { background: var(--coral-soft); color: var(--coral); }
 
 .dashboard-action > span:nth-child(2) {
   display: flex;
@@ -773,12 +830,12 @@ body.client-app {
 
 .dashboard-action small {
   margin-top: 3px;
-  color: #8a95a8;
+  color: var(--muted);
   font-size: 10px;
 }
 
 .action-chevron {
-  color: #a3adbd;
+  color: #A3ADB6;
   font-size: 12px;
 }
 
@@ -787,17 +844,17 @@ body.client-app {
 .dashboard-lower-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
-  gap: 18px;
+  gap: 14px;
   align-items: start;
 }
 
 .dashboard-panel {
   min-width: 0;
-  padding: 21px;
-  border: 1px solid #e8edf5;
-  border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(25, 45, 80, 0.035);
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 30px;
+  background: rgba(255,255,255,0.85);
+  box-shadow: var(--card-shadow);
 }
 
 .panel-heading {
@@ -809,11 +866,19 @@ body.client-app {
 }
 
 .panel-heading a {
-  color: #1649ae;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--teal-soft);
+  color: var(--teal);
   font-size: 11px;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
+}
+
+.panel-heading a:hover {
+  background: var(--teal);
+  color: #fff;
 }
 
 .transaction-list {
@@ -826,13 +891,13 @@ body.client-app {
   align-items: center;
   gap: 11px;
   padding: 13px 0;
-  border-top: 1px solid #edf0f5;
+  border-top: 1px solid #EEF0EC;
 }
 
 .transaction-icon {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -841,13 +906,13 @@ body.client-app {
 }
 
 .transaction-in {
-  background: #e6f7ee;
-  color: #16945e;
+  background: var(--green-soft);
+  color: var(--green);
 }
 
 .transaction-out {
-  background: #fff0ef;
-  color: #d64b4b;
+  background: var(--coral-soft);
+  color: var(--coral);
 }
 
 .transaction-information {
@@ -858,14 +923,14 @@ body.client-app {
 }
 
 .transaction-information strong {
-  color: #263650;
+  color: var(--ink);
   font-size: 11px;
   font-weight: 800;
 }
 
 .transaction-information small {
   margin-top: 3px;
-  color: #929bad;
+  color: var(--muted);
   font-size: 9px;
 }
 
@@ -874,8 +939,8 @@ body.client-app {
   white-space: nowrap;
 }
 
-.transaction-value.positive { color: #16945e; }
-.transaction-value.negative { color: #d64b4b; }
+.transaction-value.positive { color: var(--green); }
+.transaction-value.negative { color: var(--coral); }
 
 /* Loan Summary */
 
@@ -883,20 +948,20 @@ body.client-app {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 13px;
+  padding: 14px 16px;
   margin-bottom: 8px;
-  border-radius: 10px;
-  background: #f2f5fb;
+  border-radius: 20px;
+  background: var(--page-bg);
 }
 
 .loan-total span {
-  color: #64738b;
+  color: #5C6873;
   font-size: 11px;
 }
 
 .loan-total strong {
-  color: #1649ae;
-  font-size: 20px;
+  color: var(--teal);
+  font-size: 22px;
 }
 
 .loan-item {
@@ -904,19 +969,19 @@ body.client-app {
   align-items: center;
   gap: 10px;
   padding: 13px 0;
-  border-top: 1px solid #edf0f5;
+  border-top: 1px solid #EEF0EC;
 }
 
 .loan-product-icon {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: #edf2ff;
-  color: #2859bd;
+  border-radius: 50%;
+  background: var(--teal-soft);
+  color: var(--teal);
 }
 
 .loan-information {
@@ -928,20 +993,20 @@ body.client-app {
 
 .loan-information strong {
   font-size: 11px;
-  color: #263650;
+  color: var(--ink);
 }
 
 .loan-information small {
   margin-top: 3px;
-  color: #929bad;
+  color: var(--muted);
   font-size: 9px;
 }
 
 .loan-status {
-  padding: 5px 8px;
-  border-radius: 20px;
-  background: #eef2f8;
-  color: #596a83;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--yellow-soft);
+  color: #6B5200;
   font-size: 9px;
   font-weight: 700;
   text-align: center;
@@ -952,18 +1017,19 @@ body.client-app {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px;
-  margin-top: 12px;
-  border-radius: 9px;
-  background: #1049b9;
+  padding: 14px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: var(--ink);
   color: #fff;
   font-size: 11px;
   font-weight: 800;
   text-decoration: none;
+  transition: background .18s ease;
 }
 
 .loan-action-button:hover {
-  background: #07358f;
+  background: var(--teal);
   color: #fff;
 }
 
@@ -972,19 +1038,19 @@ body.client-app {
 .empty-state {
   padding: 30px 12px;
   text-align: center;
-  color: #8793a7;
+  color: var(--muted);
 }
 
 .empty-state > i {
   display: block;
   margin-bottom: 10px;
-  color: #b1bed1;
+  color: #B5BFC6;
   font-size: 28px;
 }
 
 .empty-state strong {
   display: block;
-  color: #35445d;
+  color: var(--ink);
   font-size: 12px;
 }
 
@@ -1006,14 +1072,14 @@ body.client-app {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #77849a;
+  color: var(--muted);
   font-size: 10px;
   font-weight: 700;
   text-decoration: none;
 }
 
 .dashboard-footer-links a:hover {
-  color: #1649ae;
+  color: var(--teal);
 }
 
 /* Responsive Dashboard */
@@ -1041,10 +1107,6 @@ body.client-app {
     display: none;
   }
 
-  .welcome-profile-link {
-    padding: 10px;
-  }
-
   .quick-action-grid {
     grid-template-columns: 1fr;
   }
@@ -1059,18 +1121,29 @@ body.client-app {
   }
 
   .account-card {
-    padding: 19px;
+    padding: 22px;
   }
 
   .dashboard-panel {
-    padding: 16px;
+    padding: 20px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-action {
+  .dashboard-action,
+  .welcome-profile-link {
     transition: none;
   }
+}
+
+.regular-account,
+.regular-account h2,
+.regular-account strong,
+.regular-account span,
+.regular-account small,
+.regular-account p,
+.regular-account i {
+  color: #fff !important;
 }
 </style>
 

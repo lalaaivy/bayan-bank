@@ -17,44 +17,221 @@
     rel="stylesheet"
   >
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
   <style>
     body.client-app {
       min-height: 100vh;
       margin: 0;
-      background: #f8f9fa;
-      color: #212529;
+      background: #F1F2EE;
+      color: #12202B;
+      font-family: "Plus Jakarta Sans", sans-serif;
     }
 
-    /* Top Navigation */
-
-    .client-navbar {
-      background: #212529;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    .client-sidebar {
+      position: fixed;
+      top: 16px;
+      bottom: 16px;
+      left: 16px;
+      z-index: 1040;
+      box-sizing: border-box;
+      padding: 24px 16px;
+      align-items: flex-start;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(18, 32, 43, 0.08);
     }
 
-    .client-navbar .navbar-brand {
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: -0.3px;
+    .client-sidebar-content {
+      width: 100%;
+      align-items: stretch;
+      flex-direction: column;
     }
 
-    .client-navbar .nav-link {
-      color: rgba(255, 255, 255, 0.75);
-      transition: color 0.2s ease;
+    .client-sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
-    .client-navbar .nav-link:hover,
-    .client-navbar .nav-link.active {
+    .client-sidebar .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 36px;
+      color: #12202B;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .client-brand-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      border-radius: 10px;
+      background: #00485C;
       color: #fff;
+      font-size: 0.95rem;
     }
 
-    .client-navbar .nav-link.active {
+    .client-sidebar .client-sidebar-link {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      box-sizing: border-box;
+      gap: 6px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      color: #4B5963;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .client-sidebar .client-sidebar-link:hover {
+      background: rgba(0, 72, 92, 0.08);
+      color: #4B5963;
+    }
+
+    .client-sidebar .client-sidebar-link.active {
+      background: #00485C;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 6px 14px rgba(0, 72, 92, 0.25);
+    }
+
+    .client-sidebar .client-sidebar-link i {
+      width: 20px;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .client-workspace {
+      position: relative;
+      min-width: 0;
+    }
+
+    .client-topbar {
+      position: absolute;
+      top: 49px;
+      right: 72px;
+      z-index: 10;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    .client-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .client-topbar .navbar-toggler {
+      display: none;
+    }
+
+    .client-topbar-title h1 {
+      margin: 0;
+      color: #12202B;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .client-topbar-title {
+      display: none;
+    }
+
+    .client-topbar-title p {
+      display: none;
+      margin: 2px 0 0;
+      color: #7A8590;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .client-topbar .navbar-nav {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .client-topbar .client-account-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 36px;
+      padding: 2px 10px 2px 2px;
+      border-radius: 999px;
+      background: #fff;
+      color: #12202B;
       font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 6px 16px rgba(18, 32, 43, 0.08);
     }
 
-    .client-navbar .dropdown-menu {
+    .client-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      border-radius: 50%;
+      background: #00485C;
+      color: #fff;
+      font-size: 0;
+    }
+
+    .client-avatar span {
+      display: block;
+      font-size: 0;
+      line-height: 1;
+    }
+
+    .client-avatar span::first-letter {
+      font-size: 1rem;
+      text-transform: uppercase;
+    }
+
+    .client-account-name {
+      color: #12202B;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .client-topbar .client-account-toggle::after {
+      margin-left: 0;
+      color: #4B5963;
+    }
+
+    .client-topbar .client-account-toggle:hover {
+      color: #12202B;
+    }
+
+    .client-topbar .dropdown-menu {
       min-width: 200px;
       padding: 0.4rem 0;
       border: 1px solid #e9ecef;
@@ -62,36 +239,43 @@
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
     }
 
-    .client-navbar .dropdown-item {
+    .client-topbar .dropdown-item {
       padding: 0.65rem 1rem;
       font-size: 0.9rem;
     }
 
-    .client-navbar .dropdown-item:hover {
+    .client-topbar .dropdown-item:hover {
       background: #f1f3f5;
     }
 
-    .client-navbar .dropdown-item i {
+    .client-topbar .dropdown-item i {
       width: 22px;
     }
 
-    /* Notifications */
+    @media (min-width: 992px) {
+      .client-sidebar {
+        width: 240px;
+        overflow: hidden;
+      }
+
+      .client-workspace {
+        margin-left: 272px;
+      }
+    }
 
     .notification-link {
       position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      color: rgba(255, 255, 255, 0.8);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      color: #12202B;
       text-decoration: none;
-      transition: color 0.2s ease;
-    }
-
-    .notification-link:hover,
-    .notification-link.active {
-      color: #fff;
+      box-shadow: 0 6px 16px rgba(18, 32, 43, 0.08);
+      transition: color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .notification-link i {
@@ -100,29 +284,29 @@
 
     .notification-count {
       position: absolute;
-      top: 0;
-      right: -2px;
+      top: 3px;
+      right: 3px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 17px;
-      height: 17px;
-      padding: 1px 4px;
-      border: 2px solid #212529;
-      border-radius: 999px;
-      background: #dc3545;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
+      width: 9px;
+      min-width: 9px;
+      height: 9px;
+      padding: 0;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #E8503A;
+      color: transparent;
+      font-size: 0;
       line-height: 1;
     }
 
-    /* Main Content */
-
     .client-main {
-      min-height: calc(100vh - 150px);
-      padding-top: 24px;
-      padding-bottom: 45px;
+      width: 100%;
+      max-width: none;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px 24px;
     }
 
     .client-page-heading {
@@ -134,7 +318,7 @@
 
     .client-page-heading h1 {
       margin: 0;
-      color: #212529;
+      color: #12202B;
       font-size: 1.5rem;
       font-weight: 700;
     }
@@ -158,8 +342,6 @@
       background: #e9ecef;
       color: #0d6efd;
     }
-
-    /* Django Messages */
 
     .client-main > .alert {
       border-radius: 8px;
@@ -224,31 +406,72 @@
     }
 
     @media (max-width: 991.98px) {
-      .client-navbar .navbar-nav {
-        padding-top: 8px;
+      .client-sidebar {
+        width: 0;
+        height: 0;
+        padding: 0;
+        overflow: visible;
+        background: transparent;
       }
 
-      .client-navbar .navbar-account-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding-top: 12px;
-        padding-bottom: 8px;
+      .client-sidebar-content.show {
+        position: fixed;
+        top: 16px;
+        bottom: 16px;
+        left: 16px;
+        display: block;
+        width: min(240px, calc(100vw - 32px));
+        padding: 24px 16px;
+        overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.08);
       }
 
-      .client-navbar .navbar-account-actions .dropdown-menu {
-        position: absolute;
+      .client-sidebar .navbar-brand {
+        margin-bottom: 36px;
+      }
+
+      .client-workspace {
+        margin-left: 0;
+      }
+
+      .client-topbar {
+        justify-content: flex-end;
+      }
+
+      .client-topbar .navbar-toggler {
+        display: inline-flex;
+      }
+
+      .client-topbar-left {
+        gap: 8px;
+      }
+
+      .client-topbar .navbar-toggler {
+        padding: 4px;
       }
     }
 
     @media (max-width: 575.98px) {
-      .client-main {
-        padding-top: 18px;
-        padding-bottom: 35px;
-      }
-
       .client-page-heading h1 {
         font-size: 1.25rem;
+      }
+
+      .client-topbar .navbar-nav {
+        gap: 8px;
+      }
+
+      .client-account-name {
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .client-topbar .dropdown-menu {
+        position: absolute;
       }
 
       .kabayan-float-button {
@@ -268,7 +491,8 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .client-navbar .nav-link,
+      .client-sidebar .client-sidebar-link,
+      .notification-link,
       .client-back,
       .kabayan-float-button {
         transition: none;
@@ -279,54 +503,63 @@
 
 <body class="client-app">
 
-  <!-- Top Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark client-navbar">
-    <div class="container">
+  <div class="client-layout">
+    <nav class="navbar navbar-expand-lg navbar-dark client-sidebar">
+      <div class="client-sidebar-content collapse navbar-collapse" id="clientNavbar">
+        <a class="navbar-brand" href="{% url 'portal_home' %}">
+          <span class="client-brand-icon" aria-hidden="true">
+            <i class="bi bi-bank2"></i>
+          </span>
+          Bayan Bank
+        </a>
 
-      <!-- Brand -->
-      <a class="navbar-brand" href="{% url 'portal_home' %}">
-        Bayan Bank
-      </a>
+        <ul class="client-sidebar-nav">
 
-      <!-- Mobile Menu Button -->
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#clientNavbar"
-        aria-controls="clientNavbar"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="clientNavbar">
-
-        <!-- Main Navigation -->
-        <ul class="navbar-nav me-auto">
-
-          <li class="nav-item">
+          <li>
             <a
-              class="nav-link {% if request.resolver_match.url_name == 'portal_home' %}active{% endif %}"
+              class="client-sidebar-link {% if request.resolver_match.url_name == 'portal_home' %}active{% endif %}"
               href="{% url 'portal_home' %}"
             >
+              <i class="bi bi-grid" aria-hidden="true"></i>
               Dashboard
             </a>
           </li>
 
-          <li class="nav-item">
+          <li>
             <a
-              class="nav-link {% if request.resolver_match.url_name == 'client_bank_page' or request.resolver_match.url_name == 'client_bank_transfer' %}active{% endif %}"
+              class="client-sidebar-link {% if request.resolver_match.url_name == 'client_bank_page' or request.resolver_match.url_name == 'client_bank_transfer' %}active{% endif %}"
               href="{% url 'client_bank_page' %}"
             >
+              <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
               Transactions
             </a>
           </li>
 
         </ul>
+      </div>
+    </nav>
 
-        <!-- Account Actions -->
+    <div class="client-workspace">
+      <header class="client-topbar navbar navbar-light">
+        <div class="client-topbar-left">
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#clientNavbar"
+            aria-controls="clientNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="client-topbar-title">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <p>{% block page_subtitle %}{% endblock %}</p>
+          </div>
+        </div>
+
         <ul class="navbar-nav align-items-lg-center gap-lg-2">
 
           <!-- Notifications -->
@@ -355,15 +588,17 @@
           <li class="nav-item dropdown">
 
             <a
-              class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+              class="client-account-toggle dropdown-toggle"
               href="#"
               role="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              <i class="bi bi-person-circle fs-5"></i>
+              <span class="client-avatar" aria-hidden="true">
+                <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+              </span>
 
-              <span>
+              <span class="client-account-name">
                 {{ request.user.get_full_name|default:request.user.username }}
               </span>
             </a>
@@ -448,13 +683,9 @@
           </li>
 
         </ul>
+      </header>
 
-      </div>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="container client-main">
+      <main class="client-main">
 
     {% if request.resolver_match.url_name != 'portal_home' %}
 
@@ -521,7 +752,9 @@
 
     {% block content %}{% endblock %}
 
-  </main>
+      </main>
+    </div>
+  </div>
 
   <!-- Floating Kabayan Chatbot Shortcut -->
   {% if request.user.is_authenticated and request.user.role.name == 'client' %}
