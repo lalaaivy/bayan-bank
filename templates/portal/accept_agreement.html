@@ -17,4 +17,80 @@
   <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="agree" id="agree" required><label class="form-check-label" for="agree">I have reviewed and agree to the loan terms above.</label></div>
   <button class="btn btn-dark">Accept Agreement</button>
 </form></div></div>
+<style>
+  .client-main > h3 {
+    display: none;
+  }
+
+  .client-main > .card {
+    background: #fff;
+    border: 0;
+    border-radius: 28px;
+    box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
+  }
+
+  .client-main > .card.mb-3,
+  .client-main > .btn.mb-3 {
+    margin-bottom: 14px !important;
+  }
+
+  .client-main > .card > .card-body {
+    padding: 20px;
+  }
+
+  .client-main > .card > .card-header {
+    background: #fff;
+    border-bottom: 1px solid #EEF0EC;
+    border-radius: 28px 28px 0 0;
+    color: #12202B;
+    font-weight: 700;
+    padding: 16px 20px;
+  }
+
+  .client-main > .card dl.row {
+    row-gap: 14px;
+  }
+
+  .client-main > .card dt {
+    color: #4B5963;
+    font-weight: 600;
+  }
+
+  .client-main > .card dd {
+    color: #12202B;
+  }
+
+  .client-main .btn {
+    border-radius: 999px;
+  }
+
+  .client-main .btn-dark {
+    background: #00485C;
+    border-color: #00485C;
+    color: #fff;
+  }
+
+  .client-main .btn-dark:hover {
+    background: #00323F;
+    border-color: #00323F;
+  }
+
+  .client-main .btn-outline-secondary {
+    border-color: #00485C;
+    color: #00485C;
+  }
+
+  .client-main .btn-outline-secondary:hover:not(:disabled) {
+    background: #00485C;
+    color: #fff;
+  }
+
+  .client-main .form-check-input {
+    accent-color: #00485C;
+  }
+
+  .client-main .form-check-label {
+    color: #12202B;
+  }
+</style>
 {% endblock %}
