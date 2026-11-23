@@ -6,23 +6,9 @@
 {% block content %}
 
 <style>
-    :root {
-        --bank-teal: #00485C;
-        --bank-yellow: #FDBE1A;
-        --bank-cream: #F7F0E5;
-        --bank-card: #FFF9F0;
-        --bank-text: #172B32;
-        --bank-muted: #7A8590;
-        --bank-border: #E9E0D3;
-        --bank-green: #0A6B3C;
-        --bank-red: #E8503A;
-    }
-
     .applications-page {
-        color: var(--bank-text);
+        color: #172B32;
     }
-
-    /* PAGE HEADING */
 
     .applications-heading {
         display: flex;
@@ -34,31 +20,29 @@
     }
 
     .applications-heading h3 {
-        margin: 0 0 5px;
-        color: var(--bank-teal);
-        font-size: 25px;
+        margin: 0 0 6px;
+        color: #00485C;
+        font-size: 26px;
         font-weight: 800;
     }
 
     .applications-heading p {
         margin: 0;
-        color: var(--bank-muted);
-        font-size: 13px;
+        color: #667780;
+        font-size: 14px;
     }
 
     .application-count {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 16px;
+        padding: 11px 17px;
         border-radius: 30px;
         background: #DCEBEF;
-        color: var(--bank-teal);
-        font-size: 12px;
+        color: #00485C;
+        font-size: 13px;
         font-weight: 800;
     }
-
-    /* FILTERS */
 
     .applications-toolbar {
         display: flex;
@@ -70,110 +54,103 @@
     }
 
     .applications-back {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--bank-teal);
-        font-size: 13px;
+        color: #00485C;
+        font-size: 14px;
         font-weight: 700;
         text-decoration: none;
     }
 
     .applications-back:hover {
-        color: #00323F;
+        color: #002F3D;
     }
 
     .application-filters {
         display: flex;
         flex-wrap: wrap;
-        gap: 7px;
+        gap: 6px;
         padding: 5px;
-        border: 1px solid var(--bank-border);
+        border: 1px solid #E2D9CC;
         border-radius: 30px;
-        background: var(--bank-card);
+        background: #FFF9F0;
     }
 
     .application-filters a {
-        padding: 8px 15px;
+        padding: 9px 16px;
         border-radius: 30px;
-        color: var(--bank-muted);
+        color: #687780;
         font-size: 12px;
         font-weight: 700;
         text-decoration: none;
-        transition: background .2s ease, color .2s ease;
     }
 
     .application-filters a:hover {
         background: #DCEBEF;
-        color: var(--bank-teal);
+        color: #00485C;
     }
 
     .application-filters a.active {
-        background: var(--bank-teal);
+        background: #00485C;
         color: #fff;
     }
 
-    /* APPLICATION TABLE CARD */
-
     .applications-card {
         overflow: hidden;
-        border: 1px solid var(--bank-border);
-        border-radius: 22px;
-        background: var(--bank-card);
-        box-shadow: 0 6px 20px rgba(23, 43, 50, .04);
+        border: 1px solid #E4DCCF;
+        border-radius: 18px;
+        background: #FFFDF9;
+        box-shadow: 0 5px 20px rgba(23, 43, 50, .06);
     }
 
     .applications-card-header {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         padding: 22px 24px;
-        border-bottom: 1px solid var(--bank-border);
+        border-bottom: 1px solid #E9E0D3;
     }
 
     .applications-card-header .header-icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 42px;
-        height: 42px;
+        width: 46px;
+        height: 46px;
         flex-shrink: 0;
         border-radius: 13px;
         background: #DCEBEF;
-        color: var(--bank-teal);
-        font-size: 18px;
+        color: #00485C;
+        font-size: 20px;
     }
 
     .applications-card-header h5 {
-        margin: 0 0 4px;
-        color: var(--bank-teal);
-        font-size: 16px;
+        margin: 0 0 5px;
+        color: #00485C;
+        font-size: 17px;
         font-weight: 800;
     }
 
     .applications-card-header p {
         margin: 0;
-        color: var(--bank-muted);
-        font-size: 11px;
+        color: #687780;
+        font-size: 12px;
     }
-
-    /* TABLE */
 
     .applications-table {
         width: 100%;
+        min-width: 1050px;
         margin: 0;
         border-collapse: separate;
         border-spacing: 0;
     }
 
     .applications-table thead th {
-        padding: 15px 14px;
-        border-bottom: 1px solid var(--bank-border);
+        padding: 16px 15px;
+        border-bottom: 1px solid #E2D9CC;
         background: #F1E9DC;
-        color: var(--bank-muted);
-        font-size: 10px;
+        color: #40535C;
+        font-size: 11px;
         font-weight: 800;
-        letter-spacing: .045em;
+        letter-spacing: .04em;
         text-transform: uppercase;
         white-space: nowrap;
     }
@@ -184,10 +161,10 @@
     }
 
     .applications-table tbody td {
-        padding: 17px 14px;
-        border-bottom: 1px solid var(--bank-border);
-        color: var(--bank-text);
-        font-size: 12px;
+        padding: 19px 15px;
+        border-bottom: 1px solid #ECE5DA;
+        color: #172B32;
+        font-size: 13px;
         vertical-align: middle;
     }
 
@@ -195,16 +172,13 @@
         border-bottom: none;
     }
 
-    .applications-table tbody tr {
-        transition: background .15s ease;
-    }
-
     .applications-table tbody tr:hover {
-        background: rgba(220, 235, 239, .35);
+        background: #F3F8F8;
     }
 
     .application-number {
-        color: var(--bank-teal);
+        color: #00485C;
+        font-size: 14px;
         font-weight: 800;
         white-space: nowrap;
     }
@@ -212,145 +186,130 @@
     .applicant-name,
     .product-name {
         display: block;
-        color: var(--bank-text);
-        font-size: 12px;
+        color: #172B32;
+        font-size: 14px;
         font-weight: 800;
+        line-height: 1.5;
     }
 
     .applicant-username,
-    .product-rate {
+    .product-rate,
+    .application-time {
         display: block;
-        margin-top: 4px;
-        color: var(--bank-muted);
-        font-size: 10px;
+        margin-top: 5px;
+        color: #657780;
+        font-size: 11px;
+        font-weight: 600;
     }
 
     .application-amount {
-        color: var(--bank-teal);
+        color: #00485C;
+        font-size: 15px;
         font-weight: 800;
         white-space: nowrap;
     }
 
     .application-date {
-        color: var(--bank-text);
-        font-size: 11px;
+        color: #172B32;
+        font-size: 13px;
         font-weight: 700;
         white-space: nowrap;
     }
 
-    .application-time {
-        display: block;
-        margin-top: 4px;
-        color: var(--bank-muted);
-        font-size: 10px;
-    }
-
-    /* STATUS BADGES */
-
     .application-status {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
+        gap: 7px;
+        padding: 8px 12px;
         border-radius: 30px;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 800;
         white-space: nowrap;
     }
 
     .application-status::before {
         content: "";
-        width: 6px;
-        height: 6px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: currentColor;
     }
 
     .status-pending {
         background: #FFF0C2;
-        color: #8A6000;
+        color: #805900;
     }
 
     .status-approved {
         background: #DDEFE5;
-        color: var(--bank-green);
+        color: #0A6B3C;
     }
 
     .status-rejected,
     .status-defaulted {
         background: #FBE4DF;
-        color: var(--bank-red);
+        color: #B83224;
     }
 
     .status-active {
         background: #DCEBEF;
-        color: var(--bank-teal);
+        color: #00485C;
     }
 
     .status-paid,
     .status-other {
         background: #E9E0D3;
-        color: #68747B;
+        color: #58656B;
     }
-
-    /* REVIEW BUTTON */
 
     .application-review {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 7px;
-        padding: 9px 13px;
-        border: 1px solid var(--bank-teal);
+        padding: 10px 15px;
+        border: 1px solid #00485C;
         border-radius: 30px;
-        background: transparent;
-        color: var(--bank-teal);
-        font-size: 11px;
+        background: #00485C;
+        color: #fff;
+        font-size: 12px;
         font-weight: 800;
         text-decoration: none;
         white-space: nowrap;
-        transition: background .2s ease, color .2s ease;
+        transition: .2s ease;
     }
 
     .application-review:hover {
-        background: var(--bank-teal);
+        background: #003442;
+        border-color: #003442;
         color: #fff;
+        transform: translateY(-1px);
     }
 
-    /* EMPTY STATE */
-
     .applications-empty {
-        padding: 60px 20px !important;
+        padding: 65px 20px !important;
         text-align: center;
     }
 
     .applications-empty i {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 65px;
-        height: 65px;
-        margin-bottom: 16px;
-        border-radius: 20px;
-        background: #DCEBEF;
-        color: var(--bank-teal);
-        font-size: 27px;
+        display: inline-block;
+        margin-bottom: 15px;
+        color: #72909A;
+        font-size: 42px;
     }
 
     .applications-empty h6 {
         margin-bottom: 7px;
-        color: var(--bank-teal);
-        font-size: 15px;
+        color: #00485C;
+        font-size: 16px;
         font-weight: 800;
     }
 
     .applications-empty p {
         margin: 0;
-        color: var(--bank-muted);
-        font-size: 12px;
+        color: #687780;
+        font-size: 13px;
     }
-
-    /* RESPONSIVE */
 
     @media (max-width: 767.98px) {
         .applications-heading h3 {
@@ -359,11 +318,6 @@
 
         .applications-card-header {
             padding: 18px;
-        }
-
-        .applications-table thead th,
-        .applications-table tbody td {
-            padding: 13px 12px;
         }
 
         .applications-table thead th:first-child,
@@ -392,20 +346,19 @@
 
 <div class="applications-page">
 
-    <!-- PAGE HEADING -->
     <div class="applications-heading">
         <div>
             <h3>Loan Applications</h3>
-            <p>Review and manage submitted client loan applications.</p>
+            <p>Review client applications and monitor their loan status.</p>
         </div>
 
         <span class="application-count">
             <i class="bi bi-folder2-open"></i>
-            {{ applications|length }} Application{{ applications|length|pluralize }}
+            {{ applications|length }}
+            Application{{ applications|length|pluralize }}
         </span>
     </div>
 
-    <!-- TOOLBAR AND FILTERS -->
     <div class="applications-toolbar">
 
         <a href="{% url 'officer_home' %}" class="applications-back">
@@ -438,7 +391,6 @@
         </div>
     </div>
 
-    <!-- APPLICATIONS TABLE -->
     <section class="applications-card">
 
         <div class="applications-card-header">
@@ -447,8 +399,8 @@
             </span>
 
             <div>
-                <h5>Applications</h5>
-                <p>Select an application to review its details and supporting documents.</p>
+                <h5>Application Records</h5>
+                <p>Review applicant information, requested loan details, and current status.</p>
             </div>
         </div>
 
@@ -490,17 +442,20 @@
                             </span>
 
                             <span class="applicant-username">
-                                {{ loan.client.user.username }}
+                                Client ID: {{ loan.client_id }}<br>
+                                @{{ loan.client.user.username }}
                             </span>
                         </td>
 
                         <td>
                             <span class="product-name">
-                                {{ loan.product.name }}
+                                {{ loan.product.name|default:"Product unavailable" }}
                             </span>
 
                             <span class="product-rate">
-                                {{ loan.annual_rate }}% annual interest
+                                {{ loan.annual_rate|floatformat:2 }}% annual interest
+                                <br>
+                                {{ loan.term_months }} months
                             </span>
                         </td>
 
@@ -521,43 +476,35 @@
                         </td>
 
                         <td>
-
                             {% if loan.status == "pending" %}
                                 <span class="application-status status-pending">
-                                    Pending
-                                </span>
-
-                            {% elif loan.status == "approved" %}
-                                <span class="application-status status-approved">
-                                    Approved
-                                </span>
-
-                            {% elif loan.status == "rejected" %}
-                                <span class="application-status status-rejected">
-                                    Rejected
-                                </span>
-
-                            {% elif loan.status == "active" %}
-                                <span class="application-status status-active">
-                                    Active
-                                </span>
-
-                            {% elif loan.status == "paid" %}
-                                <span class="application-status status-paid">
-                                    Fully Paid
-                                </span>
-
-                            {% elif loan.status == "defaulted" %}
-                                <span class="application-status status-defaulted">
-                                    Defaulted
-                                </span>
-
-                            {% else %}
-                                <span class="application-status status-other">
                                     {{ loan.get_status_display }}
                                 </span>
+                            {% elif loan.status == "approved" %}
+                                <span class="application-status status-approved">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "rejected" %}
+                                <span class="application-status status-rejected">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "active" %}
+                                <span class="application-status status-active">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "paid" %}
+                                <span class="application-status status-paid">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% elif loan.status == "defaulted" %}
+                                <span class="application-status status-defaulted">
+                                    {{ loan.get_status_display }}
+                                </span>
+                            {% else %}
+                                <span class="application-status status-other">
+                                    {{ loan.get_status_display|default:loan.status }}
+                                </span>
                             {% endif %}
-
                         </td>
 
                         <td class="text-center">
@@ -574,84 +521,20 @@
 
                     <tr>
                         <td colspan="7" class="applications-empty">
-
-                            <i class="bi bi-folder2-open"></i>
-
-                            <h6>No Loan Applications</h6>
-
-                            <p>
-                                Applications matching this status will appear here.
-                            </p>
-
+                            <i class="bi bi-inbox"></i>
+                            <h6>No Loan Applications Found</h6>
+                            <p>Applications matching this status will appear here.</p>
                         </td>
                     </tr>
 
                     {% endfor %}
 
                 </tbody>
-
             </table>
 
         </div>
     </section>
 
-  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-    <div class="card-header bg-white border-bottom py-3 px-4">
-      <h5 class="fw-bold mb-0">Applications <span class="badge text-bg-light ms-2">{{ applications|length }}</span></h5>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th class="ps-4">Application ID</th>
-            <th>Client</th>
-            <th>Loan Product</th>
-            <th class="text-end">Amount</th>
-            <th>Applied</th>
-            <th>Status</th>
-            <th class="text-end pe-4">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for loan in applications %}
-          <tr>
-            <td class="ps-4 fw-semibold text-nowrap">{{ loan.reference }}</td>
-            <td>
-              <div class="fw-semibold">{{ loan.name }}</div>
-            </td>
-            <td>{{ loan.product }}</td>
-            <td class="text-end text-nowrap fw-semibold">₱{{ loan.amount }}</td>
-            <td class="text-nowrap">{{ loan.date }}</td>
-            <td>
-              {% if loan.status == 'Pending' %}
-                <span class="badge rounded-pill text-bg-warning">Pending</span>
-              {% elif loan.status == 'Approved' %}
-                <span class="badge rounded-pill text-bg-success">Approved</span>
-              {% elif loan.status == 'Rejected' %}
-                <span class="badge rounded-pill text-bg-danger">Rejected</span>
-              {% elif loan.status == 'Active' %}
-                <span class="badge rounded-pill text-bg-primary">Active</span>
-              {% else %}
-                <span class="badge rounded-pill text-bg-secondary">{{ loan.status }}</span>
-              {% endif %}
-            </td>
-            <td class="text-end pe-4">
-              <a href="{% url 'loan_application_detail' loan.pk %}" class="btn btn-sm btn-outline-primary text-nowrap">
-                <i class="bi bi-eye me-1"></i> Review
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="7" class="text-center py-5">
-            <i class="bi bi-inbox fs-1 text-muted"></i>
-            <h6 class="fw-bold mt-3">No loan applications found</h6>
-            <p class="text-muted mb-0">Try another status or wait for new applications.</p>
-          </td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 {% endblock %}
