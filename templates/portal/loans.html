@@ -1,7 +1,5 @@
-
 {% extends "base_client.html" %}
 {% block title %}My Loans - Bayan Bank{% endblock %}
-
 {% block content %}
 <style>
     body.client-app {
@@ -219,7 +217,6 @@
 </style>
 
 <div class="container-fluid py-3">
-
     <!-- PAGE HEADER -->
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
@@ -228,19 +225,16 @@
                 Apply for financing, monitor your loans, and make repayments online.
             </p>
         </div>
-
         <div class="d-flex flex-wrap gap-2 align-items-center">
             <span class="badge bg-primary rounded-pill px-3 py-2">
                 {{ loans|length }} Application{{ loans|length|pluralize }}
             </span>
-
             <a href="{% url 'loan_calendar' %}" class="btn btn-outline-primary">
                 <i class="bi bi-calendar3 me-1"></i>
                 Payment Calendar
             </a>
         </div>
     </div>
-
     <!-- BANK ACCOUNT SUMMARY -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-body p-4">
@@ -250,10 +244,8 @@
                         <div class="rounded-circle bg-primary bg-opacity-10 p-3">
                             <i class="bi bi-bank fs-3 text-primary"></i>
                         </div>
-
                         <div>
                             <h6 class="fw-bold mb-1">Regular Bank Account</h6>
-
                             {% if bank_account %}
                                 <div class="text-muted small">
                                     Account Number: {{ bank_account.account_number }}
@@ -276,10 +268,8 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-5 text-md-end">
                     <small class="text-muted d-block">Available Balance</small>
-
                     {% if bank_account %}
                         <h3 class="fw-bold text-primary mb-0">
                             ₱{{ bank_account.balance|floatformat:2 }}
@@ -289,7 +279,6 @@
                     {% endif %}
                 </div>
             </div>
-
             <div class="alert alert-info small mt-3 mb-0">
                 <i class="bi bi-info-circle me-1"></i>
                 Online loan repayments are deducted from your regular Bayan Bank
@@ -297,7 +286,6 @@
             </div>
         </div>
     </div>
-
     <!-- LOAN APPLICATION -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-white border-bottom py-3">
@@ -306,9 +294,7 @@
                 Complete the application form and attach at least one supporting document.
             </small>
         </div>
-
         <div class="card-body p-4">
-
             {% if products %}
                 <form
                     method="post"
@@ -318,12 +304,10 @@
                     id="loanApplicationForm"
                 >
                     {% csrf_token %}
-
                     <div class="col-12">
                         <label class="form-label fw-semibold">
                             Loan Product
                         </label>
-
                         <select
                             name="product"
                             id="loanProduct"
@@ -331,7 +315,6 @@
                             required
                         >
                             <option value="">Select a loan product</option>
-
                             {% for p in products %}
                                 <option
                                     value="{{ p.pk }}"
@@ -344,17 +327,14 @@
                                 </option>
                             {% endfor %}
                         </select>
-
                         <small id="productLimits" class="text-muted">
                             Select a loan product to view its application limits.
                         </small>
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">
                             Loan Amount (₱)
                         </label>
-
                         <input
                             type="number"
                             name="principal"
@@ -367,12 +347,10 @@
                             required
                         >
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">
                             Term (Months)
                         </label>
-
                         <input
                             type="number"
                             name="term_months"
@@ -385,31 +363,29 @@
                             required
                         >
                     </div>
-
                     <div class="col-12">
                         <label class="form-label fw-semibold">
                             Purpose of Loan
                         </label>
-
-                        <textarea
-                            name="purpose"
-                            class="form-control"
-                            rows="3"
-                            maxlength="1000"
-                            placeholder="Explain why you are applying for this loan."
-                            required
-                        ></textarea>
-
-                        <small class="text-muted">
-                            Maximum of 1,000 characters.
-                        </small>
+                        <select id="loanPurposeCategory" class="form-select" required>
+                            <option value="">Select loan purpose</option>
+                            <option value="Education">Education</option>
+                            <option value="Medical">Medical</option>
+                            <option value="Business">Business</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Others">Others</option>
+                        </select>
+                        <div id="loanPurposeOtherWrap" class="mt-2 d-none">
+                            <label for="loanPurposeOther" class="form-label small fw-semibold">Explain your purpose</label>
+                            <textarea id="loanPurposeOther" class="form-control" rows="3" maxlength="1000" placeholder="Please describe your loan purpose."></textarea>
+                        </div>
+                        <input type="hidden" name="purpose" id="loanPurposeFinal">
+                        <small class="text-muted">Select a purpose. If you choose Others, an explanation is required.</small>
                     </div>
-
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">
                             Supporting Document Type
                         </label>
-
                         <select
                             name="document_type"
                             id="documentType"
@@ -425,12 +401,10 @@
                             <option value="other">Other Supporting Document</option>
                         </select>
                     </div>
-
                     <div class="col-md-8">
                         <label class="form-label fw-semibold">
                             Supporting Documents <span class="text-danger">*</span>
                         </label>
-
                         <input
                             type="file"
                             name="documents"
@@ -440,19 +414,15 @@
                             multiple
                             required
                         >
-
                         <small class="text-muted d-block mt-1">
                             At least one document is required. PDF, JPG, JPEG, or PNG.
                             Maximum 5 files, 5 MB each.
                         </small>
-
                         <small class="text-muted d-block">
                             All files selected together will use the document category selected above.
                         </small>
-
                         <div id="documentFeedback" class="small mt-2"></div>
                     </div>
-
                     <div class="col-12 pt-2">
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="bi bi-send me-1"></i>
@@ -460,15 +430,12 @@
                         </button>
                     </div>
                 </form>
-
             {% else %}
                 <div class="text-center py-4">
                     <i class="bi bi-info-circle fs-1 text-muted"></i>
-
                     <h6 class="fw-bold mt-3">
                         No Loan Products Available
                     </h6>
-
                     <p class="text-muted mb-0">
                         There are currently no active loan products available.
                         Please check again later.
@@ -477,501 +444,330 @@
             {% endif %}
         </div>
     </div>
-
-    <!-- LOAN APPLICATIONS -->
-    <div class="card border-0 shadow-sm rounded-3">
+        <!-- COMPACT LOAN ACCORDION -->
+    <section class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-white border-bottom py-3">
             <h5 class="fw-bold mb-1">My Applications</h5>
-            <small class="text-muted">
-                View your application status, agreements, documents,
-                statements, and repayment options.
-            </small>
+            <small class="text-muted">Select a loan to view its repayment details, documents, and agreement.</small>
         </div>
-
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-3">Applied</th>
-                            <th>Product</th>
-                            <th class="text-end">Amount</th>
-                            <th>Term</th>
-                            <th>Status</th>
-                            <th>Agreement</th>
-                            <th>Documents</th>
-                            <th>Exports</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for l in loans %}
-                            <tr>
-                                <td class="ps-3 text-nowrap">
-                                    {{ l.applied_at|date:"M d, Y" }}
-                                </td>
-
-                                <td class="fw-semibold">
-                                    {{ l.product.name }}
-
-                                    <div class="small text-muted">
-                                        {{ l.annual_rate }}% annual interest
-                                    </div>
-                                </td>
-
-                                <td class="text-end text-nowrap fw-semibold">
-                                    ₱{{ l.principal|floatformat:2 }}
-                                </td>
-
-                                <td class="text-nowrap">
-                                    {{ l.term_months }} months
-                                </td>
-
-                                <!-- STATUS -->
-                                <td>
-                                    {% if l.status == "pending" %}
+        <div class="card-body p-3">
+            <div class="accordion loan-accordion" id="clientLoanAccordion">
+                {% for l in loans %}
+                <div class="accordion-item border rounded-3 mb-3 overflow-hidden">
+                    <h2 class="accordion-header" id="loanHeading{{ l.pk }}">
+                        <button class="accordion-button collapsed bg-white px-3 py-3" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#loanDetails{{ l.pk }}"
+                                aria-expanded="false" aria-controls="loanDetails{{ l.pk }}">
+                            <span class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 w-100 pe-3">
+                                <span>
+                                    <span class="fw-bold d-block">{{ l.product.name }} <span class="text-muted">#{{ l.pk }}</span></span>
+                                    <span class="text-muted small">{{ l.applied_at|date:"M d, Y" }} · {{ l.term_months }} months · {{ l.annual_rate }}% annual interest</span>
+                                </span>
+                                <span class="d-flex flex-wrap align-items-center gap-2">
+                                    {% if l.status == "active" %}
+                                        <span class="text-end me-2">
+                                            <span class="text-muted small d-block">Outstanding</span>
+                                            <span class="fw-bold text-primary">₱{{ l.remaining_balance|floatformat:2 }}</span>
+                                        </span>
+                                        <span class="badge bg-primary">Active</span>
+                                    {% elif l.status == "pending" %}
+                                        <span class="fw-semibold">₱{{ l.principal|floatformat:2 }}</span>
                                         <span class="badge bg-warning text-dark">Pending</span>
                                     {% elif l.status == "approved" %}
+                                        <span class="fw-semibold">₱{{ l.principal|floatformat:2 }}</span>
                                         <span class="badge bg-success">Approved</span>
                                     {% elif l.status == "rejected" %}
+                                        <span class="fw-semibold">₱{{ l.principal|floatformat:2 }}</span>
                                         <span class="badge bg-danger">Rejected</span>
-                                    {% elif l.status == "active" %}
-                                        <span class="badge bg-primary">Active</span>
                                     {% elif l.status == "paid" %}
+                                        <span class="fw-semibold">₱{{ l.principal|floatformat:2 }}</span>
                                         <span class="badge bg-secondary">Fully Paid</span>
                                     {% elif l.status == "defaulted" %}
+                                        <span class="fw-semibold">₱{{ l.principal|floatformat:2 }}</span>
                                         <span class="badge bg-danger">Defaulted</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">
-                                            {{ l.get_status_display }}
-                                        </span>
+                                        <span class="fw-semibold">₱{{ l.principal|floatformat:2 }}</span>
+                                        <span class="badge bg-secondary">{{ l.get_status_display }}</span>
                                     {% endif %}
-
-                                    {% if l.reject_reason %}
-                                        <div class="small text-danger mt-2">
-                                            {{ l.reject_reason }}
-                                        </div>
-                                    {% endif %}
-                                </td>
-
-                                <!-- AGREEMENT -->
-                                <td>
-                                    {% if l.agreement %}
-                                        <div class="d-flex flex-column gap-2">
-                                            <a
-                                                href="{% url 'portal_loan_agreement' l.pk %}"
-                                                class="btn btn-outline-primary btn-sm text-nowrap"
-                                            >
-                                                <i class="bi bi-file-earmark-text me-1"></i>
-                                                View Agreement
-                                            </a>
-
-                                            {% if l.agreement.signed_at %}
-                                                <span class="badge bg-success">Accepted</span>
-                                            {% elif l.status == "approved" %}
-                                                <span class="badge bg-warning text-dark">
-                                                    Awaiting Acceptance
-                                                </span>
-                                                <small class="text-muted">
-                                                    Required before disbursement.
-                                                </small>
-                                            {% else %}
-                                                <span class="badge bg-secondary">
-                                                    Not Accepted
-                                                </span>
-                                            {% endif %}
-                                        </div>
-
-                                    {% elif l.status == "pending" %}
-                                        <small class="text-muted">Awaiting approval</small>
-                                    {% elif l.status == "approved" %}
-                                        <small class="text-muted">
-                                            Waiting for staff to create agreement
-                                        </small>
-                                    {% else %}
-                                        <small class="text-muted">Not available</small>
-                                    {% endif %}
-                                </td>
-
-                                <!-- DOCUMENTS -->
-                                <td>
-                                    {% with documents=l.documents.all %}
-                                        {% if documents %}
-                                            <div class="d-flex flex-column gap-2">
-                                                {% for document in documents %}
-                                                    <a
-                                                        href="{% url 'loan_document_download' document.id %}"
-                                                        class="btn btn-outline-secondary btn-sm text-nowrap"
-                                                    >
-                                                        <i class="bi bi-download me-1"></i>
-                                                        {{ document.get_document_type_display }}
-                                                        {{ forloop.counter }}
-                                                    </a>
-                                                {% endfor %}
-                                            </div>
-                                        {% else %}
-                                            <small class="text-muted">No documents</small>
-                                        {% endif %}
-                                    {% endwith %}
-                                </td>
-
-                                <!-- EXPORTS -->
-                                <td>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <a
-                                            href="{% url 'export_loan_pdf' l.pk %}"
-                                            class="btn btn-outline-danger btn-sm"
-                                            title="Download loan statement PDF"
-                                        >
-                                            <i class="bi bi-file-pdf"></i>
-                                            PDF
-                                        </a>
-
-                                        <a
-                                            href="{% url 'export_loan_excel' l.pk %}"
-                                            class="btn btn-outline-success btn-sm"
-                                            title="Download loan statement Excel"
-                                        >
-                                            <i class="bi bi-file-earmark-excel"></i>
-                                            Excel
-                                        </a>
-
-                                        {% if l.agreement %}
-                                            <a
-                                                href="{% url 'loan_agreement_pdf' l.pk %}"
-                                                class="btn btn-outline-primary btn-sm text-nowrap"
-                                            >
-                                                Agreement PDF
-                                            </a>
-                                        {% endif %}
+                                </span>
+                            </span>
+                        </button>
+                    </h2>
+                    <div id="loanDetails{{ l.pk }}" class="accordion-collapse collapse"
+                         aria-labelledby="loanHeading{{ l.pk }}" data-bs-parent="#clientLoanAccordion">
+                        <div class="accordion-body p-3 p-md-4 border-top">
+                            <div class="row g-3 mb-3">
+                                <div class="col-6 col-lg-3">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted d-block">Original Loan</small>
+                                        <strong>₱{{ l.principal|floatformat:2 }}</strong>
                                     </div>
-                                </td>
-                            </tr>
-
-                            <!-- REPAYMENT SCHEDULE -->
-                            {% if l.status == "active" %}
-                                <tr>
-                                    <td colspan="8" class="px-3 py-3">
-                                        <div class="border rounded-3 p-3">
-                                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                                                <div>
-                                                    <h6 class="fw-bold mb-1">
-                                                        <i class="bi bi-calendar-check text-primary me-1"></i>
-                                                        Repayment Schedule
-                                                    </h6>
-                                                    <small class="text-muted">
-                                                        Loan #{{ l.pk }} · {{ l.term_months }}-month repayment plan
-                                                    </small>
-                                                </div>
-
-                                                <button
-                                                    class="btn btn-outline-primary btn-sm"
-                                                    type="button"
-                                                    data-bs-toggle="collapse"
-                                                    data-bs-target="#repaymentSchedule{{ l.pk }}"
-                                                    aria-expanded="false"
-                                                    aria-controls="repaymentSchedule{{ l.pk }}"
-                                                >
-                                                    <i class="bi bi-list-ul me-1"></i>
-                                                    View Schedule
-                                                </button>
-                                            </div>
-
-                                            <div class="row g-3 mb-3">
-                                                <div class="col-md-4">
-                                                    <div class="bg-light rounded-3 p-3 h-100">
-                                                        <small class="text-muted d-block">
-                                                            Total Outstanding
-                                                        </small>
-                                                        <h5 class="fw-bold text-primary mb-0">
-                                                            ₱{{ l.remaining_balance|floatformat:2 }}
-                                                        </h5>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-4">
-                                                    <div class="bg-light rounded-3 p-3 h-100">
-                                                        <small class="text-muted d-block">
-                                                            Scheduled Installments
-                                                        </small>
-                                                        <h5 class="fw-bold mb-0">
-                                                            {{ l.installments.all|length }}
-                                                        </h5>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-4">
-                                                    <div class="bg-light rounded-3 p-3 h-100">
-                                                        <small class="text-muted d-block">
-                                                            Unpaid Installments
-                                                        </small>
-                                                        <h5 class="fw-bold mb-0">
-                                                            {{ l.unpaid_installments|length }}
-                                                        </h5>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="collapse" id="repaymentSchedule{{ l.pk }}">
-                                                {% with installments=l.installments.all %}
-                                                    {% if installments %}
-                                                        <div class="table-responsive">
-                                                            <table class="table table-bordered table-hover table-sm align-middle mb-0">
-                                                                <thead class="table-light">
-                                                                    <tr>
-                                                                        <th>Installment</th>
-                                                                        <th>Due Date</th>
-                                                                        <th class="text-end">Principal</th>
-                                                                        <th class="text-end">Interest</th>
-                                                                        <th class="text-end">Penalty</th>
-                                                                        <th class="text-end">Total Due</th>
-                                                                        <th class="text-end">Amount Paid</th>
-                                                                        <th class="text-end">Remaining</th>
-                                                                        <th>Status</th>
-                                                                        <th>Paid Date</th>
-                                                                    </tr>
-                                                                </thead>
-
-                                                                <tbody>
-                                                                    {% for installment in installments %}
-                                                                        <tr>
-                                                                            <td class="fw-semibold">
-                                                                                #{{ installment.number }}
-                                                                            </td>
-
-                                                                            <td class="text-nowrap">
-                                                                                {{ installment.due_date|date:"M d, Y" }}
-                                                                            </td>
-
-                                                                            <td class="text-end text-nowrap">
-                                                                                ₱{{ installment.principal_due|floatformat:2 }}
-                                                                            </td>
-
-                                                                            <td class="text-end text-nowrap">
-                                                                                ₱{{ installment.interest_due|floatformat:2 }}
-                                                                            </td>
-
-                                                                            <td class="text-end text-nowrap">
-                                                                                ₱{{ installment.penalty_amount|floatformat:2 }}
-                                                                            </td>
-
-                                                                            <td class="text-end text-nowrap fw-semibold">
-                                                                                ₱{{ installment.total_due|floatformat:2 }}
-                                                                            </td>
-
-                                                                            <td class="text-end text-nowrap text-success">
-                                                                                ₱{{ installment.amount_paid|floatformat:2 }}
-                                                                            </td>
-
-                                                                            <td class="text-end text-nowrap fw-semibold">
-                                                                                ₱{{ installment.remaining_balance|floatformat:2 }}
-                                                                            </td>
-
-                                                                            <td>
-                                                                                {% if installment.status == "paid" %}
-                                                                                    <span class="badge bg-success">Paid</span>
-                                                                                {% elif installment.status == "overdue" or installment.due_date < today %}
-                                                                                    <span class="badge bg-danger">Overdue</span>
-                                                                                {% else %}
-                                                                                    <span class="badge bg-warning text-dark">Due</span>
-                                                                                {% endif %}
-                                                                            </td>
-
-                                                                            <td class="text-nowrap">
-                                                                                {% if installment.paid_at %}
-                                                                                    {{ installment.paid_at|date:"M d, Y" }}
-                                                                                {% else %}
-                                                                                    <span class="text-muted">—</span>
-                                                                                {% endif %}
-                                                                            </td>
-                                                                        </tr>
-                                                                    {% endfor %}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    {% else %}
-                                                        <div class="alert alert-info small mb-0">
-                                                            No repayment installments have been generated for this loan yet.
-                                                        </div>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- ONLINE REPAYMENT -->
-                                <tr class="bg-light">
-                                    <td colspan="8" class="px-3 py-3">
-                                        <div class="row align-items-center g-3">
-                                            <div class="col-lg-4">
-                                                <div class="fw-bold">
-                                                    <i class="bi bi-wallet2 text-primary me-1"></i>
-                                                    Online Loan Repayment
-                                                </div>
-
-                                                <div class="small text-muted mt-1">
-                                                    Outstanding Balance
-                                                </div>
-
-                                                <h5 class="fw-bold text-primary mb-0">
-                                                    ₱{{ l.remaining_balance|floatformat:2 }}
-                                                </h5>
-
-                                                <small class="text-muted">
-                                                    {{ l.unpaid_installments|length }}
-                                                    unpaid installment{{ l.unpaid_installments|length|pluralize }}
-                                                </small>
-                                            </div>
-
-                                            <div class="col-lg-8">
-                                                {% if l.remaining_balance > 0 %}
-                                                    {% if bank_account and bank_account.status == "active" %}
-                                                        <form
-                                                            method="post"
-                                                            action="{% url 'portal_loan_repay' l.pk %}"
-                                                            class="row g-2 align-items-end"
-                                                            onsubmit="return confirmLoanPayment(this);"
-                                                        >
-                                                            {% csrf_token %}
-
-                                                            <div class="col-md-7">
-                                                                <label class="form-label small fw-semibold">
-                                                                    Payment Amount (₱)
-                                                                </label>
-
-                                                                <input
-                                                                    type="number"
-                                                                    name="amount"
-                                                                    class="form-control"
-                                                                    step="0.01"
-                                                                    min="0.01"
-                                                                    max="{{ l.remaining_balance }}"
-                                                                    inputmode="decimal"
-                                                                    placeholder="Enter payment amount"
-                                                                    required
-                                                                >
-
-                                                                <small class="text-muted">
-                                                                    Available bank balance:
-                                                                    ₱{{ bank_account.balance|floatformat:2 }}
-                                                                </small>
-                                                            </div>
-
-                                                            <div class="col-md-5">
-                                                                <button
-                                                                    type="submit"
-                                                                    class="btn btn-primary w-100"
-                                                                >
-                                                                    <i class="bi bi-credit-card me-1"></i>
-                                                                    Pay Loan
-                                                                </button>
-                                                            </div>
-                                                        </form>
-                                                    {% else %}
-                                                        <div class="alert alert-warning mb-0 small">
-                                                            <i class="bi bi-exclamation-triangle me-1"></i>
-                                                            Your regular bank account is unavailable or inactive.
-                                                            Please contact the bank before making a repayment.
-                                                        </div>
-                                                    {% endif %}
-                                                {% else %}
-                                                    <span class="badge bg-success">
-                                                        No outstanding balance
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted d-block">Term</small>
+                                        <strong>{{ l.term_months }} months</strong>
+                                    </div>
+                                </div>
+                                {% if l.status == "active" %}
+                                <div class="col-6 col-lg-3">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted d-block">Outstanding</small>
+                                        <strong class="text-primary">₱{{ l.remaining_balance|floatformat:2 }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted d-block">Unpaid Installments</small>
+                                        <strong>{{ l.unpaid_installments|length }}</strong>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if l.reject_reason %}
+                            <div class="alert alert-danger small">{{ l.reject_reason }}</div>
                             {% endif %}
-
-                        {% empty %}
-                            <tr>
-                                <td colspan="8" class="text-center py-5">
-                                    <i class="bi bi-folder2-open fs-1 text-muted"></i>
-
-                                    <h6 class="fw-bold mt-3">
-                                        No Loan Applications Yet
-                                    </h6>
-
-                                    <p class="text-muted mb-0">
-                                        Your submitted loan applications
-                                        will appear here.
-                                    </p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                {% if l.agreement %}
+                                    <a href="{% url 'portal_loan_agreement' l.pk %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-file-earmark-text me-1"></i> View Agreement
+                                    </a>
+                                    {% if l.agreement.signed_at %}
+                                        <span class="badge bg-success">Agreement Accepted</span>
+                                    {% elif l.status == "approved" %}
+                                        <span class="badge bg-warning text-dark">Awaiting Agreement Acceptance</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Agreement Not Accepted</span>
+                                    {% endif %}
+                                {% elif l.status == "pending" %}
+                                    <small class="text-muted">Agreement awaiting approval.</small>
+                                {% elif l.status == "approved" %}
+                                    <small class="text-muted">Waiting for staff to create agreement.</small>
+                                {% endif %}
+                                <div class="dropdown ms-md-auto">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-folder2-open me-1"></i> Documents & Exports
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="{% url 'export_loan_pdf' l.pk %}">
+                                            <i class="bi bi-file-pdf me-2"></i>Loan Statement PDF
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{% url 'export_loan_excel' l.pk %}">
+                                            <i class="bi bi-file-earmark-excel me-2"></i>Loan Statement Excel
+                                        </a></li>
+                                        {% if l.agreement %}
+                                        <li><a class="dropdown-item" href="{% url 'loan_agreement_pdf' l.pk %}">
+                                            <i class="bi bi-file-earmark-pdf me-2"></i>Agreement PDF
+                                        </a></li>
+                                        {% endif %}
+                                        {% with documents=l.documents.all %}
+                                            {% if documents %}
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><h6 class="dropdown-header">Supporting Documents</h6></li>
+                                                {% for document in documents %}
+                                                <li><a class="dropdown-item" href="{% url 'loan_document_download' document.id %}">
+                                                    <i class="bi bi-download me-2"></i>{{ document.get_document_type_display }} {{ forloop.counter }}
+                                                </a></li>
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </ul>
+                                </div>
+                            </div>
+                            {% if l.status == "active" %}
+                            <div class="border rounded-3 p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                    <div>
+                                        <h6 class="fw-bold mb-0"><i class="bi bi-wallet2 text-primary me-1"></i> Online Loan Repayment</h6>
+                                        <small class="text-muted">From your regular Bayan Bank account</small>
+                                    </div>
+                                    <span class="fw-bold text-primary">₱{{ l.remaining_balance|floatformat:2 }} outstanding</span>
+                                </div>
+                                {% if l.remaining_balance > 0 %}
+                                    {% if bank_account and bank_account.status == "active" %}
+                                    <form method="post" action="{% url 'portal_loan_repay' l.pk %}"
+                                          class="row g-2 align-items-end" data-loan-repayment-form="true"
+                                          data-loan-number="{{ l.pk }}"
+                                          data-bank-balance="{{ bank_account.balance }}"
+                                          data-remaining-balance="{{ l.remaining_balance }}">
+                                        {% csrf_token %}
+                                        <div class="col-md-8">
+                                            <label class="form-label small fw-semibold">Payment Amount (₱)</label>
+                                            <input type="number" name="amount" class="form-control"
+                                                   step="0.01" min="0.01" max="{{ l.remaining_balance }}"
+                                                   inputmode="decimal" placeholder="Enter payment amount" required>
+                                            <small class="text-muted">Available bank balance: ₱{{ bank_account.balance|floatformat:2 }}</small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="bi bi-credit-card me-1"></i> Pay Loan
+                                            </button>
+                                        </div>
+                                    </form>
+                                    {% else %}
+                                    <div class="alert alert-warning small mb-0">
+                                        Your regular bank account is unavailable or inactive. Please contact the bank before making a repayment.
+                                    </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-success">No outstanding balance</span>
+                                {% endif %}
+                            </div>
+                            <div class="border rounded-3 p-3">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><i class="bi bi-calendar-check text-primary me-1"></i> Repayment Schedule</h6>
+                                        <small class="text-muted">{{ l.installments.all|length }} scheduled · {{ l.unpaid_installments|length }} unpaid</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#repaymentSchedule{{ l.pk }}"
+                                            aria-expanded="false" aria-controls="repaymentSchedule{{ l.pk }}">
+                                        <i class="bi bi-list-ul me-1"></i> View Schedule
+                                    </button>
+                                </div>
+                                <div class="collapse mt-3" id="repaymentSchedule{{ l.pk }}">
+                                    {% with installments=l.installments.all %}
+                                    {% if installments %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover table-sm align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Installment</th><th>Due Date</th>
+                                                    <th class="text-end">Principal</th><th class="text-end">Interest</th>
+                                                    <th class="text-end">Penalty</th><th class="text-end">Total Due</th>
+                                                    <th class="text-end">Amount Paid</th><th class="text-end">Remaining</th>
+                                                    <th>Status</th><th>Paid Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for installment in installments %}
+                                                <tr>
+                                                    <td class="fw-semibold">#{{ installment.number }}</td>
+                                                    <td class="text-nowrap">{{ installment.due_date|date:"M d, Y" }}</td>
+                                                    <td class="text-end text-nowrap">₱{{ installment.principal_due|floatformat:2 }}</td>
+                                                    <td class="text-end text-nowrap">₱{{ installment.interest_due|floatformat:2 }}</td>
+                                                    <td class="text-end text-nowrap">₱{{ installment.penalty_amount|floatformat:2 }}</td>
+                                                    <td class="text-end text-nowrap fw-semibold">₱{{ installment.total_due|floatformat:2 }}</td>
+                                                    <td class="text-end text-nowrap text-success">₱{{ installment.amount_paid|floatformat:2 }}</td>
+                                                    <td class="text-end text-nowrap fw-semibold">₱{{ installment.remaining_balance|floatformat:2 }}</td>
+                                                    <td>
+                                                        {% if installment.status == "paid" %}
+                                                        <span class="badge bg-success">Paid</span>
+                                                        {% elif installment.status == "overdue" or installment.due_date < today %}
+                                                        <span class="badge bg-danger">Overdue</span>
+                                                        {% else %}
+                                                        <span class="badge bg-warning text-dark">Due</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        {% if installment.paid_at %}
+                                                            {{ installment.paid_at|date:"M d, Y" }}
+                                                        {% else %}
+                                                            <span class="text-muted">—</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info small mb-0">No repayment installments have been generated for this loan yet.</div>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5">
+                    <i class="bi bi-folder2-open fs-1 text-muted"></i>
+                    <h6 class="fw-bold mt-3">No Loan Applications Yet</h6>
+                    <p class="text-muted mb-0">Your submitted loan applications will appear here.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</div>
+<!-- CONFIRM ONLINE LOAN REPAYMENT -->
+<div class="modal fade" id="confirmRepaymentModal" tabindex="-1" aria-labelledby="confirmRepaymentTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="confirmRepaymentTitle">Confirm Loan Repayment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Please review the repayment details before proceeding.</p>
+                <div class="d-flex justify-content-between mb-2"><span>Loan</span><strong id="repaymentConfirmLoan"></strong></div>
+                <div class="d-flex justify-content-between mb-2"><span>Payment amount</span><strong id="repaymentConfirmAmount"></strong></div>
+                <div class="d-flex justify-content-between mb-2"><span>Available bank balance</span><strong id="repaymentConfirmBalance"></strong></div>
+                <div class="alert alert-info small mb-0">This amount will be deducted from your regular Bayan Bank account.</div>
+                <div id="repaymentModalError" class="text-danger small mt-2" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmRepaymentSubmit">
+                    <i class="bi bi-check-circle me-1"></i> Confirm Payment
+                </button>
             </div>
         </div>
     </div>
-
 </div>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const productSelect = document.getElementById("loanProduct");
     const amountInput = document.getElementById("loanAmount");
     const termInput = document.getElementById("loanTerm");
     const limitsText = document.getElementById("productLimits");
-
     if (productSelect && amountInput && termInput && limitsText) {
         productSelect.addEventListener("change", function () {
             const option = productSelect.selectedOptions[0];
-
             if (!option || !option.value) {
                 amountInput.removeAttribute("min");
                 amountInput.removeAttribute("max");
                 termInput.min = "1";
                 termInput.removeAttribute("max");
-
                 limitsText.textContent =
                     "Select a loan product to view its application limits.";
                 return;
             }
-
             const minAmount = option.dataset.min;
             const maxAmount = option.dataset.max;
             const minTerm = option.dataset.minTerm;
             const maxTerm = option.dataset.maxTerm;
-
             amountInput.min = minAmount;
             amountInput.max = maxAmount;
             termInput.min = minTerm;
             termInput.max = maxTerm;
-
             limitsText.textContent =
                 "Allowed amount: ₱" + Number(minAmount).toLocaleString("en-PH") +
                 " – ₱" + Number(maxAmount).toLocaleString("en-PH") +
                 " | Term: " + minTerm + "–" + maxTerm + " months";
-
             amountInput.value = "";
             termInput.value = "";
         });
     }
-
     const documentInput = document.getElementById("loanDocuments");
     const documentFeedback = document.getElementById("documentFeedback");
     const applicationForm = document.getElementById("loanApplicationForm");
-
     if (documentInput && documentFeedback) {
         documentInput.addEventListener("change", function () {
             const files = Array.from(documentInput.files);
             const allowedExtensions = ["pdf", "jpg", "jpeg", "png"];
             const maxSize = 5 * 1024 * 1024;
-
             documentFeedback.textContent = "";
             documentFeedback.className = "small mt-2";
-
             if (files.length === 0) {
                 documentFeedback.textContent =
                     "At least one supporting document is required.";
                 documentFeedback.classList.add("text-danger");
                 return;
             }
-
             if (files.length > 5) {
                 documentFeedback.textContent =
                     "You can upload a maximum of 5 files.";
@@ -979,10 +775,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 documentInput.value = "";
                 return;
             }
-
             for (const file of files) {
                 const extension = file.name.split(".").pop().toLowerCase();
-
                 if (!allowedExtensions.includes(extension)) {
                     documentFeedback.textContent =
                         file.name + ": Unsupported file type.";
@@ -990,7 +784,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     documentInput.value = "";
                     return;
                 }
-
                 if (file.size === 0 || file.size > maxSize) {
                     documentFeedback.textContent =
                         file.name + ": File must be greater than 0 bytes and no larger than 5 MB.";
@@ -999,28 +792,23 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
             }
-
             documentFeedback.textContent =
                 files.length + " supporting document(s) selected.";
             documentFeedback.classList.add("text-success");
         });
     }
-
     if (applicationForm) {
         applicationForm.addEventListener("submit", function (event) {
             const selectedFiles = documentInput
                 ? documentInput.files.length
                 : 0;
-
             const selectedType = document.getElementById("documentType");
-
             if (selectedFiles < 1) {
                 event.preventDefault();
                 alert("Please upload at least one supporting document.");
                 if (documentInput) documentInput.focus();
                 return;
             }
-
             if (selectedType && !selectedType.value) {
                 event.preventDefault();
                 alert("Please select a supporting document type.");
@@ -1029,23 +817,81 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
-function confirmLoanPayment(form) {
-    const amount = Number(form.querySelector('[name="amount"]').value);
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-        alert("Please enter a valid payment amount.");
-        return false;
-    }
-
-    return confirm(
-        "Confirm online loan repayment of ₱" +
-        amount.toLocaleString("en-PH", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }) +
-        "?\n\nThe amount will be deducted from your regular Bayan Bank account."
-    );
+// Purpose dropdown is combined into the existing purpose POST field.
+const purposeCategory = document.getElementById("loanPurposeCategory");
+const purposeOther = document.getElementById("loanPurposeOther");
+const purposeOtherWrap = document.getElementById("loanPurposeOtherWrap");
+const purposeFinal = document.getElementById("loanPurposeFinal");
+const applicationFormForPurpose = document.getElementById("loanApplicationForm");
+if (purposeCategory && purposeOther && purposeFinal) {
+    const syncPurpose = () => {
+        const isOther = purposeCategory.value === "Others";
+        purposeOtherWrap.classList.toggle("d-none", !isOther);
+        purposeOther.required = isOther;
+        purposeFinal.value = isOther ? purposeOther.value.trim() : purposeCategory.value;
+    };
+    purposeCategory.addEventListener("change", syncPurpose);
+    purposeOther.addEventListener("input", syncPurpose);
+    applicationFormForPurpose?.addEventListener("submit", function (event) {
+        syncPurpose();
+        if (!purposeFinal.value) {
+            event.preventDefault();
+            if (purposeCategory.value === "Others") purposeOther.reportValidity();
+            else purposeCategory.reportValidity();
+        }
+    });
+    syncPurpose();
 }
+// Open Bootstrap confirmation modal instead of native confirm().
+let repaymentFormToSubmit = null;
+const repaymentModalElement = document.getElementById("confirmRepaymentModal");
+const repaymentSubmitButton = document.getElementById("confirmRepaymentSubmit");
+const repaymentError = document.getElementById("repaymentModalError");
+const money = (amount) => "₱" + amount.toLocaleString("en-PH", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+});
+document.querySelectorAll('[data-loan-repayment-form="true"]').forEach(form => {
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (form.dataset.submitting === "true" || !form.reportValidity()) return;
+        const amount = Number(form.querySelector('[name="amount"]').value);
+        const available = Number(form.dataset.bankBalance);
+        const remaining = Number(form.dataset.remainingBalance);
+        if (!Number.isFinite(amount) || amount <= 0 || amount > remaining || amount > available) {
+            alert("Enter a valid payment amount that does not exceed your bank balance or remaining loan balance.");
+            return;
+        }
+        if (!window.bootstrap || !window.bootstrap.Modal) {
+            alert("The confirmation dialog is unavailable. Please reload the page.");
+            return;
+        }
+        repaymentFormToSubmit = form;
+        repaymentSubmitButton.disabled = false;
+        repaymentError.textContent = "";
+        document.getElementById("repaymentConfirmLoan").textContent = "#" + form.dataset.loanNumber;
+        document.getElementById("repaymentConfirmAmount").textContent = money(amount);
+        document.getElementById("repaymentConfirmBalance").textContent = money(available);
+        window.bootstrap.Modal.getOrCreateInstance(repaymentModalElement).show();
+    });
+});
+repaymentModalElement?.addEventListener("hidden.bs.modal", function () {
+    repaymentFormToSubmit = null;
+});
+repaymentSubmitButton?.addEventListener("click", function () {
+    if (!repaymentFormToSubmit || repaymentFormToSubmit.dataset.submitting === "true") return;
+    const form = repaymentFormToSubmit;
+    const amount = Number(form.querySelector('[name="amount"]').value);
+    const available = Number(form.dataset.bankBalance);
+    const remaining = Number(form.dataset.remainingBalance);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > remaining || amount > available || !form.reportValidity()) {
+        repaymentError.textContent = "The payment amount is no longer valid. Please cancel and check it.";
+        return;
+    }
+    form.dataset.submitting = "true";
+    repaymentSubmitButton.disabled = true;
+    repaymentSubmitButton.textContent = "Processing...";
+    form.querySelectorAll('button[type="submit"]').forEach(button => button.disabled = true);
+    HTMLFormElement.prototype.submit.call(form);
+});
 </script>
 {% endblock %}

@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Register - Bayan Bank{% endblock %}
@@ -9,12 +8,15 @@
 
     <!-- LEFT: BRANDING PANEL -->
     <div class="register-brand-panel">
+
         <div class="register-brand-content">
+
             <div class="register-brand-logo">
                 <i class="bi bi-bank2"></i>
             </div>
 
             <p class="register-eyebrow">WELCOME TO BAYAN BANK</p>
+
             <h1>Banking built around you.</h1>
 
             <p class="register-brand-description">
@@ -25,7 +27,9 @@
             <div class="register-brand-footer">
                 <span>Secure. Simple. For every Filipino.</span>
             </div>
+
         </div>
+
     </div>
 
     <!-- RIGHT: REGISTRATION FORM -->
@@ -33,11 +37,16 @@
 
         <div class="register-form-heading">
             <span class="register-step">CREATE YOUR ACCOUNT</span>
+
             <h2>Get started.</h2>
-            <p>Fill in your details to create your Bayan Bank account.</p>
+
+            <p>
+                Fill in your details to create your Bayan Bank account.
+            </p>
         </div>
 
-        <form method="post" class="register-form">
+        <form method="post" class="register-form" id="clientRegistrationForm">
+
             {% csrf_token %}
 
             {% if form.non_field_errors %}
@@ -47,8 +56,17 @@
             {% endif %}
 
             <div class="register-fields">
+
                 {% for field in form %}
-                    <div class="register-field">
+
+                    <div
+                        class="register-field"
+                        {% if field.name == "other_source_of_income" %}
+                            id="otherIncomeContainer"
+                            hidden
+                        {% endif %}
+                    >
+
                         <label for="{{ field.id_for_label }}">
                             {{ field.label }}
                         </label>
@@ -62,10 +80,15 @@
                         {% endif %}
 
                         {% for error in field.errors %}
-                            <small class="register-error">{{ error }}</small>
+                            <small class="register-error">
+                                {{ error }}
+                            </small>
                         {% endfor %}
+
                     </div>
+
                 {% endfor %}
+
             </div>
 
             <button type="submit" class="btn register-submit">
@@ -77,10 +100,41 @@
                 Already have an account?
                 <a href="{% url 'login' %}">Sign in</a>
             </p>
+
         </form>
 
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const dropdown = document.getElementById('id_source_of_income');
+    const container = document.getElementById('otherIncomeContainer');
+    const other = document.getElementById('id_other_source_of_income');
+
+    if (!dropdown || !container || !other) {
+        return;
+    }
+
+    function updateOtherField() {
+
+        const show = dropdown.value === 'Other';
+
+        container.hidden = !show;
+        other.required = show;
+
+        if (!show) {
+            other.value = '';
+        }
+    }
+
+    dropdown.addEventListener('change', updateOtherField);
+
+    updateOtherField();
+
+});
+</script>
 
 {% endblock %}

@@ -2,26 +2,63 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from accounting.models import LedgerEntry
 from notifications.models import Notification
 
-from .models import SavingsAccount, SavingsInterestPosting
+from .models import (
+    SavingsAccount,
+    SavingsDeposit,
+    SavingsInterestPosting,
+)
 
 
 ANNUAL_RATE = Decimal("2.00")
 MONTHLY_DIVISOR = Decimal("1200")
 CENT = Decimal("0.01")
+ZERO = Decimal("0.00")
 
 
-def calculate_monthly_interest(balance, annual_rate=ANNUAL_RATE):
+def calculate_monthly_interest(
+    balance,
+    annual_rate=ANNUAL_RATE,
+):
     balance = Decimal(str(balance))
     annual_rate = Decimal(str(annual_rate))
+
+    if balance <= ZERO:
+        return ZERO
 
     return (
         balance * annual_rate / MONTHLY_DIVISOR
     ).quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def get_regular_savings_balance(account):
+    """
+    Exclude term-deposit principal from regular savings.
+
+    Locked and matured deposits remain reserved until
+    they are released. Released deposits are already
+    removed from the savings account balance.
+    """
+
+    reserved = (
+        SavingsDeposit.objects.filter(
+            savings_account=account,
+            status__in=[
+                SavingsDeposit.Status.LOCKED,
+                SavingsDeposit.Status.MATURED,
+            ],
+        ).aggregate(total=Sum("amount"))["total"]
+        or ZERO
+    )
+
+    available = account.balance - reserved
+
+    return max(available, ZERO)
 
 
 def post_monthly_interest(year, month, by):
@@ -29,7 +66,9 @@ def post_monthly_interest(year, month, by):
     month = int(month)
 
     if not 1 <= month <= 12:
-        raise ValueError("Month must be between 1 and 12.")
+        raise ValueError(
+            "Month must be between 1 and 12."
+        )
 
     if not 1 <= year <= 9999:
         raise ValueError("Invalid year.")
@@ -45,15 +84,20 @@ def post_monthly_interest(year, month, by):
         not by
         or not by.pk
         or not by.is_active
-        or getattr(getattr(by, "role", None), "name", None)
-        != "admin"
+        or getattr(
+            getattr(by, "role", None),
+            "name",
+            None,
+        ) != "admin"
     ):
-        raise ValueError("An active admin user is required.")
+        raise ValueError(
+            "An active admin user is required."
+        )
 
     results = {
         "posted": 0,
         "skipped": 0,
-        "total_interest": Decimal("0.00"),
+        "total_interest": ZERO,
     }
 
     account_ids = list(
@@ -70,37 +114,48 @@ def post_monthly_interest(year, month, by):
                 .get(pk=account_id)
             )
 
-            if account.status != SavingsAccount.Status.ACTIVE:
+            if (
+                account.status
+                != SavingsAccount.Status.ACTIVE
+            ):
                 results["skipped"] += 1
                 continue
 
-            already_posted = SavingsInterestPosting.objects.filter(
-                savings_account=account,
-                year=year,
-                month=month,
-            ).exists()
+            already_posted = (
+                SavingsInterestPosting.objects.filter(
+                    savings_account=account,
+                    year=year,
+                    month=month,
+                ).exists()
+            )
 
             if already_posted:
                 results["skipped"] += 1
                 continue
 
-            interest = calculate_monthly_interest(
-                account.balance
+            regular_balance = (
+                get_regular_savings_balance(account)
             )
 
-            if interest <= 0:
+            interest = calculate_monthly_interest(
+                regular_balance
+            )
+
+            if interest <= ZERO:
                 results["skipped"] += 1
                 continue
 
             account.balance += interest
-            account.save(update_fields=["balance"])
+            account.save(
+                update_fields=["balance"]
+            )
 
             reference = (
                 f"INT-{year}{month:02d}-{account.pk}"
             )
 
             entry = LedgerEntry.objects.create(
-                entry_type=LedgerEntry.EntryType.INTEREST,
+                entry_type=LedgerEntry.EntryType.INTEREST_CREDIT,
                 amount=interest,
                 balance_after=account.balance,
                 savings_account=account,

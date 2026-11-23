@@ -98,6 +98,12 @@
                         </div>
 
                         <div class="notification-actions">
+                            <form method="post" action="{% url 'notification_open' notification.id %}" class="mb-2">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Open notification
+                              </button>
+                            </form>
                             {% if notification.is_read %}
                                 <span class="badge bg-light text-secondary">Read</span>
                             {% else %}

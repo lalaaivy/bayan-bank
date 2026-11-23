@@ -1,0 +1,53 @@
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        (
+            "accounting",
+            "0005_bankaccount_remove_reportexport_report_valid_subject_and_more",
+        ),
+        ("clients", "0003_clientdocument"),
+    ]
+
+    operations = [
+        migrations.AlterModelOptions(
+            name="bankaccount",
+            options={},
+        ),
+
+        migrations.AlterField(
+            model_name="bankaccount",
+            name="account_number",
+            field=models.CharField(
+                max_length=20,
+                unique=True,
+            ),
+        ),
+
+        migrations.AlterField(
+            model_name="bankaccount",
+            name="client",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="bank_accounts",
+                to="clients.client",
+            ),
+        ),
+
+        migrations.AlterField(
+            model_name="bankaccount",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("active", "Active"),
+                    ("frozen", "Frozen"),
+                    ("closed", "Closed"),
+                ],
+                default="active",
+                max_length=10,
+            ),
+        ),
+    ]

@@ -70,7 +70,7 @@ def get_activity_details(entry):
     }
 
 
-@role_required("admin", "loan_officer", "staff")
+@role_required("staff")
 def role_dashboard(request):
     role = request.user.role.name
 

@@ -1,8 +1,7 @@
-
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}Staff Dashboard - Bayan Bank{% endblock %}
+{% block title %}Banking Dashboard - Bayan Bank{% endblock %}
 
 {% block content %}
 
@@ -126,15 +125,6 @@
     font-size: 11px;
   }
 
-  /* SECTION HEADINGS */
-
-  .staff-dashboard .section-title {
-    margin-bottom: 14px;
-    color: var(--bank-teal);
-    font-size: 17px;
-    font-weight: 800;
-  }
-
   /* PANELS */
 
   .staff-dashboard .dashboard-panel {
@@ -169,70 +159,10 @@
     text-decoration: underline;
   }
 
-  /* QUICK ACTIONS */
-
-  .staff-dashboard .dashboard-action {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 150px;
-    padding: 19px;
-    border: 1px solid var(--bank-border);
-    border-radius: 18px;
-    background: var(--bank-card);
-    color: var(--bank-text);
-    text-decoration: none;
-    transition: transform .18s ease, border-color .18s ease;
-  }
-
-  .staff-dashboard .dashboard-action:hover {
-    transform: translateY(-3px);
-    border-color: var(--bank-blue);
-    color: var(--bank-text);
-  }
-
-  .staff-dashboard .action-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    margin-bottom: 13px;
-    border-radius: 13px;
-    background: #E6EEF7;
-    color: var(--bank-blue);
-    font-size: 20px;
-  }
-
-  .staff-dashboard .action-icon.yellow {
-    background: #FFF0C2;
-    color: #A87900;
-  }
-
-  .staff-dashboard .action-icon.red {
-    background: #FCE5E1;
-    color: var(--bank-red);
-  }
-
-  .staff-dashboard .action-icon.teal {
-    background: #DCECEF;
-    color: var(--bank-teal);
-  }
-
-  .staff-dashboard .dashboard-action strong {
-    color: var(--bank-teal);
-    font-size: 13px;
-  }
-
-  .staff-dashboard .dashboard-action .small {
-    color: var(--bank-muted);
-    font-size: 11px;
-    line-height: 1.5;
-  }
-
   /* TABLES */
 
   .staff-dashboard .table {
+    margin-bottom: 0;
     color: var(--bank-text);
     --bs-table-bg: transparent;
     --bs-table-hover-bg: rgba(0, 72, 92, .035);
@@ -318,19 +248,26 @@
     font-size: 11px;
   }
 
-  /* BUTTONS */
-
-  .staff-dashboard .btn-dark {
-    border: 0;
-    border-radius: 30px;
-    background: var(--bank-teal);
-    color: white;
-    font-size: 11px;
-    font-weight: 700;
+  .staff-dashboard .dashboard-empty {
+    padding: 28px 20px;
+    color: var(--bank-muted);
+    text-align: center;
+    font-size: 12px;
   }
 
-  .staff-dashboard .btn-dark:hover {
-    background: #003746;
+  .staff-dashboard .dashboard-empty i {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1.8rem;
+  }
+
+  /* SECTION HEADINGS */
+
+  .staff-dashboard .dashboard-section-title {
+    margin-bottom: 14px;
+    color: var(--bank-teal);
+    font-size: 17px;
+    font-weight: 800;
   }
 
   /* RESPONSIVE */
@@ -351,33 +288,36 @@
     .staff-dashboard .panel-heading {
       padding: 15px;
     }
-
-    .staff-dashboard .dashboard-action {
-      min-height: 140px;
-    }
   }
 </style>
 
 <div class="staff-dashboard">
 
   <!-- DASHBOARD HEADING -->
+
   <div class="mb-4">
     {% if dashboard_role == "admin" %}
-      <h2 class="dashboard-heading mb-1">Bank Administration</h2>
+      <h2 class="dashboard-heading mb-1">
+        Bank Administration
+      </h2>
       <p class="dashboard-subtitle mb-0">
-        Manage clients, employees, loans, and banking operations.
+        Manage and monitor clients, loans, and banking activity.
       </p>
 
     {% elif dashboard_role == "loan_officer" %}
-      <h2 class="dashboard-heading mb-1">Loan Management</h2>
+      <h2 class="dashboard-heading mb-1">
+        Loan Management
+      </h2>
       <p class="dashboard-subtitle mb-0">
-        Review applications and monitor loan performance.
+        Review loan applications and monitor loan performance.
       </p>
 
     {% else %}
-      <h2 class="dashboard-heading mb-1">Staff Dashboard</h2>
+      <h2 class="dashboard-heading mb-1">
+        Staff Dashboard
+      </h2>
       <p class="dashboard-subtitle mb-0">
-        Daily banking operations and pending tasks.
+        Monitor daily banking operations and pending tasks.
       </p>
     {% endif %}
   </div>
@@ -386,16 +326,21 @@
   {% if dashboard_role == "admin" %}
 
   <!-- ADMIN STATISTICS -->
+
   <div class="row g-3 mb-4">
 
     <div class="col-md-3 col-6">
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Active Clients</span>
-          <span class="stat-icon blue"><i class="bi bi-people"></i></span>
+          <span class="stat-icon blue">
+            <i class="bi bi-people"></i>
+          </span>
         </div>
         <div class="value blue-text">{{ active_clients }}</div>
-        <div class="stat-note">{{ total_clients }} total registered</div>
+        <div class="stat-note">
+          {{ total_clients }} total registered
+        </div>
       </div>
     </div>
 
@@ -403,7 +348,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Pending Verification</span>
-          <span class="stat-icon yellow"><i class="bi bi-hourglass-split"></i></span>
+          <span class="stat-icon yellow">
+            <i class="bi bi-hourglass-split"></i>
+          </span>
         </div>
         <div class="value yellow-text">{{ pending_clients }}</div>
         <div class="stat-note">Awaiting staff review</div>
@@ -414,7 +361,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Active Loans</span>
-          <span class="stat-icon teal"><i class="bi bi-credit-card"></i></span>
+          <span class="stat-icon teal">
+            <i class="bi bi-credit-card"></i>
+          </span>
         </div>
         <div class="value teal-text">{{ active_count }}</div>
         <div class="stat-note">Currently active loans</div>
@@ -425,7 +374,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Pending Loan Applications</span>
-          <span class="stat-icon red"><i class="bi bi-file-earmark-text"></i></span>
+          <span class="stat-icon red">
+            <i class="bi bi-file-earmark-text"></i>
+          </span>
         </div>
         <div class="value red-text">{{ pending_count }}</div>
         <div class="stat-note">Awaiting loan officer review</div>
@@ -434,62 +385,20 @@
 
   </div>
 
-  <!-- ADMINISTRATION TOOLS -->
-  <h5 class="section-title">Administration Tools</h5>
+  <!-- ADMIN RECENT ACTIVITY -->
 
-  <div class="row g-3 mb-4">
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'admin:index' %}" class="dashboard-action">
-        <div class="action-icon blue"><i class="bi bi-people"></i></div>
-        <strong>User and Role Management</strong>
-        <div class="small mt-1">
-          Manage employees, users, and permissions.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'staff_clients' %}" class="dashboard-action">
-        <div class="action-icon yellow"><i class="bi bi-person-vcard"></i></div>
-        <strong>Client Management</strong>
-        <div class="small mt-1">
-          View client records and accounts.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'staff_loans' %}" class="dashboard-action">
-        <div class="action-icon red"><i class="bi bi-file-earmark-text"></i></div>
-        <strong>Loan Oversight</strong>
-        <div class="small mt-1">
-          Monitor applications and loan statuses.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'bank_transactions' %}" class="dashboard-action">
-        <div class="action-icon teal"><i class="bi bi-graph-up"></i></div>
-        <strong>Banking Records</strong>
-        <div class="small mt-1">
-          Review recorded banking transactions.
-        </div>
-      </a>
-    </div>
-
-  </div>
-
-  <!-- RECENT BANKING ACTIVITY -->
   <div class="dashboard-panel">
+
     <div class="panel-heading">
       <span>Recent Banking Activity</span>
-      <span class="small text-muted fw-normal">Latest 8 transactions</span>
+      <span class="small text-muted fw-normal">
+        Latest transactions
+      </span>
     </div>
 
     <div class="table-responsive">
-      <table class="table table-hover mb-0">
+      <table class="table table-hover align-middle">
+
         <thead>
           <tr>
             <th>Date</th>
@@ -510,22 +419,26 @@
                 {{ entry.created_at|date:"H:i" }}
               </small>
             </td>
-            <td class="fw-semibold">{{ entry.customer }}</td>
+
+            <td>{{ entry.customer }}</td>
             <td>{{ entry.account }}</td>
             <td>{{ entry.activity }}</td>
             <td>{{ entry.processed_by }}</td>
-            <td class="text-end fw-semibold">
+
+            <td class="text-end fw-semibold text-nowrap">
               ₱{{ entry.amount|floatformat:2|intcomma }}
             </td>
           </tr>
+
           {% empty %}
           <tr>
-            <td colspan="6" class="text-center text-muted py-4">
+            <td colspan="6" class="dashboard-empty">
               No recent banking activity recorded.
             </td>
           </tr>
           {% endfor %}
         </tbody>
+
       </table>
     </div>
   </div>
@@ -534,13 +447,16 @@
   {% elif dashboard_role == "loan_officer" %}
 
   <!-- LOAN OFFICER STATISTICS -->
+
   <div class="row g-3 mb-4">
 
     <div class="col-md-3 col-6">
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Awaiting Review</span>
-          <span class="stat-icon yellow"><i class="bi bi-hourglass-split"></i></span>
+          <span class="stat-icon yellow">
+            <i class="bi bi-hourglass-split"></i>
+          </span>
         </div>
         <div class="value yellow-text">{{ pending_count }}</div>
       </div>
@@ -550,7 +466,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Approved / Awaiting Release</span>
-          <span class="stat-icon blue"><i class="bi bi-check-circle"></i></span>
+          <span class="stat-icon blue">
+            <i class="bi bi-check-circle"></i>
+          </span>
         </div>
         <div class="value blue-text">{{ approved_count }}</div>
       </div>
@@ -560,7 +478,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Active Loans</span>
-          <span class="stat-icon teal"><i class="bi bi-credit-card"></i></span>
+          <span class="stat-icon teal">
+            <i class="bi bi-credit-card"></i>
+          </span>
         </div>
         <div class="value teal-text">{{ active_count }}</div>
       </div>
@@ -570,7 +490,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Defaulted Loans</span>
-          <span class="stat-icon red"><i class="bi bi-exclamation-circle"></i></span>
+          <span class="stat-icon red">
+            <i class="bi bi-exclamation-circle"></i>
+          </span>
         </div>
         <div class="value red-text">{{ defaulted_count }}</div>
       </div>
@@ -578,15 +500,18 @@
 
   </div>
 
-  <!-- APPLICATION REVIEW QUEUE -->
+  <!-- LOAN OFFICER REVIEW QUEUE -->
+
   <div class="dashboard-panel mb-4">
+
     <div class="panel-heading">
       <span>Application Review Queue</span>
       <a href="{% url 'staff_loans' %}">View All</a>
     </div>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle">
+
         <thead>
           <tr>
             <th>Applicant</th>
@@ -602,69 +527,42 @@
           <tr>
             <td>{{ loan.client }}</td>
             <td>{{ loan.product.name }}</td>
-            <td>₱{{ loan.principal|floatformat:2|intcomma }}</td>
+            <td class="text-nowrap">
+              ₱{{ loan.principal|floatformat:2|intcomma }}
+            </td>
             <td>{{ loan.applied_at|date:"M d, Y" }}</td>
             <td>
-              <a href="{% url 'staff_loan' loan.pk %}" class="btn btn-sm btn-dark">
+              <a href="{% url 'staff_loan' loan.pk %}"
+                 class="btn btn-sm btn-dark">
                 Review
               </a>
             </td>
           </tr>
+
           {% empty %}
           <tr>
-            <td colspan="5" class="text-center text-muted py-4">
+            <td colspan="5" class="dashboard-empty">
               No applications awaiting review.
             </td>
           </tr>
           {% endfor %}
         </tbody>
+
       </table>
     </div>
   </div>
 
-  <!-- LOAN MANAGEMENT TOOLS -->
-  <h5 class="section-title">Loan Management Tools</h5>
+  <!-- RECENT LOAN APPLICATIONS -->
 
-  <div class="row g-3 mb-4">
-
-    <div class="col-md-4">
-      <a href="{% url 'staff_loans' %}" class="dashboard-action">
-        <div class="action-icon blue"><i class="bi bi-file-earmark-text"></i></div>
-        <strong>Loan Portfolio</strong>
-        <div class="small mt-1">
-          View pending, approved, active, and paid loans.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-4">
-      <a href="{% url 'staff_payments' %}" class="dashboard-action">
-        <div class="action-icon yellow"><i class="bi bi-calendar-check"></i></div>
-        <strong>Repayment Monitoring</strong>
-        <div class="small mt-1">
-          Review payments and installment records.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-4">
-      <a href="{% url 'notification_list' %}" class="dashboard-action">
-        <div class="action-icon red"><i class="bi bi-bell"></i></div>
-        <strong>Notifications</strong>
-        <div class="small mt-1">
-          View loan-related updates.
-        </div>
-      </a>
-    </div>
-
-  </div>
-
-  <!-- RECENT LOANS -->
   <div class="dashboard-panel">
-    <div class="panel-heading">Recent Loan Applications</div>
+
+    <div class="panel-heading">
+      <span>Recent Loan Applications</span>
+    </div>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle">
+
         <thead>
           <tr>
             <th>Applicant</th>
@@ -682,22 +580,27 @@
                 {{ loan.client }}
               </a>
             </td>
+
             <td>{{ loan.product.name }}</td>
+
             <td>
               <span class="badge status-pending">
                 {{ loan.get_status_display }}
               </span>
             </td>
+
             <td>{{ loan.applied_at|date:"M d, Y" }}</td>
           </tr>
+
           {% empty %}
           <tr>
-            <td colspan="4" class="text-center text-muted py-4">
+            <td colspan="4" class="dashboard-empty">
               No loan applications found.
             </td>
           </tr>
           {% endfor %}
         </tbody>
+
       </table>
     </div>
   </div>
@@ -706,13 +609,16 @@
   {% else %}
 
   <!-- STAFF STATISTICS -->
+
   <div class="row g-3 mb-4">
 
     <div class="col-md-3 col-6">
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Pending Verification</span>
-          <span class="stat-icon yellow"><i class="bi bi-hourglass-split"></i></span>
+          <span class="stat-icon yellow">
+            <i class="bi bi-hourglass-split"></i>
+          </span>
         </div>
         <div class="value yellow-text">{{ pending_clients }}</div>
       </div>
@@ -722,7 +628,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Loans Awaiting Release</span>
-          <span class="stat-icon red"><i class="bi bi-bank"></i></span>
+          <span class="stat-icon red">
+            <i class="bi bi-bank"></i>
+          </span>
         </div>
         <div class="value red-text">{{ approved_for_release }}</div>
       </div>
@@ -732,7 +640,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Active Savings Accounts</span>
-          <span class="stat-icon blue"><i class="bi bi-piggy-bank"></i></span>
+          <span class="stat-icon blue">
+            <i class="bi bi-piggy-bank"></i>
+          </span>
         </div>
         <div class="value blue-text">{{ savings_count }}</div>
       </div>
@@ -742,7 +652,9 @@
       <div class="dashboard-stat">
         <div class="stat-top">
           <span class="stat-label">Active Loans</span>
-          <span class="stat-icon teal"><i class="bi bi-credit-card"></i></span>
+          <span class="stat-icon teal">
+            <i class="bi bi-credit-card"></i>
+          </span>
         </div>
         <div class="value teal-text">{{ active_count }}</div>
       </div>
@@ -750,110 +662,98 @@
 
   </div>
 
-  <!-- STAFF OPERATIONS -->
-  <h5 class="section-title">Quick Operations</h5>
+  <!-- STAFF PENDING TASKS -->
 
-  <div class="row g-3 mb-4">
+  <h5 class="dashboard-section-title">
+    Pending Tasks
+  </h5>
 
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'staff_clients' %}" class="dashboard-action">
-        <div class="action-icon yellow"><i class="bi bi-person-vcard"></i></div>
-        <strong>Verify Clients</strong>
-        <div class="small mt-1">
-          Review client information.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'bank_transactions' %}" class="dashboard-action">
-        <div class="action-icon blue"><i class="bi bi-cash-stack"></i></div>
-        <strong>Deposits & Withdrawals</strong>
-        <div class="small mt-1">
-          Process regular bank transactions.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'staff_loans' %}" class="dashboard-action">
-        <div class="action-icon red"><i class="bi bi-bank"></i></div>
-        <strong>Loan Releases</strong>
-        <div class="small mt-1">
-          Review and release approved loans.
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <a href="{% url 'staff_savings' %}" class="dashboard-action">
-        <div class="action-icon teal"><i class="bi bi-piggy-bank"></i></div>
-        <strong>Savings Operations</strong>
-        <div class="small mt-1">
-          Manage savings transactions.
-        </div>
-      </a>
-    </div>
-
-  </div>
-
-  <!-- STAFF TASK QUEUES -->
   <div class="row g-3">
 
+    <!-- PENDING CLIENT VERIFICATION -->
+
     <div class="col-lg-6">
-      <div class="dashboard-panel">
+      <div class="dashboard-panel h-100">
+
         <div class="panel-heading">
-          <span>Pending Client Verification</span>
-          <span class="stat-icon yellow"><i class="bi bi-person-check"></i></span>
+          <span>
+            <i class="bi bi-person-check me-2"></i>
+            Pending Client Verification
+          </span>
         </div>
 
         <div class="list-group list-group-flush">
-          {% for client in pending_verifications %}
-          <a
-            href="{% url 'staff_client_detail' client.pk %}"
-            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
 
-            <span>{{ client }}</span>
-            <span class="badge status-pending">Pending</span>
+          {% for client in pending_verifications %}
+
+          <a href="{% url 'staff_client_detail' client.pk %}"
+             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3">
+
+            <span class="fw-semibold">
+              {{ client }}
+            </span>
+
+            <span class="badge status-pending">
+              Pending
+            </span>
           </a>
+
           {% empty %}
-          <div class="p-4 text-muted text-center">
+
+          <div class="dashboard-empty">
+            <i class="bi bi-check-circle text-success"></i>
             No pending client verifications.
           </div>
+
           {% endfor %}
+
         </div>
       </div>
     </div>
 
+    <!-- LOANS AWAITING RELEASE -->
+
     <div class="col-lg-6">
-      <div class="dashboard-panel">
+      <div class="dashboard-panel h-100">
+
         <div class="panel-heading">
-          <span>Loans Awaiting Release</span>
-          <span class="stat-icon red"><i class="bi bi-bank"></i></span>
+          <span>
+            <i class="bi bi-cash-coin me-2"></i>
+            Loans Awaiting Release
+          </span>
         </div>
 
         <div class="list-group list-group-flush">
+
           {% for loan in release_queue %}
-          <a
-            href="{% url 'staff_loan' loan.pk %}"
-            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+
+          <a href="{% url 'staff_loan' loan.pk %}"
+             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3">
 
             <span>
-              {{ loan.client }}
+              <strong class="d-block">
+                {{ loan.client }}
+              </strong>
+
               <small class="d-block text-muted">
                 {{ loan.product.name }}
               </small>
             </span>
 
-            <span class="fw-semibold">
+            <span class="fw-semibold text-nowrap">
               ₱{{ loan.principal|floatformat:2|intcomma }}
             </span>
           </a>
+
           {% empty %}
-          <div class="p-4 text-muted text-center">
+
+          <div class="dashboard-empty">
+            <i class="bi bi-check-circle text-success"></i>
             No loans awaiting release.
           </div>
+
           {% endfor %}
+
         </div>
       </div>
     </div>

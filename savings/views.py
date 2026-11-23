@@ -20,7 +20,7 @@ from .models import (
 
 
 STAFF_VIEWERS = ("admin", "staff", "loan_officer")
-CASHIERS = ("admin", "staff")
+CASHIERS = ("staff",)
 
 
 def _is_cashier(user):
@@ -46,7 +46,7 @@ def portal_savings(request):
     )
 
     bank_account = BankAccount.objects.filter(
-        client=request.client
+        client=request.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     deposits = list(
@@ -143,11 +143,11 @@ def portal_open_account(request):
 @require_POST
 def portal_transfer(request):
     bank_account = BankAccount.objects.filter(
-        client=request.client
+        client=request.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     savings_account = SavingsAccount.objects.filter(
-        client=request.client
+        client=request.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     if bank_account is None:
@@ -272,7 +272,7 @@ def staff_account(request, account_id):
     )
 
     bank_account = BankAccount.objects.filter(
-        client=account.client
+        client=account.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     deposits = list(
@@ -344,7 +344,7 @@ def staff_deposit(request, account_id):
     )
 
     bank_account = BankAccount.objects.filter(
-        client=savings_account.client
+        client=savings_account.client, status=BankAccount.Status.ACTIVE
     ).first()
 
     if bank_account is None:

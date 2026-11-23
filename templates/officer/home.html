@@ -1,343 +1,126 @@
 
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}Loan Officer Dashboard - Bayan Bank{% endblock %}
 
 {% block content %}
 
-<style>
-  :root {
-    --bank-teal: #00485C;
-    --bank-yellow: #FDBE1A;
-    --bank-red: #E8503A;
-    --bank-blue: #2463A6;
-    --bank-cream: #F7F0E5;
-    --bank-card: #FFF9F0;
-    --bank-text: #172B32;
-    --bank-muted: #7A8590;
-    --bank-border: #E9E0D3;
-  }
-
-  .officer-dashboard {
-    color: var(--bank-text);
-  }
-
-  .officer-dashboard .dashboard-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-
-  .officer-dashboard .dashboard-heading h3 {
-    margin: 0 0 5px;
-    color: var(--bank-teal);
-    font-size: 25px;
-    font-weight: 800;
-  }
-
-  .officer-dashboard .dashboard-heading p {
-    margin: 0;
-    color: var(--bank-muted);
-    font-size: 13px;
-  }
-
-  .officer-dashboard .icon-circle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    font-size: 18px;
-  }
-
-  /* RED, BLUE AND YELLOW ACCENTS */
-
-  .officer-dashboard .icon-circle.red {
-    background: var(--bank-red);
-    color: #fff;
-  }
-
-  .officer-dashboard .icon-circle.blue {
-    background: var(--bank-blue);
-    color: #fff;
-  }
-
-  .officer-dashboard .icon-circle.yellow {
-    background: var(--bank-yellow);
-    color: var(--bank-teal);
-  }
-
-  .officer-dashboard .icon-circle.teal {
-    background: var(--bank-teal);
-    color: #fff;
-  }
-
-  /* Statistics */
-
-  .officer-dashboard .stat-card {
-    height: 100%;
-    overflow: hidden;
-    border: 1px solid var(--bank-border);
-    border-radius: 22px;
-    background: var(--bank-card);
-    box-shadow: 0 6px 20px rgba(23, 43, 50, 0.04);
-    transition: transform .2s ease, box-shadow .2s ease;
-  }
-
-  .officer-dashboard .stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(23, 43, 50, 0.08);
-  }
-
-  .officer-dashboard .stat-card .card-body {
-    display: flex;
-    align-items: center;
-    gap: 17px;
-    padding: 24px;
-  }
-
-  .officer-dashboard .stat-card .stat-value {
-    margin-bottom: 4px;
-    font-size: 30px;
-    font-weight: 800;
-    line-height: 1.2;
-  }
-
-  .officer-dashboard .stat-card .stat-label {
-    color: var(--bank-muted);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .officer-dashboard .stat-value.blue-text {
-    color: var(--bank-blue);
-  }
-
-  .officer-dashboard .stat-value.yellow-text {
-    color: #B78300;
-  }
-
-  .officer-dashboard .stat-value.red-text {
-    color: var(--bank-red);
-  }
-
-  /* Quick Actions */
-
-  .officer-dashboard .section-title {
-    margin-bottom: 14px;
-    color: var(--bank-teal);
-    font-size: 17px;
-    font-weight: 800;
-  }
-
-  .officer-dashboard .quick-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .officer-dashboard .quick-actions-grid a {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
-    padding: 19px;
-    border: 1px solid var(--bank-border);
-    border-radius: 20px;
-    background: var(--bank-card);
-    color: var(--bank-teal);
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    box-shadow: 0 5px 18px rgba(23, 43, 50, 0.04);
-    transition: transform .18s ease, border-color .18s ease;
-  }
-
-  .officer-dashboard .quick-actions-grid a:hover {
-    transform: translateY(-2px);
-    border-color: var(--bank-blue);
-  }
-
-  /* Recent Activity */
-
-  .officer-dashboard .activity-card {
-    margin-top: 26px;
-    border: 1px solid var(--bank-border);
-    border-radius: 22px;
-    background: var(--bank-card);
-    box-shadow: 0 6px 20px rgba(23, 43, 50, 0.04);
-  }
-
-  .officer-dashboard .activity-card .card-body {
-    padding: 24px;
-  }
-
-  .officer-dashboard .activity-card h5 {
-    margin-bottom: 16px;
-    color: var(--bank-teal);
-    font-size: 17px;
-    font-weight: 800;
-  }
-
-  .officer-dashboard .transaction-row {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    padding: 15px 0;
-    border-top: 1px solid var(--bank-border);
-  }
-
-  .officer-dashboard .transaction-title {
-    color: var(--bank-text);
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .officer-dashboard .transaction-date {
-    display: block;
-    margin-top: 4px;
-    color: var(--bank-muted);
-    font-size: 11px;
-  }
-
-  @media (max-width: 575.98px) {
-    .officer-dashboard .dashboard-heading h3 {
-      font-size: 21px;
-    }
-
-    .officer-dashboard .quick-actions-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .officer-dashboard .stat-card .card-body {
-      padding: 19px;
-    }
-  }
-</style>
-
-<div class="officer-dashboard">
-
-  <!-- Dashboard Heading -->
-  <div class="dashboard-heading">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h3>Loan Officer Dashboard</h3>
-      <p>Tuesday, November 18, 2026</p>
+        <h3 class="mb-1">Loan Officer Dashboard</h3>
+        <p class="text-muted mb-0">
+            {% now "l, F d, Y" %}
+        </p>
     </div>
 
-    <span class="icon-circle blue">
-      <i class="bi bi-clipboard2-check" aria-hidden="true"></i>
+    <span class="icon-circle red">
+        <i class="bi bi-clipboard2-check" aria-hidden="true"></i>
     </span>
-  </div>
-
-  <!-- Statistics -->
-  <div class="row g-3 mb-4 dashboard-stats">
-
-    <div class="col-md-4">
-      <div class="card stat-card">
-        <div class="card-body">
-          <span class="icon-circle yellow">
-            <i class="bi bi-hourglass-split"></i>
-          </span>
-          <div>
-            <div class="stat-value yellow-text">14</div>
-            <div class="stat-label">Pending Applications</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card stat-card">
-        <div class="card-body">
-          <span class="icon-circle blue">
-            <i class="bi bi-check2-circle"></i>
-          </span>
-          <div>
-            <div class="stat-value blue-text">32</div>
-            <div class="stat-label">Approved This Month</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card stat-card">
-        <div class="card-body">
-          <span class="icon-circle red">
-            <i class="bi bi-credit-card"></i>
-          </span>
-          <div>
-            <div class="stat-value red-text">186</div>
-            <div class="stat-label">Active Loans</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Quick Actions -->
-  <section class="mb-4">
-    <h5 class="section-title">Quick Actions</h5>
-
-    <div class="quick-actions-grid">
-
-      <a href="{% url 'loan_applications' %}">
-        <span class="icon-circle blue">
-          <i class="bi bi-clipboard2-check"></i>
-        </span>
-        Review Applications
-      </a>
-
-      <a href="{% url 'officer_loans' %}">
-        <span class="icon-circle yellow">
-          <i class="bi bi-credit-card"></i>
-        </span>
-        View Loan Portfolio
-      </a>
-
-    </div>
-  </section>
-
-  <!-- Recent Activity -->
-  <section class="card activity-card">
-    <div class="card-body">
-
-      <h5>Recent Activity</h5>
-
-      <div class="transaction-row">
-        <span class="icon-circle blue">
-          <i class="bi bi-check2"></i>
-        </span>
-
-        <span>
-          <span class="transaction-title d-block">
-            APP-2026-1182 approved
-          </span>
-          <span class="transaction-date">Today · 9:55 AM</span>
-        </span>
-      </div>
-
-      <div class="transaction-row">
-        <span class="icon-circle yellow">
-          <i class="bi bi-file-earmark-plus"></i>
-        </span>
-
-        <span>
-          <span class="transaction-title d-block">
-            New application from Liza Navarro
-          </span>
-          <span class="transaction-date">Today · 9:20 AM</span>
-        </span>
-      </div>
-
-    </div>
-  </section>
-
 </div>
+
+<section class="card mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-start gap-3">
+            <span class="icon-circle blue flex-shrink-0">
+                <i class="bi bi-shield-check" aria-hidden="true"></i>
+            </span>
+
+            <div>
+                <h5 class="mb-2">Loan Review and Approval</h5>
+
+                <p class="text-muted mb-0">
+                    Review loan applications, evaluate applicant
+                    eligibility, and approve or reject applications
+                    according to Bayan Bank's lending rules.
+                    Use the Applications section in the sidebar
+                    to manage pending reviews.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="icon-circle yellow">
+                        <i class="bi bi-clipboard2-check"
+                           aria-hidden="true"></i>
+                    </span>
+
+                    <h5 class="mb-0">Application Review</h5>
+                </div>
+
+                <p class="text-muted mb-0">
+                    Assess loan applications using the configured
+                    income, savings, credit score, and age
+                    requirements.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="icon-circle green">
+                        <i class="bi bi-credit-card"
+                           aria-hidden="true"></i>
+                    </span>
+
+                    <h5 class="mb-0">Loan Monitoring</h5>
+                </div>
+
+                <p class="text-muted mb-0">
+                    Monitor loan status and review the existing
+                    loan portfolio through the Loans section
+                    in the sidebar.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-body p-4">
+        <h5 class="mb-3">Separation of Duties</h5>
+
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <span class="icon-circle green flex-shrink-0">
+                <i class="bi bi-check-circle" aria-hidden="true"></i>
+            </span>
+
+            <div>
+                <strong>Loan Officer Responsibilities</strong>
+                <p class="text-muted mb-0">
+                    Review applications, assess eligibility,
+                    and approve or reject loan requests.
+                </p>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="d-flex align-items-start gap-3">
+            <span class="icon-circle red flex-shrink-0">
+                <i class="bi bi-shield-lock" aria-hidden="true"></i>
+            </span>
+
+            <div>
+                <strong>Financial Transaction Restrictions</strong>
+                <p class="text-muted mb-0">
+                    Loan disbursement and payment processing
+                    are handled by authorized Staff.
+                    Loan Officers do not independently release
+                    loan funds.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
 
 {% endblock %}

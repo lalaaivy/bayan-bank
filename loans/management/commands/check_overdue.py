@@ -1,24 +1,35 @@
 
-from django.core.management.base import BaseCommand
+from datetime import date
 
-from loans.overdue import process_overdue_installments
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Check overdue loan installments and notify borrowers."
+    help = (
+        "Check overdue installments, apply penalties, "
+        "and notify borrowers using the central "
+        "overdue processing command."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--date",
+            type=date.fromisoformat,
+            default=None,
+            help="Processing date in YYYY-MM-DD format.",
+        )
 
     def handle(self, *args, **options):
-        processed_count = process_overdue_installments()
+        command_options = {
+            "stdout": self.stdout,
+            "stderr": self.stderr,
+        }
 
-        if processed_count:
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Processed {processed_count} newly overdue installment(s)."
-                )
-            )
-        else:
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "No newly overdue installments found."
-                )
-            )
+        if options["date"] is not None:
+            command_options["date"] = options["date"]
+
+        call_command(
+            "process_overdue_loans",
+            **command_options,
+        )

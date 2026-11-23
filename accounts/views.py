@@ -45,6 +45,7 @@ from loans.models import (
     Installment,
     Loan,
     LoanAgreement,
+    LoanDocument,
     LoanPayment,
     LoanProduct,
     LoanRule,
@@ -83,7 +84,7 @@ def portal_home(request):
     client = request.client
 
     bank_account = BankAccount.objects.filter(
-        client=client
+        client=client, status=BankAccount.Status.ACTIVE
     ).first()
 
     bank_balance = (
@@ -93,7 +94,7 @@ def portal_home(request):
     )
 
     savings_account = SavingsAccount.objects.filter(
-        client=client
+        client=client, status=BankAccount.Status.ACTIVE
     ).first()
 
     accounts = SavingsAccount.objects.filter(
@@ -188,7 +189,7 @@ def staff_home(request):
     return render(request, "staff/home.html", context)
 
 
-@role_required("loan_officer", "admin")
+@role_required("loan_officer")
 def officer_home(request):
     return render(request, "officer/home.html")
 
@@ -393,12 +394,21 @@ def notifications(request):
     return render(request, "portal/notifications.html", context)
 
 
-@role_required("client")
+@client_required
 def apply_loan(request):
-    return _demo_form(
+    """Display the real loan application form; submit via loans.portal_apply."""
+    if request.method == "POST":
+        messages.error(request, "Please submit the loan application form again.")
+        return redirect("apply_loan")
+
+    return render(
         request,
         "portal/apply_loan.html",
-        "apply_loan",
+        {
+            "products": LoanProduct.objects.filter(is_active=True).order_by("name"),
+            "document_types": LoanDocument.DocumentType.choices,
+            "client": request.client,
+        },
     )
 
 
@@ -632,7 +642,7 @@ def staff_client_detail(request, client_id):
     )
 
     bank_account = BankAccount.objects.filter(
-        client=client
+        client=client, status=BankAccount.Status.ACTIVE
     ).first()
 
     savings_accounts = (
@@ -674,15 +684,6 @@ def staff_client_detail(request, client_id):
         request,
         "staff/client_detail.html",
         context,
-    )
-
-
-@role_required("staff", "admin")
-def staff_payments(request):
-    return _demo_form(
-        request,
-        "staff/payments.html",
-        "staff_receipt",
     )
 
 
@@ -810,7 +811,8 @@ def verify_client_detail(request, client_id):
 
                     if approved:
                         bank_account = BankAccount.objects.filter(
-                            client=locked_client
+                            client=locked_client,
+                            status__in=[BankAccount.Status.ACTIVE, BankAccount.Status.FROZEN],
                         ).first()
 
                         if bank_account is None:

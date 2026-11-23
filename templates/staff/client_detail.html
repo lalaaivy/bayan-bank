@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Client Profile - Bayan Bank{% endblock %}
@@ -690,6 +689,24 @@
 
                 </div>
 
+                <!-- Other Credit Score Reason -->
+                <div class="mt-4"
+                     id="other-credit-reason-wrapper"
+                     style="display: none;">
+
+                    <label for="{{ credit_score_form.other_reason.id_for_label }}"
+                           class="form-label">
+                        {{ credit_score_form.other_reason.label }}
+                    </label>
+
+                    {{ credit_score_form.other_reason }}
+
+                    {% for error in credit_score_form.other_reason.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+
+                </div>
+
                 <div class="mt-4">
                     <button type="submit" class="btn btn-bank">
                         Update Credit Score
@@ -928,4 +945,39 @@
     </div>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const reasonSelect = document.getElementById(
+        "{{ credit_score_form.reason.id_for_label }}"
+    );
+
+    const otherWrapper = document.getElementById(
+        "other-credit-reason-wrapper"
+    );
+
+    const otherInput = document.getElementById(
+        "{{ credit_score_form.other_reason.id_for_label }}"
+    );
+
+    if (!reasonSelect || !otherWrapper || !otherInput) {
+        return;
+    }
+
+    function toggleOtherReason() {
+        const isOther = reasonSelect.value === "Other";
+
+        otherWrapper.style.display = isOther ? "block" : "none";
+        otherInput.required = isOther;
+
+        if (!isOther) {
+            otherInput.value = "";
+        }
+    }
+
+    reasonSelect.addEventListener("change", toggleOtherReason);
+    toggleOtherReason();
+});
+</script>
+
 {% endblock %}
