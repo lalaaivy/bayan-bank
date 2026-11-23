@@ -172,16 +172,13 @@ def _calculate_interest(amount, annual_rate, term_months):
 
 
 def _is_authorized_staff(user):
-    if not user or not user.is_authenticated:
+    if not user or not user.is_authenticated or not user.is_active:
         return False
 
-    if getattr(user, "is_superuser", False):
-        return True
-
     role = getattr(user, "role", None)
-    role_name = getattr(role, "name", "").lower()
+    role_name = str(getattr(role, "name", "") or "").lower()
 
-    return role_name in ("admin", "staff")
+    return role_name == "staff"
 
 
 @transaction.atomic
@@ -538,7 +535,7 @@ def release_matured_deposit(deposit_id, by):
 
     bank_account = (
         BankAccount.objects.select_for_update()
-        .filter(client_id=client_id)
+        .filter(client_id=client_id, status=BankAccount.Status.ACTIVE)
         .first()
     )
 
@@ -677,7 +674,7 @@ def review_early_withdrawal_request(
 
         bank_account = (
             BankAccount.objects.select_for_update()
-            .filter(client_id=client_id)
+            .filter(client_id=client_id, status=BankAccount.Status.ACTIVE)
             .first()
         )
 

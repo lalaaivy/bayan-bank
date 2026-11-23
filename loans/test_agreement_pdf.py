@@ -1,9 +1,9 @@
-
 from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from cryptography.fernet import Fernet
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import Role
@@ -12,6 +12,7 @@ from loans.agreement_pdf import generate_agreement_pdf
 from loans.models import Loan, LoanAgreement, LoanProduct
 
 
+@override_settings(FIELD_KEY=Fernet.generate_key().decode())
 class LoanAgreementPDFTests(TestCase):
 
     @classmethod

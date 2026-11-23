@@ -27,9 +27,9 @@ from .models import (
 # PERMISSIONS AND DEFAULT ELIGIBILITY RULES
 # --------------------------------------------------
 
-DECIDERS = ("admin", "loan_officer")
-DISBURSERS = ("admin", "staff")
-PAYMENT_TAKERS = ("admin", "staff")
+DECIDERS = ("loan_officer",)
+DISBURSERS = ("staff",)
+PAYMENT_TAKERS = ("staff",)
 
 INTERNAL_NOTIFICATION_ROLES = (
     Role.ADMIN,
@@ -1157,7 +1157,7 @@ def make_online_payment(loan_id, amount, by):
     try:
         account = (
             BankAccount.objects.select_for_update()
-            .get(client_id=loan.client_id)
+            .get(client_id=loan.client_id, status=BankAccount.Status.ACTIVE)
         )
     except BankAccount.DoesNotExist:
         raise BankError(
