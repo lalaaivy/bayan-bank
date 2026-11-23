@@ -2,6 +2,87 @@
 {% block title %}Apply for a Loan - Bayan Bank{% endblock %}
 
 {% block content %}
+<style>
+  body.client-app {
+    background: #F1F2EE;
+  }
+
+  .client-main {
+    padding-top: 60px;
+  }
+
+  .client-page-heading h1 {
+    display: none;
+  }
+
+  .client-main h3 {
+    color: #12202B;
+  }
+
+  .client-main h3::after {
+    display: block;
+    width: 36px;
+    height: 1px;
+    margin-top: 8px;
+    background: #EEF0EC;
+    content: "";
+  }
+
+  .client-main .card {
+    border: 0;
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06) !important;
+  }
+
+  .client-main .card-body {
+    padding: 20px !important;
+  }
+
+  .client-main .btn {
+    border-radius: 999px;
+  }
+
+  .client-main .btn-dark,
+  .client-main .btn-primary {
+    border-color: #00485C;
+    background: #00485C;
+    color: #fff;
+  }
+
+  .client-main .btn-dark:hover,
+  .client-main .btn-primary:hover {
+    border-color: #00323F;
+    background: #00323F;
+    color: #fff;
+  }
+
+  .client-main .btn-outline-secondary,
+  .client-main .btn-outline-dark {
+    border-color: #00485C;
+    color: #00485C;
+  }
+
+  .client-main .btn-outline-secondary:hover,
+  .client-main .btn-outline-dark:hover {
+    border-color: #00323F;
+    background: #00323F;
+    color: #fff;
+  }
+
+  .client-main .form-control,
+  .client-main .form-select {
+    border: 1px solid #E1E5EC;
+    border-radius: 16px;
+  }
+
+  .client-main .form-control:focus,
+  .client-main .form-select:focus {
+    border-color: #00485C;
+    box-shadow: 0 0 0 0.22rem rgba(0, 72, 92, 0.12);
+  }
+</style>
+
 <h3 class="mb-4">Apply for a Loan</h3>
 <a href="{% url 'portal_home' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Dashboard</a>
 <div class="card shadow-sm">
