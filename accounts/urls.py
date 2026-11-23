@@ -107,7 +107,11 @@ urlpatterns = [
     path("staff/loans/release/confirm/", staff_only(views.confirm_loan_release), name="confirm_loan_release"),
 
     # Loan Officer: only Loan Officers may approve/reject
-    path("officer/applications/", views.loan_applications, name="loan_applications"),
+    path(
+    "officer/applications/",
+    loan_views.loan_applications,
+    name="loan_applications",
+    ),
     path(
         "officer/applications/<int:loan_id>/",
         restrict_post_to("loan_officer")(views.loan_application_detail),
