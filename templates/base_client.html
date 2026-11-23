@@ -149,99 +149,6 @@
             font-weight: 800;
         }
 
-        /* SIDEBAR USER AND LOGOUT */
-
-        .client-sidebar-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-
-            width: 100%;
-            margin-top: auto;
-            padding: 20px 6px 0;
-
-            border-top: 1px solid rgba(255, 249, 240, 0.18);
-        }
-
-        .client-sidebar-user-avatar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            width: 44px;
-            height: 44px;
-            flex: 0 0 44px;
-
-            border-radius: 50%;
-            background: #DCEBEF;
-            color: var(--teal);
-
-            font-size: 1rem;
-            font-weight: 800;
-        }
-
-        .client-sidebar-user-info {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
-            gap: 5px;
-
-            min-width: 0;
-        }
-
-        .client-sidebar-user-info strong {
-            overflow: hidden;
-
-            color: var(--cream-light);
-            font-size: 0.78rem;
-            font-weight: 800;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .client-sidebar-user-info span {
-            width: fit-content;
-            padding: 5px 12px;
-
-            border-radius: 30px;
-            background: var(--yellow);
-            color: var(--teal);
-
-            font-size: 0.7rem;
-            font-weight: 800;
-        }
-
-        .client-sidebar-user form {
-            margin: 0;
-        }
-
-        .client-sidebar-logout {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            width: 44px;
-            height: 44px;
-            flex-shrink: 0;
-
-            border: none;
-            border-radius: 14px;
-
-            background: rgba(253, 190, 26, 0.16);
-            color: var(--yellow);
-
-            font-size: 1.2rem;
-            cursor: pointer;
-
-            transition: background .2s ease, transform .2s ease;
-        }
-
-        .client-sidebar-logout:hover {
-            background: var(--yellow);
-            color: var(--teal);
-            transform: translateY(-2px);
-        }
-
         /* MAIN WORKSPACE */
 
         .client-workspace {
@@ -682,31 +589,6 @@
                     </li>
 
                 </ul>
-
-                <!-- SIDEBAR USER AND LOGOUT -->
-                {% if request.user.is_authenticated %}
-                <div class="client-sidebar-user">
-
-                    <span class="client-sidebar-user-avatar">
-                        {{ request.user.get_full_name|default:request.user.username|first|upper }}
-                    </span>
-
-                    <div class="client-sidebar-user-info">
-                        <strong>
-                            {{ request.user.get_full_name|default:request.user.username }}
-                        </strong>
-                        <span>Client</span>
-                    </div>
-
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="client-sidebar-logout" aria-label="Logout" title="Logout">
-                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-                        </button>
-                    </form>
-
-                </div>
-                {% endif %}
 
             </div>
         </nav>
