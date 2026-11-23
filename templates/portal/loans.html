@@ -1,6 +1,221 @@
 {% extends "base_client.html" %}
 {% block title %}My Loans - Bayan Bank{% endblock %}
 {% block content %}
+<style>
+    body.client-app {
+        background: #F1F2EE;
+    }
+
+    .client-main {
+        padding-top: 60px;
+    }
+
+    .client-page-heading h1 {
+        display: none;
+    }
+
+    .client-main > .container-fluid {
+        padding: 0 !important;
+    }
+
+    .client-main > .container-fluid > .d-flex.mb-4 {
+        margin-bottom: 18px !important;
+    }
+
+    .client-main > .container-fluid > .row.mb-4,
+    .client-main > .container-fluid > .card.mb-4 {
+        margin-bottom: 14px !important;
+    }
+
+    .client-main .row.g-2,
+    .client-main .row.g-3 {
+        --bs-gutter-x: 14px;
+        --bs-gutter-y: 14px;
+    }
+
+    .client-main .card {
+        border: 0;
+        border-radius: 28px !important;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06) !important;
+    }
+
+    .client-main .card-body:not(.p-0) {
+        padding: 20px !important;
+    }
+
+    .client-main .card-body.p-0 {
+        padding: 0 !important;
+    }
+
+    .client-main .card-header {
+        padding: 20px !important;
+        border: 0 !important;
+        border-bottom: 1px solid #EEF0EC !important;
+        background: #fff !important;
+    }
+
+    .client-main .border.rounded-3 {
+        border-color: #E1E5EC !important;
+        border-radius: 20px !important;
+        background: #F1F2EE;
+    }
+
+    .client-main .bg-light {
+        background: #F1F2EE !important;
+    }
+
+    .client-main .btn {
+        border-radius: 999px;
+    }
+
+    .client-main .btn-primary,
+    .client-main .btn-dark {
+        border-color: #00485C;
+        background: #00485C;
+        color: #fff;
+    }
+
+    .client-main .btn-primary:hover,
+    .client-main .btn-dark:hover {
+        border-color: #00323F;
+        background: #00323F;
+        color: #fff;
+    }
+
+    .client-main .btn-outline-primary {
+        border-color: #00485C;
+        color: #00485C;
+    }
+
+    .client-main .btn-outline-primary:hover {
+        border-color: #00485C;
+        background: #00485C;
+        color: #fff;
+    }
+
+    .client-main .btn-success {
+        border-color: #0A6B3C;
+        background: #0A6B3C;
+        color: #fff;
+    }
+
+    .client-main .btn-outline-success {
+        border-color: #0A6B3C;
+        color: #0A6B3C;
+    }
+
+    .client-main .btn-outline-success:hover {
+        border-color: #0A6B3C;
+        background: #0A6B3C;
+        color: #fff;
+    }
+
+    .client-main .btn-outline-danger {
+        border-color: #E8503A;
+        color: #E8503A;
+    }
+
+    .client-main .btn-outline-danger:hover {
+        border-color: #E8503A;
+        background: #E8503A;
+        color: #fff;
+    }
+
+    .client-main .form-control,
+    .client-main .form-select {
+        border: 1px solid #E1E5EC;
+        border-radius: 16px;
+    }
+
+    .client-main .form-control:focus,
+    .client-main .form-select:focus {
+        border-color: #00485C;
+        box-shadow: 0 0 0 0.22rem rgba(0, 72, 92, 0.12);
+    }
+
+    .client-main .table > :not(caption) > * > * {
+        border-right: 0;
+        border-left: 0;
+        border-bottom-color: #E1E5EC;
+    }
+
+    .client-main .table thead th {
+        background: #F1F2EE;
+        color: #7A8590;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .client-main .badge {
+        border-radius: 999px;
+    }
+
+    .client-main .badge.bg-primary {
+        background: rgba(0, 72, 92, 0.1) !important;
+        color: #00485C !important;
+    }
+
+    .client-main .badge.bg-success {
+        background: #DDEFE5 !important;
+        color: #0A6B3C !important;
+    }
+
+    .client-main .badge.bg-warning {
+        background: #FFF3CC !important;
+        color: #725400 !important;
+    }
+
+    .client-main .badge.bg-danger {
+        background: #FBE4DF !important;
+        color: #E8503A !important;
+    }
+
+    .client-main .badge.bg-secondary {
+        background: #F1F3F6 !important;
+        color: #596273 !important;
+    }
+
+    .client-main .text-primary {
+        color: #00485C !important;
+    }
+
+    .client-main .text-success {
+        color: #0A6B3C !important;
+    }
+
+    .client-main .text-danger {
+        color: #E8503A !important;
+    }
+
+    .client-main .alert {
+        border: 0;
+        border-radius: 18px;
+    }
+
+    .client-main .alert-info {
+        background: rgba(0, 72, 92, 0.08);
+        color: #00485C;
+    }
+
+    .client-main .alert-success {
+        background: #DDEFE5;
+        color: #0A6B3C;
+    }
+
+    .client-main .alert-warning {
+        background: #FFF3CC;
+        color: #725400;
+    }
+
+    .client-main .alert-danger {
+        background: #FBE4DF;
+        color: #E8503A;
+    }
+</style>
+
 <div class="container-fluid py-3">
     <!-- PAGE HEADER -->
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">

@@ -1,22 +1,115 @@
 
-{% extends "base.html" %}
+{% extends "base_client.html" %}
 {% load humanize %}
 
 {% block title %}Transfers - Bayan Bank{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h3 class="mb-1">Transfers & Transactions</h3>
-    <p class="text-muted mb-0">
-      Manage transfers and view your regular account activity.
-    </p>
-  </div>
-  <a href="{% url 'portal_home' %}"
-     class="btn btn-outline-secondary">
-    Dashboard
-  </a>
-</div>
+<style>
+  body {
+    background: #F1F2EE;
+  }
+
+  .client-main {
+    padding-top: 60px;
+  }
+
+  .client-main > .card {
+    border: 0;
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06) !important;
+  }
+
+  .client-main > .card.mb-4 {
+    margin-bottom: 14px !important;
+  }
+
+  .client-main > .card .card-body {
+    padding: 20px !important;
+  }
+
+  .client-main > .card .card-header {
+    padding: 20px;
+    border: 0;
+    border-bottom: 1px solid rgba(253, 190, 26, 0.35);
+    background: transparent;
+  }
+
+  .client-main .btn {
+    border-radius: 999px;
+  }
+
+  .client-main .btn-primary {
+    border-color: #00485C;
+    background: #00485C;
+    color: #fff;
+  }
+
+  .client-main .btn-primary:hover {
+    border-color: #00323F;
+    background: #00323F;
+    color: #fff;
+  }
+
+  .client-main .btn-outline-secondary {
+    border-color: #00485C;
+    color: #00485C;
+  }
+
+  .client-main .btn-outline-secondary:hover {
+    border-color: #00323F;
+    background: #00323F;
+    color: #fff;
+  }
+
+  .client-main .form-control,
+  .client-main .form-select {
+    border: 1px solid #E1E5EC;
+    border-radius: 16px;
+  }
+
+  .client-main .form-control:focus,
+  .client-main .form-select:focus {
+    border-color: #00485C;
+    box-shadow: 0 0 0 0.22rem rgba(0, 72, 92, 0.12);
+  }
+
+  .client-main .table > :not(caption) > * > * {
+    border-right: 0;
+    border-left: 0;
+    border-bottom-color: #E1E5EC;
+  }
+
+  .client-main .table thead th {
+    background: transparent;
+    color: #7A8590;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .client-main .text-success {
+    color: #0A6B3C !important;
+  }
+
+  .client-main .text-danger {
+    color: #E8503A !important;
+  }
+
+  .client-main .alert-info {
+    border-radius: 18px;
+    background: rgba(0, 72, 92, 0.08);
+    color: #00485C;
+  }
+
+  .client-main .alert-danger {
+    border-radius: 18px;
+    background: #FBE4DF;
+    color: #E8503A;
+  }
+</style>
 
 <div class="card shadow-sm mb-4">
   <div class="card-body p-4">

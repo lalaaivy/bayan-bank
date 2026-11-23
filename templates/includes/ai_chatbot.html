@@ -66,7 +66,7 @@
   }
 
   #kabayan-toggle {
-    background: #14532d;
+    background: #00485C;
     color: white;
     border: none;
     border-radius: 30px;
@@ -76,7 +76,7 @@
   }
 
   #kabayan-toggle:hover {
-    background: #166534;
+    background: #00323F;
   }
 
   #kabayan-toggle[aria-expanded="true"] {
@@ -87,10 +87,10 @@
     width: min(380px, calc(100vw - 24px));
     height: min(540px, calc(100dvh - 40px));
     background: white;
-    color: #1f2937;
+    color: #12202B;
     border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    box-shadow: 0 10px 35px #0003;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(18,32,43,0.12);
     overflow: hidden;
     flex-direction: column;
   }
@@ -100,7 +100,7 @@
   }
 
   #kabayan-header {
-    background: #14532d;
+    background: #00485C;
     color: white;
     padding: 14px 16px;
     display: flex;
@@ -134,7 +134,7 @@
 
   .kabayan-brand small {
     display: block;
-    color: #d1fae5;
+    color: white;
     font-size: 11px;
     margin-top: 3px;
   }
@@ -176,15 +176,15 @@
   }
 
   .kabayan-message.bot {
-    background: #f0f2f4;
-    color: #1f2937;
+    background: #fff;
+    color: #12202B;
     align-self: flex-start;
     border-bottom-left-radius: 4px;
   }
 
   .kabayan-message.user {
-    background: #dcfce7;
-    color: #14532d;
+    background: #00485C;
+    color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
     white-space: pre-wrap;
@@ -237,11 +237,11 @@
   }
 
   .kabayan-option {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 9px;
+    background: #fff;
+    border: 1px solid #00485C;
+    border-radius: 999px;
     padding: 10px 7px;
-    color: #14532d;
+    color: #00485C;
     font-size: 12px;
     line-height: 1.4;
     text-align: center;
@@ -249,7 +249,8 @@
   }
 
   .kabayan-option:hover {
-    background: #dcfce7;
+    background: #00485C;
+    color: white;
   }
 
   .kabayan-option:disabled {
@@ -274,7 +275,7 @@
     height: 42px;
     padding: 10px 12px;
     background: white;
-    color: #1f2937;
+    color: #12202B;
     border: 1px solid #d1d5db;
     border-radius: 9px;
     outline: none;
@@ -282,14 +283,14 @@
   }
 
   #kabayan-input:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 2px #16a34a22;
+    border-color: #00485C;
+    box-shadow: 0 0 0 2px #00485c22;
   }
 
   #kabayan-send {
     height: 42px;
     padding: 0 15px;
-    background: #14532d;
+    background: #00485C;
     color: white;
     border: none;
     border-radius: 9px;
@@ -298,7 +299,7 @@
   }
 
   #kabayan-send:hover {
-    background: #166534;
+    background: #00323F;
   }
 
   #kabayan-send:disabled {
@@ -574,7 +575,7 @@
     const waiting = addMessage("KaBayan is typing...", "bot");
 
     try {
-      const response = await fetch("{% url 'chatbot:ask' %}", {
+      const response = await fetch("{% url 'chatbot:chat_message' %}", {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -588,21 +589,70 @@
         })
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        let errorMessage = "Something went wrong.";
+        const contentType = response.headers.get("content-type") || "";
 
-      if (response.ok) {
-        formatBotMessage(
-          waiting,
-          data.reply || "No response received."
-        );
+        if (contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      if (!response.body) {
+        throw new Error("Your browser does not support streaming.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let reply = "";
+
+      function processLine(line) {
+        if (!line.trim()) return;
+
+        const data = JSON.parse(line);
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        if (typeof data.chunk === "string") {
+          reply += data.chunk;
+        }
+      }
+
+      while (true) {
+        const result = await reader.read();
+
+        if (result.done) break;
+
+        buffer += decoder.decode(result.value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        lines.forEach(processLine);
+      }
+
+      buffer += decoder.decode();
+
+      if (buffer.trim()) {
+        processLine(buffer);
+      }
+
+      if (reply) {
+        formatBotMessage(waiting, reply);
       } else {
         waiting.textContent =
-          data.error || "Something went wrong.";
+          "Kabayan could not generate an answer. Please try again.";
       }
 
     } catch (error) {
       waiting.textContent =
-        "Unable to connect to KaBayan. Please try again.";
+        error.message || "Unable to connect to KaBayan. Please try again.";
 
     } finally {
       busy = false;

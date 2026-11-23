@@ -5,100 +5,363 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="mb-1">Notifications</h3>
-        <p class="text-muted mb-0">
-            Stay updated with your banking activities.
-        </p>
+<div class="notifications-page">
+
+    <div class="notifications-heading">
+        <div>
+            <h2>Notifications</h2>
+            <p>Stay updated with your banking activities.</p>
+        </div>
+
+        {% if unread_count %}
+        <div class="unread-counter">
+            <i class="bi bi-bell-fill"></i>
+            {{ unread_count }} Unread
+        </div>
+        {% endif %}
     </div>
 
-    {% if unread_count %}
-        <span class="badge bg-primary">
-            {{ unread_count }} Unread
-        </span>
-    {% endif %}
-</div>
+    <div class="notifications-card">
 
-<a href="{% url 'portal_home' %}"
-   class="btn btn-sm btn-outline-secondary mb-3">
-    &larr; Back to Dashboard
-</a>
+        <div class="notifications-card-header">
+            <div>
+                <h5>All Notifications</h5>
+                <p>Your recent account updates and activities</p>
+            </div>
+            <i class="bi bi-bell"></i>
+        </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-body p-0">
+        <div class="notifications-list">
 
-        {% for notification in notifications %}
+            {% for notification in notifications %}
 
-            <div class="p-3 border-bottom
-                {% if not notification.is_read %}bg-light{% endif %}">
+            <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
 
-                <div class="d-flex justify-content-between align-items-start gap-3">
+                <div class="notification-icon">
+                    <i class="bi bi-bell-fill"></i>
+                </div>
 
-                    <div class="flex-grow-1">
+                <div class="notification-content">
 
-                        <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="notification-meta">
 
-                            {% if not notification.is_read %}
-                                <span class="badge bg-primary">
-                                    New
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary">
-                                    Read
-                                </span>
-                            {% endif %}
+                        {% if not notification.is_read %}
+                        <span class="notification-status new">
+                            New
+                        </span>
+                        {% else %}
+                        <span class="notification-status read">
+                            Read
+                        </span>
+                        {% endif %}
 
-                            <small class="text-muted">
-                                {{ notification.created_at|date:"M d, Y - h:i A" }}
-                            </small>
-
-                        </div>
-
-                        <p class="mb-0">
-                            {{ notification.message }}
-                        </p>
+                        <span class="notification-date">
+                            <i class="bi bi-clock"></i>
+                            {{ notification.created_at|date:"M d, Y - h:i A" }}
+                        </span>
 
                     </div>
 
-                    {% if not notification.is_read %}
-                        <form method="POST" class="flex-shrink-0">
-                            {% csrf_token %}
-
-                            <input type="hidden"
-                                   name="notification_id"
-                                   value="{{ notification.pk }}">
-
-                            <button type="submit"
-                                    class="btn btn-sm btn-outline-primary">
-                                Mark as Read
-                            </button>
-                        </form>
-                    {% endif %}
+                    <p class="notification-message">
+                        {{ notification.message }}
+                    </p>
 
                 </div>
+
+                {% if not notification.is_read %}
+                <form method="POST" class="notification-action">
+                    {% csrf_token %}
+
+                    <input
+                        type="hidden"
+                        name="notification_id"
+                        value="{{ notification.pk }}"
+                    >
+
+                    <button type="submit" class="mark-read-btn">
+                        <i class="bi bi-check2"></i>
+                        Mark as Read
+                    </button>
+                </form>
+                {% endif %}
 
             </div>
 
-        {% empty %}
+            {% empty %}
 
-            <div class="text-center py-5">
-
-                <div class="mb-3">
-                    <i class="bi bi-bell-slash fs-1 text-muted"></i>
+            <div class="notifications-empty">
+                <div class="empty-icon">
+                    <i class="bi bi-bell-slash"></i>
                 </div>
 
-                <h5>No notifications yet</h5>
+                <h5>You're all caught up!</h5>
 
-                <p class="text-muted mb-0">
+                <p>
+                    You don't have any notifications yet.
                     Your banking updates will appear here.
                 </p>
-
             </div>
 
-        {% endfor %}
+            {% endfor %}
 
+        </div>
     </div>
+
 </div>
+
+<style>
+    .notifications-page {
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .notifications-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .notifications-heading h2 {
+        margin: 0 0 6px;
+        color: #12202B;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .notifications-heading p {
+        margin: 0;
+        color: #7A8590;
+        font-size: 0.9rem;
+    }
+
+    .unread-counter {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: #DCEBEF;
+        color: #00485C;
+        font-size: 0.85rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .notifications-card {
+        overflow: hidden;
+        border: 0;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(18, 32, 43, 0.06);
+    }
+
+    .notifications-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 28px;
+        border-bottom: 1px solid #EEF0EC;
+    }
+
+    .notifications-card-header h5 {
+        margin: 0 0 5px;
+        color: #12202B;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .notifications-card-header p {
+        margin: 0;
+        color: #7A8590;
+        font-size: 0.82rem;
+    }
+
+    .notifications-card-header > i {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: #EAF2F3;
+        color: #00485C;
+        font-size: 1.2rem;
+    }
+
+    .notifications-list {
+        padding: 8px 28px;
+    }
+
+    .notification-item {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 22px 0;
+        border-bottom: 1px solid #EEF0EC;
+    }
+
+    .notification-item:last-child {
+        border-bottom: 0;
+    }
+
+    .notification-item.unread {
+        background: #F7FAFA;
+        margin: 0 -28px;
+        padding: 22px 28px;
+    }
+
+    .notification-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        border-radius: 15px;
+        background: #EAF2F3;
+        color: #00485C;
+        font-size: 1.1rem;
+    }
+
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notification-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .notification-status {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .notification-status.new {
+        background: #DCEBEF;
+        color: #00485C;
+    }
+
+    .notification-status.read {
+        background: #EEF0EC;
+        color: #65717A;
+    }
+
+    .notification-date {
+        color: #89939B;
+        font-size: 0.75rem;
+    }
+
+    .notification-date i {
+        margin-right: 4px;
+    }
+
+    .notification-message {
+        margin: 0;
+        color: #263640;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    .notification-action {
+        flex-shrink: 0;
+    }
+
+    .mark-read-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 15px;
+        border: 1px solid #00485C;
+        border-radius: 999px;
+        background: transparent;
+        color: #00485C;
+        font-size: 0.78rem;
+        font-weight: 700;
+        transition: 0.2s ease;
+    }
+
+    .mark-read-btn:hover {
+        background: #00485C;
+        color: #fff;
+    }
+
+    .notifications-empty {
+        padding: 65px 20px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 18px;
+        border-radius: 24px;
+        background: #EAF2F3;
+        color: #00485C;
+        font-size: 1.8rem;
+    }
+
+    .notifications-empty h5 {
+        margin-bottom: 8px;
+        color: #12202B;
+        font-weight: 700;
+    }
+
+    .notifications-empty p {
+        max-width: 340px;
+        margin: 0 auto;
+        color: #7A8590;
+        font-size: 0.88rem;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 767px) {
+        .notifications-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .notifications-card-header {
+            padding: 20px;
+        }
+
+        .notifications-list {
+            padding: 8px 20px;
+        }
+
+        .notification-item {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .notification-item.unread {
+            margin: 0 -20px;
+            padding: 20px;
+        }
+
+        .notification-content {
+            flex-basis: calc(100% - 60px);
+        }
+
+        .notification-action {
+            margin-left: 58px;
+        }
+    }
+</style>
 
 {% endblock %}

@@ -1,63 +1,102 @@
-
 {% extends "base.html" %}
 
 {% block title %}Login - Bayan Bank{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center py-4">
-    <div class="col-md-6 col-lg-5 col-xl-4">
 
-        <div class="card auth-card shadow-sm">
-            <div class="card-body p-4">
+<div class="login-layout">
 
-                <div class="auth-logo">
-                    <i class="bi bi-bank2" aria-hidden="true"></i>
-                </div>
+    <!-- LEFT: BRANDING PANEL -->
+    <section class="login-brand-panel">
 
-                <h3 class="text-center mb-1">
-                    Welcome back
-                </h3>
+        <a href="{% url 'login' %}" class="login-brand">
+            <span class="login-brand-icon">
+                <i class="bi bi-bank2"></i>
+            </span>
+            <span>Bayan Bank</span>
+        </a>
 
-                <p class="text-center text-muted mb-4">
-                    Sign in to your account
-                </p>
+        <div class="login-brand-content">
+            <span class="login-eyebrow">YOUR BANKING PARTNER</span>
 
-                {% if form.errors %}
-                    <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-circle me-2"
-                           aria-hidden="true"></i>
-                        Invalid username or password.
+            <h1>
+                Banking made
+                <span>simple.</span>
+            </h1>
+
+            <p>
+                Manage your money, grow your savings, and
+                take control of your financial future with
+                Bayan Bank.
+            </p>
+
+            <div class="login-decoration">
+                <div class="decoration-circle"></div>
+                <div class="decoration-square"></div>
+                <div class="decoration-small-circle"></div>
+                <i class="bi bi-bank2 decoration-bank"></i>
+            </div>
+        </div>
+
+        <div class="login-brand-footer">
+            <span>Banking with purpose.</span>
+            <span>Est. 2026</span>
+        </div>
+
+    </section>
+
+    <!-- RIGHT: LOGIN PANEL -->
+    <section class="login-form-panel">
+
+        <div class="login-form-container">
+
+            <div class="login-mobile-brand">
+                <span class="login-brand-icon">
+                    <i class="bi bi-bank2"></i>
+                </span>
+                <span>Bayan Bank</span>
+            </div>
+
+            <div class="login-heading">
+                <span class="login-eyebrow">WELCOME BACK</span>
+                <h2>Sign in to your account</h2>
+                <p>Enter your credentials to continue.</p>
+            </div>
+
+            {% if form.errors %}
+                <div class="login-error" role="alert">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <div>
+                        <strong>Login unsuccessful</strong>
+                        <p>Invalid username or password. Please try again.</p>
                     </div>
-                {% endif %}
-
-                <div class="alert alert-warning small"
-                     role="note">
-                    <i class="bi bi-shield-lock me-2"
-                       aria-hidden="true"></i>
-                    5 failed attempts will temporarily lock
-                    your account.
                 </div>
+            {% endif %}
 
-                <form method="post">
-                    {% csrf_token %}
+            <div class="login-security-notice" role="alert">
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>
+                    Five incorrect password attempts will lock
+                    your account for 15 minutes.
+                </span>
+            </div>
 
-                    <input type="hidden"
-                           name="next"
-                           value="{{ next }}">
+            <form method="post" class="login-form">
 
-                    <div class="mb-3">
-                        <label for="id_username"
-                               class="form-label">
-                            <i class="bi bi-person me-1"
-                               aria-hidden="true"></i>
-                            Username
-                        </label>
+                {% csrf_token %}
+
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div class="login-field">
+                    <label for="id_username">Username</label>
+
+                    <div class="login-input-wrapper">
+                        <i class="bi bi-person"></i>
 
                         <input
                             type="text"
                             name="username"
                             id="id_username"
-                            class="form-control"
                             placeholder="Enter your username"
                             autocomplete="username"
                             value="{{ form.username.value|default_if_none:'' }}"
@@ -65,42 +104,46 @@
                             autofocus
                         >
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="id_password"
-                               class="form-label">
-                            <i class="bi bi-lock me-1"
-                               aria-hidden="true"></i>
-                            Password
-                        </label>
+                <div class="login-field">
+                    <label for="id_password">Password</label>
+
+                    <div class="login-input-wrapper">
+                        <i class="bi bi-lock"></i>
 
                         <input
                             type="password"
                             name="password"
                             id="id_password"
-                            class="form-control"
                             placeholder="Enter your password"
                             autocomplete="current-password"
                             required
                         >
                     </div>
+                </div>
 
-                    <button type="submit"
-                            class="btn btn-primary w-100">
-                        Sign In
-                    </button>
-                </form>
+                <button type="submit" class="login-submit">
+                    <span>Sign in</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
 
-                <p class="text-center mt-4 mb-0">
-                    No account yet?
-                    <a href="{% url 'register' %}">
-                        Register
-                    </a>
-                </p>
+            </form>
 
+            <div class="login-register">
+                Don't have an account?
+                <a href="{% url 'register' %}">Create an account</a>
             </div>
+
+            <div class="login-bottom-note">
+                <i class="bi bi-shield-check"></i>
+                Your information is protected and secure.
+            </div>
+
         </div>
 
-    </div>
+    </section>
+
 </div>
+
 {% endblock %}

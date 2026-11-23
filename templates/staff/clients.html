@@ -4,177 +4,404 @@
 {% block title %}Clients - Bayan Bank{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-        <div>
-            <h3 class="mb-1">Client Management</h3>
-            <p class="text-muted mb-0">View and manage registered bank clients.</p>
-        </div>
+<style>
+  :root {
+    --bank-teal: #00485C;
+    --bank-yellow: #FDBE1A;
+    --bank-cream: #F7F0E5;
+    --bank-card: #FFF9F0;
+    --bank-text: #172B32;
+    --bank-muted: #7A8590;
+    --bank-border: #E9E0D3;
+    --bank-blue: #2878B8;
+    --bank-red: #E8503A;
+  }
 
-        <a href="{% url 'staff_add_client' %}" class="btn btn-dark">
-            <i class="bi bi-person-plus me-1"></i> Add Client
+  .clients-page {
+    color: var(--bank-text);
+    background: var(--bank-cream);
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+
+  .clients-page .page-heading h3 {
+    color: var(--bank-teal);
+    font-weight: 800;
+  }
+
+  .clients-page .page-heading p {
+    color: var(--bank-muted);
+    font-size: 13px;
+  }
+
+  .clients-page .client-card {
+    background: var(--bank-card);
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(18,32,43,.06);
+  }
+
+  .clients-page .filter-card {
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+
+  .clients-page .form-control,
+  .clients-page .form-select {
+    min-height: 44px;
+    border: 1px solid var(--bank-border);
+    border-radius: 16px;
+    background-color: var(--bank-card);
+    color: var(--bank-text);
+    font-size: 13px;
+  }
+
+  .clients-page .form-control:focus,
+  .clients-page .form-select:focus {
+    border-color: var(--bank-teal);
+    box-shadow: 0 0 0 3px rgba(0,72,92,.10);
+  }
+
+  .clients-page .btn {
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 17px;
+  }
+
+  .clients-page .btn-teal {
+    background: var(--bank-teal);
+    border: 1px solid var(--bank-teal);
+    color: white;
+  }
+
+  .clients-page .btn-teal:hover {
+    background: #00323F;
+    color: white;
+  }
+
+  .clients-page .btn-yellow {
+    background: var(--bank-yellow);
+    border: 1px solid var(--bank-yellow);
+    color: var(--bank-teal);
+  }
+
+  .clients-page .btn-yellow:hover {
+    background: #E5A900;
+    color: var(--bank-teal);
+  }
+
+  .clients-page .btn-blue {
+    background: #E7F1FA;
+    border: 1px solid #C9DDED;
+    color: var(--bank-blue);
+  }
+
+  .clients-page .btn-blue:hover {
+    background: var(--bank-blue);
+    color: white;
+  }
+
+  .clients-page .btn-reset {
+    background: white;
+    border: 1px solid var(--bank-border);
+    color: var(--bank-muted);
+  }
+
+  .clients-page .btn-reset:hover {
+    border-color: var(--bank-teal);
+    color: var(--bank-teal);
+  }
+
+  .clients-page .section-heading {
+    color: var(--bank-teal);
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .clients-page .table {
+    color: var(--bank-text);
+  }
+
+  .clients-page .table thead th {
+    padding: 15px 16px;
+    background: var(--bank-cream);
+    color: var(--bank-muted);
+    border-bottom: 1px solid var(--bank-border);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .clients-page .table tbody td {
+    padding: 16px;
+    border-color: var(--bank-border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .clients-page .table tbody tr:hover {
+    background: rgba(0,72,92,.04);
+  }
+
+  .clients-page .client-name {
+    color: var(--bank-teal);
+    font-weight: 800;
+  }
+
+  .clients-page .client-code {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #DCECEF;
+    color: var(--bank-teal);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .clients-page .status-badge {
+    display: inline-block;
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .clients-page .status-verified {
+    background: #DDEFE5;
+    color: #0A6B3C;
+  }
+
+  .clients-page .status-pending {
+    background: #FFF3CC;
+    color: #6B5200;
+  }
+
+  .clients-page .status-rejected {
+    background: #FBE4DF;
+    color: var(--bank-red);
+  }
+
+  .clients-page .status-other {
+    background: #E9ECEF;
+    color: #59636D;
+  }
+
+  .clients-page .table-footer {
+    padding: 14px 18px;
+    background: var(--bank-card);
+    border-top: 1px solid var(--bank-border);
+    color: var(--bank-muted);
+    font-size: 11px;
+  }
+
+  .clients-page .empty-state {
+    padding: 45px 20px !important;
+    color: var(--bank-muted);
+  }
+
+  .clients-page .empty-state i {
+    color: var(--bank-teal);
+    font-size: 35px;
+  }
+
+  @media (max-width: 767px) {
+    .clients-page .page-heading h3 {
+      font-size: 22px;
+    }
+
+    .clients-page .filter-card {
+      padding: 15px;
+    }
+  }
+</style>
+
+<div class="clients-page">
+
+  <!-- PAGE HEADER -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 page-heading">
+    <div>
+      <h3 class="mb-1">Client Management</h3>
+      <p class="mb-0">View and manage registered bank clients.</p>
+    </div>
+
+    <a href="{% url 'staff_add_client' %}" class="btn btn-yellow">
+      <i class="bi bi-person-plus me-1"></i>
+      Add Client
+    </a>
+  </div>
+
+  <div class="mb-4">
+    <a href="{% url 'staff_home' %}" class="btn btn-reset">
+      <i class="bi bi-arrow-left me-1"></i>
+      Back to Dashboard
+    </a>
+  </div>
+
+  <!-- SEARCH AND FILTERS -->
+  <div class="client-card filter-card">
+    <form method="get" class="row g-2">
+
+      <div class="col-md-6">
+        <input
+          type="search"
+          name="q"
+          class="form-control"
+          placeholder="Search client name, username, email, or mobile number"
+          value="{{ q|default:'' }}"
+        >
+      </div>
+
+      <div class="col-md-4">
+        <select name="status" class="form-select">
+          <option value="">All Verification Statuses</option>
+
+          {% for value, label in statuses %}
+            <option value="{{ value }}"
+              {% if status == value %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-teal flex-fill">
+          <i class="bi bi-search me-1"></i>
+          Search
+        </button>
+
+        <a href="{% url 'staff_clients' %}" class="btn btn-reset">
+          Reset
         </a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- CLIENT TABLE -->
+  <div class="client-card">
+
+    <div class="p-3 border-bottom" style="border-color: var(--bank-border) !important;">
+      <h6 class="section-heading mb-0">Registered Clients</h6>
     </div>
 
-    <div class="mb-3">
-        <a href="{% url 'staff_home' %}" class="btn btn-sm btn-outline-secondary">
-            &larr; Back to Dashboard
-        </a>
-    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
 
-    <!-- Search and Filters -->
-    <div class="card shadow-sm border-0 mb-3">
-        <div class="card-body">
-            <form method="get" class="row g-2">
+        <thead>
+          <tr>
+            <th>Client ID</th>
+            <th>Client Name</th>
+            <th>Contact</th>
+            <th>Active Loans</th>
+            <th>Savings Balance</th>
+            <th>Verification Status</th>
+            <th style="min-width: 240px;">Actions</th>
+          </tr>
+        </thead>
 
-                <div class="col-md-6">
-                    <input
-                        type="search"
-                        name="q"
-                        class="form-control"
-                        placeholder="Search client name, username, email, or mobile number"
-                        value="{{ q|default:'' }}"
-                    >
+        <tbody>
+          {% for client in clients %}
+            <tr>
+
+              <td>
+                <span class="client-code">
+                  {{ client.client_code }}
+                </span>
+              </td>
+
+              <td>
+                <div class="client-name">
+                  {{ client.user.get_full_name|default:client.user.username }}
                 </div>
+                <small class="text-muted">
+                  {{ client.user.email|default:"No email provided" }}
+                </small>
+              </td>
 
-                <div class="col-md-4">
-                    <select name="status" class="form-select">
-                        <option value="">All Verification Statuses</option>
+              <td>
+                {{ client.phone|default:"Not provided" }}
+              </td>
 
-                        {% for value, label in statuses %}
-                            <option value="{{ value }}"
-                                {% if status == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                        {% endfor %}
-                    </select>
+              <td>
+                <strong>{{ client.loans_count|default:0 }}</strong>
+              </td>
+
+              <td class="text-nowrap">
+                <strong>
+                  ₱{{ client.savings_balance|default:0|floatformat:2 }}
+                </strong>
+              </td>
+
+              <td>
+                {% if client.verification_status == "active" %}
+                  <span class="status-badge status-verified">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Verified
+                  </span>
+                {% elif client.verification_status == "pending" %}
+                  <span class="status-badge status-pending">
+                    <i class="bi bi-clock me-1"></i>
+                    Pending
+                  </span>
+                {% elif client.verification_status == "rejected" %}
+                  <span class="status-badge status-rejected">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Rejected
+                  </span>
+                {% else %}
+                  <span class="status-badge status-other">
+                    {{ client.get_verification_status_display }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <td>
+                <div class="d-flex flex-wrap gap-2">
+
+                  <a
+                    href="{% url 'staff_client_detail' client.pk %}"
+                    class="btn btn-teal btn-sm">
+                    <i class="bi bi-person-lines-fill me-1"></i>
+                    View Details
+                  </a>
+
+                  <a
+                    href="{% url 'verify_client_detail' client.pk %}"
+                    class="btn btn-blue btn-sm">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Review Verification
+                  </a>
+
                 </div>
+              </td>
 
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-dark flex-fill">
-                        <i class="bi bi-search me-1"></i> Search
-                    </button>
+            </tr>
 
-                    <a href="{% url 'staff_clients' %}" class="btn btn-outline-secondary">
-                        Reset
-                    </a>
-                </div>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="text-center empty-state">
+                <i class="bi bi-people d-block mb-3"></i>
+                <strong class="d-block mb-1">No Clients Found</strong>
+                <span>No registered clients match your search.</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
 
-            </form>
-        </div>
+      </table>
     </div>
 
-    <!-- Client Table -->
-    <div class="card shadow-sm border-0">
-
-        <div class="card-header bg-white py-3">
-            <h6 class="mb-0">Registered Clients</h6>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-
-                <thead class="table-light">
-                    <tr>
-                        <th>Client ID</th>
-                        <th>Client Name</th>
-                        <th>Contact</th>
-                        <th>Active Loans</th>
-                        <th>Savings Balance</th>
-                        <th>Verification Status</th>
-                        <th style="min-width: 240px;">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for client in clients %}
-                        <tr>
-
-                            <td>
-                                <span class="fw-semibold">
-                                    {{ client.client_code }}
-                                </span>
-                            </td>
-
-                            <td>
-                                <div class="fw-semibold">
-                                    {{ client.user.get_full_name|default:client.user.username }}
-                                </div>
-                                <small class="text-muted">
-                                    {{ client.user.email|default:"No email provided" }}
-                                </small>
-                            </td>
-
-                            <td>
-                                {{ client.phone|default:"Not provided" }}
-                            </td>
-
-                            <td>
-                                {{ client.loans_count|default:0 }}
-                            </td>
-
-                            <td>
-                                ₱{{ client.savings_balance|default:0|floatformat:2 }}
-                            </td>
-
-                            <td>
-                                {% if client.verification_status == "active" %}
-                                    <span class="badge bg-success">Verified</span>
-                                {% elif client.verification_status == "pending" %}
-                                    <span class="badge bg-warning text-dark">Pending</span>
-                                {% elif client.verification_status == "rejected" %}
-                                    <span class="badge bg-danger">Rejected</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">
-                                        {{ client.get_verification_status_display }}
-                                    </span>
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                <div class="d-flex flex-wrap gap-2">
-
-                                    <a
-                                        href="{% url 'staff_client_detail' client.pk %}"
-                                        class="btn btn-sm btn-dark"
-                                    >
-                                        <i class="bi bi-person-lines-fill me-1"></i>
-                                        View Details
-                                    </a>
-
-                                    <a
-                                        href="{% url 'verify_client_detail' client.pk %}"
-                                        class="btn btn-sm btn-outline-primary"
-                                    >
-                                        <i class="bi bi-shield-check me-1"></i>
-                                        Review Verification
-                                    </a>
-
-                                </div>
-                            </td>
-
-                        </tr>
-
-                    {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="bi bi-people fs-3 d-block mb-2"></i>
-                                No clients found.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-
-            </table>
-        </div>
-
-        <div class="card-footer bg-white text-muted small">
-            Showing up to 200 client records.
-        </div>
-
+    <div class="table-footer">
+      Showing up to 200 client records.
     </div>
+
+  </div>
 
 </div>
+
 {% endblock %}

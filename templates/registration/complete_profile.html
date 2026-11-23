@@ -1,17 +1,108 @@
+
 {% extends "base.html" %}
+
 {% block title %}Complete Your Profile - Bayan Bank{% endblock %}
+
 {% block content %}
-<h3 class="mb-3">Complete Your Profile</h3>
-<a href="{% url 'register' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to Registration</a>
-<div class="card shadow-sm"><div class="card-body"><form method="post">{% csrf_token %}
-  <div class="row g-3">
-    <div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" name="full_name" value="Maria Santos"></div>
-    <div class="col-md-6"><label class="form-label">Birthdate</label><input type="date" class="form-control" name="birthdate" value="1992-06-14"></div>
-    <div class="col-md-6"><label class="form-label">Mobile Number</label><input class="form-control" name="mobile" value="0917 555 0142"></div>
-    <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="maria.santos@example.ph"></div>
-    <div class="col-md-6"><label class="form-label">Monthly Income (&#8369;)</label><input type="number" class="form-control" name="monthly_income" value="42000"></div>
-    <div class="col-12"><label class="form-label">Address</label><textarea class="form-control" name="address" rows="2">Makati City, Metro Manila</textarea></div>
-  </div>
-  <button class="btn btn-dark mt-3">Save Profile</button>
-</form></div></div>
+
+<div class="register-layout">
+
+    <!-- LEFT: BRANDING PANEL -->
+    <div class="register-brand-panel">
+        <div class="register-brand-content">
+
+            <div class="register-brand-logo">
+                <i class="bi bi-person-check"></i>
+            </div>
+
+            <p class="register-eyebrow">ONE MORE STEP</p>
+
+            <h1>Make it personal.</h1>
+
+            <p class="register-brand-description">
+                Complete your profile so we can better serve your
+                banking needs and keep your account information updated.
+            </p>
+
+            <div class="register-brand-footer">
+                <span>Your information matters to us.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- RIGHT: PROFILE FORM -->
+    <div class="register-form-panel">
+
+        <div class="register-form-heading">
+            <span class="register-step">PROFILE INFORMATION</span>
+            <h2>Complete your profile.</h2>
+            <p>Please provide your personal and contact information.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="register-fields">
+
+                <div class="register-field">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name"
+                           name="full_name"
+                           placeholder="Enter your full name">
+                </div>
+
+                <div class="register-field">
+                    <label for="birthdate">Birthdate</label>
+                    <input type="date" id="birthdate"
+                           name="birthdate">
+                </div>
+
+                <div class="register-field">
+                    <label for="mobile">Mobile Number</label>
+                    <input type="tel" id="mobile"
+                           name="mobile"
+                           placeholder="09XX XXX XXXX">
+                </div>
+
+                <div class="register-field">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email"
+                           name="email"
+                           placeholder="Enter your email">
+                </div>
+
+                <div class="register-field">
+                    <label for="monthly_income">Monthly Income (₱)</label>
+                    <input type="number" id="monthly_income"
+                           name="monthly_income"
+                           placeholder="Enter monthly income">
+                </div>
+
+                <div class="register-field">
+                    <label for="address">Complete Address</label>
+                    <textarea id="address"
+                              name="address"
+                              rows="3"
+                              placeholder="House number, street, city, province"></textarea>
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn register-submit">
+                Save Profile
+                <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+
+            <p class="register-login-link">
+                Need to go back?
+                <a href="{% url 'register' %}">Back to Registration</a>
+            </p>
+
+        </form>
+
+    </div>
+
+</div>
+
 {% endblock %}

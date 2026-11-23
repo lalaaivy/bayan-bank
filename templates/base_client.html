@@ -3,531 +3,911 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{% block title %}Bayan Bank{% endblock %}</title>
+    <title>{% block title %}Bayan Bank{% endblock %}</title>
 
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    rel="stylesheet"
-  >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-  <style>
-    body.client-app {
-      min-height: 100vh;
-      margin: 0;
-      background: #f8f9fa;
-      color: #212529;
-    }
+    <style>
+        :root {
+            --teal: #00485C;
+            --yellow: #FDBE1A;
 
-    /* Top Navigation */
+            --cream: #F7F0E5;
+            --cream-light: #FFF9F0;
 
-    .client-navbar {
-      background: #212529;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
+            --text: #172B32;
+            --muted: #7A8590;
 
-    .client-navbar .navbar-brand {
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: -0.3px;
-    }
+            --border: rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        }
 
-    .client-navbar .nav-link {
-      color: rgba(255, 255, 255, 0.75);
-      transition: color 0.2s ease;
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    .client-navbar .nav-link:hover,
-    .client-navbar .nav-link.active {
-      color: #fff;
-    }
+        body.client-app {
+            min-height: 100vh;
+            margin: 0;
+            background: var(--cream);
+            color: var(--text);
+            font-family: "Plus Jakarta Sans", sans-serif;
+        }
 
-    .client-navbar .nav-link.active {
-      font-weight: 600;
-    }
+        /* SIDEBAR */
 
-    .client-navbar .dropdown-menu {
-      min-width: 200px;
-      padding: 0.4rem 0;
-      border: 1px solid #e9ecef;
-      border-radius: 9px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-    }
+        .client-sidebar {
+            position: fixed;
+            top: 16px;
+            bottom: 16px;
+            left: 16px;
+            z-index: 1040;
 
-    .client-navbar .dropdown-item {
-      padding: 0.65rem 1rem;
-      font-size: 0.9rem;
-    }
+            width: 240px;
+            padding: 24px 16px;
 
-    .client-navbar .dropdown-item:hover {
-      background: #f1f3f5;
-    }
+            display: flex;
+            align-items: stretch;
 
-    .client-navbar .dropdown-item i {
-      width: 22px;
-    }
+            background: var(--teal);
+            border: none;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
 
-    /* Notifications */
+        .client-sidebar-content {
+            width: 100%;
+            height: 100%;
 
-    .notification-link {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      color: rgba(255, 255, 255, 0.8);
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
 
-    .notification-link:hover,
-    .notification-link.active {
-      color: #fff;
-    }
+        .client-sidebar .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
 
-    .notification-link i {
-      font-size: 1.25rem;
-    }
+            margin: 0 0 40px;
+            padding: 0 8px;
 
-    .notification-count {
-      position: absolute;
-      top: 0;
-      right: -2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 17px;
-      height: 17px;
-      padding: 1px 4px;
-      border: 2px solid #212529;
-      border-radius: 999px;
-      background: #dc3545;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
-      line-height: 1;
-    }
+            color: var(--cream-light);
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
 
-    /* Main Content */
+        .client-brand-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
 
-    .client-main {
-      min-height: calc(100vh - 150px);
-      padding-top: 24px;
-      padding-bottom: 45px;
-    }
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
 
-    .client-page-heading {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 24px;
-    }
+            border-radius: 13px;
+            background: var(--yellow);
+            color: var(--teal);
+            font-size: 1.1rem;
+        }
 
-    .client-page-heading h1 {
-      margin: 0;
-      color: #212529;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
+        .client-sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
 
-    .client-back {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 38px;
-      height: 38px;
-      flex-shrink: 0;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      background: #fff;
-      color: #343a40;
-      text-decoration: none;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
+            width: 100%;
+            margin: 0;
+            padding: 0;
 
-    .client-back:hover {
-      background: #e9ecef;
-      color: #0d6efd;
-    }
+            list-style: none;
+        }
 
-    /* Django Messages */
+        .client-sidebar .client-sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
 
-    .client-main > .alert {
-      border-radius: 8px;
-    }
+            width: 100%;
+            padding: 14px;
 
-    /* Chatbot Shortcut */
+            border-radius: 13px;
 
-    .kabayan-float-button {
-      position: fixed;
-      right: 25px;
-      bottom: 25px;
-      z-index: 1050;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 17px 10px 10px;
-      border-radius: 50px;
-      background: linear-gradient(135deg, #1769d2, #084298);
-      color: #fff;
-      text-decoration: none;
-      box-shadow: 0 5px 20px rgba(13, 78, 160, 0.25);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
+            color: rgba(255, 249, 240, 0.85);
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-decoration: none;
 
-    .kabayan-float-button:hover {
-      transform: translateY(-3px);
-      color: #fff;
-      box-shadow: 0 8px 25px rgba(13, 78, 160, 0.35);
-    }
+            transition: background .2s ease, color .2s ease;
+        }
 
-    .kabayan-float-button:focus-visible {
-      outline: 3px solid #80bdff;
-      outline-offset: 4px;
-    }
+        .client-sidebar .client-sidebar-link i {
+            width: 21px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
 
-    .kabayan-float-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 42px;
-      height: 42px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      font-size: 20px;
-    }
+        .client-sidebar .client-sidebar-link:hover {
+            background: rgba(255, 249, 240, 0.10);
+            color: var(--cream-light);
+        }
 
-    .kabayan-float-text {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.3;
-    }
+        .client-sidebar .client-sidebar-link.active {
+            background: var(--yellow);
+            color: var(--teal);
+            font-weight: 800;
+        }
 
-    .kabayan-float-text strong {
-      font-size: 13px;
-      font-weight: 700;
-    }
+        /* SIDEBAR USER AND LOGOUT */
 
-    .kabayan-float-text small {
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 10px;
-    }
+        .client-sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
 
-    @media (max-width: 991.98px) {
-      .client-navbar .navbar-nav {
-        padding-top: 8px;
-      }
+            width: 100%;
+            margin-top: auto;
+            padding: 20px 6px 0;
 
-      .client-navbar .navbar-account-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding-top: 12px;
-        padding-bottom: 8px;
-      }
+            border-top: 1px solid rgba(255, 249, 240, 0.18);
+        }
 
-      .client-navbar .navbar-account-actions .dropdown-menu {
-        position: absolute;
-      }
-    }
+        .client-sidebar-user-avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-    @media (max-width: 575.98px) {
-      .client-main {
-        padding-top: 18px;
-        padding-bottom: 35px;
-      }
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
 
-      .client-page-heading h1 {
-        font-size: 1.25rem;
-      }
+            border-radius: 50%;
+            background: #DCEBEF;
+            color: var(--teal);
 
-      .kabayan-float-button {
-        right: 16px;
-        bottom: 16px;
-        padding: 8px;
-      }
+            font-size: 1rem;
+            font-weight: 800;
+        }
 
-      .kabayan-float-icon {
-        width: 45px;
-        height: 45px;
-      }
+        .client-sidebar-user-info {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            gap: 5px;
 
-      .kabayan-float-text {
-        display: none;
-      }
-    }
+            min-width: 0;
+        }
 
-    @media (prefers-reduced-motion: reduce) {
-      .client-navbar .nav-link,
-      .client-back,
-      .kabayan-float-button {
-        transition: none;
-      }
-    }
-  </style>
+        .client-sidebar-user-info strong {
+            overflow: hidden;
+
+            color: var(--cream-light);
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .client-sidebar-user-info span {
+            width: fit-content;
+            padding: 5px 12px;
+
+            border-radius: 30px;
+            background: var(--yellow);
+            color: var(--teal);
+
+            font-size: 0.7rem;
+            font-weight: 800;
+        }
+
+        .client-sidebar-user form {
+            margin: 0;
+        }
+
+        .client-sidebar-logout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+
+            border: none;
+            border-radius: 14px;
+
+            background: rgba(253, 190, 26, 0.16);
+            color: var(--yellow);
+
+            font-size: 1.2rem;
+            cursor: pointer;
+
+            transition: background .2s ease, transform .2s ease;
+        }
+
+        .client-sidebar-logout:hover {
+            background: var(--yellow);
+            color: var(--teal);
+            transform: translateY(-2px);
+        }
+
+        /* MAIN WORKSPACE */
+
+        .client-workspace {
+            position: relative;
+            min-width: 0;
+            min-height: 100vh;
+            background: var(--cream);
+        }
+
+        @media (min-width: 992px) {
+            .client-workspace {
+                margin-left: 272px;
+            }
+        }
+
+        /* TOP BAR */
+
+        .client-topbar {
+            position: relative;
+            z-index: 1100;
+
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+
+            width: 100%;
+            min-height: 76px;
+            padding: 14px 32px;
+            margin: 0;
+
+            background: var(--cream);
+            border: none;
+            box-shadow: none;
+        }
+
+        .client-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .client-topbar .navbar-toggler {
+            display: none;
+        }
+
+        .client-topbar-title {
+            display: none;
+        }
+
+        .client-topbar .navbar-nav {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .client-topbar .nav-item {
+            flex-shrink: 0;
+        }
+
+        /* NOTIFICATIONS */
+
+        .notification-link {
+            position: relative;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 40px;
+            height: 40px;
+
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--cream-light);
+            color: var(--teal);
+            text-decoration: none;
+
+            box-shadow: var(--shadow);
+            transition: background .2s ease;
+        }
+
+        .notification-link:hover {
+            background: var(--yellow);
+            color: var(--teal);
+        }
+
+        .notification-link i {
+            font-size: 1.2rem;
+        }
+
+        .notification-count {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+
+            width: 10px;
+            height: 10px;
+            min-width: 10px;
+
+            border: 2px solid var(--cream-light);
+            border-radius: 50%;
+            background: var(--teal);
+
+            color: transparent;
+            font-size: 0;
+        }
+
+        /* ACCOUNT DROPDOWN */
+
+        .client-topbar .nav-item.dropdown {
+            position: relative;
+        }
+
+        .client-topbar .client-account-toggle {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            height: 42px;
+            padding: 4px 14px 4px 4px;
+
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--cream-light);
+            color: var(--text);
+
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+
+            box-shadow: var(--shadow);
+        }
+
+        .client-topbar .client-account-toggle::after {
+            color: var(--teal);
+        }
+
+        .client-avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+
+            border-radius: 50%;
+            background: var(--yellow);
+            color: var(--teal);
+            font-weight: 800;
+        }
+
+        .client-avatar span {
+            font-size: 0;
+            line-height: 1;
+        }
+
+        .client-avatar span::first-letter {
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .client-account-name {
+            color: var(--text);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .client-topbar .dropdown-menu {
+            position: absolute !important;
+            z-index: 2000 !important;
+
+            width: max-content;
+            min-width: 210px;
+            max-width: calc(100vw - 32px);
+
+            margin-top: 10px !important;
+            padding: 8px 0;
+
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--cream-light);
+
+            box-shadow: var(--shadow);
+        }
+
+        .client-topbar .dropdown-item {
+            padding: 10px 16px;
+            color: #4B5963;
+            font-size: 0.9rem;
+        }
+
+        .client-topbar .dropdown-item:hover {
+            background: var(--cream);
+            color: var(--teal);
+        }
+
+        .client-topbar .dropdown-item i {
+            width: 22px;
+        }
+
+        /* PAGE CONTENT */
+
+        .client-main {
+            width: 100%;
+            max-width: none;
+            min-height: calc(100vh - 76px);
+
+            margin: 0;
+            padding: 24px 40px;
+
+            background: var(--cream);
+        }
+
+        .client-page-heading {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+
+            margin-bottom: 24px;
+        }
+
+        .client-page-heading h1 {
+            margin: 0;
+            color: var(--text);
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .client-back {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            background: var(--cream-light);
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .client-back:hover {
+            background: var(--teal);
+            color: var(--cream-light);
+        }
+
+        .client-main > .alert {
+            border-radius: 14px;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 991.98px) {
+            .client-sidebar {
+                width: 0;
+                height: 0;
+                padding: 0;
+                overflow: visible;
+
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .client-sidebar-content.show {
+                position: fixed;
+                top: 16px;
+                bottom: 16px;
+                left: 16px;
+                z-index: 1050;
+
+                display: flex !important;
+                flex-direction: column;
+
+                width: min(260px, calc(100vw - 32px));
+                height: auto;
+
+                padding: 24px 16px;
+                overflow-y: auto;
+
+                border-radius: 24px;
+                background: var(--teal);
+                box-shadow: var(--shadow);
+            }
+
+            .client-workspace {
+                margin-left: 0;
+            }
+
+            .client-topbar {
+                justify-content: space-between;
+                min-height: 68px;
+                padding: 10px 20px;
+            }
+
+            .client-topbar .navbar-toggler {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+
+                padding: 7px;
+                margin-right: auto;
+
+                border-color: var(--border);
+            }
+
+            .client-topbar .navbar-toggler-icon {
+                filter: none;
+            }
+
+            .client-main {
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .client-topbar {
+                min-height: 64px;
+                padding: 10px 14px;
+            }
+
+            .client-main {
+                padding: 20px 16px;
+            }
+
+            .client-page-heading h1 {
+                font-size: 1.25rem;
+            }
+
+            .client-account-name {
+                max-width: 70px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .client-topbar .navbar-nav {
+                gap: 8px;
+            }
+
+            .client-sidebar-user {
+                gap: 7px;
+            }
+
+            .client-sidebar-user-avatar {
+                width: 38px;
+                height: 38px;
+                flex-basis: 38px;
+            }
+
+            .client-sidebar-logout {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .client-sidebar .client-sidebar-link,
+            .client-sidebar-logout {
+                transition: none;
+            }
+        }
+    </style>
 </head>
 
 <body class="client-app">
 
-  <!-- Top Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark client-navbar">
-    <div class="container">
+    <div class="client-layout">
 
-      <!-- Brand -->
-      <a class="navbar-brand" href="{% url 'portal_home' %}">
-        Bayan Bank
-      </a>
+        <!-- LEFT SIDEBAR -->
+        <nav class="navbar navbar-expand-lg navbar-dark client-sidebar">
 
-      <!-- Mobile Menu Button -->
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#clientNavbar"
-        aria-controls="clientNavbar"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
+            <div class="client-sidebar-content collapse navbar-collapse" id="clientNavbar">
 
-      <div class="collapse navbar-collapse" id="clientNavbar">
-
-        <!-- Main Navigation -->
-        <ul class="navbar-nav me-auto">
-
-          <li class="nav-item">
-            <a
-              class="nav-link {% if request.resolver_match.url_name == 'portal_home' %}active{% endif %}"
-              href="{% url 'portal_home' %}"
-            >
-              Dashboard
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a
-              class="nav-link {% if request.resolver_match.url_name == 'client_bank_page' or request.resolver_match.url_name == 'client_bank_transfer' %}active{% endif %}"
-              href="{% url 'client_bank_page' %}"
-            >
-              Transactions
-            </a>
-          </li>
-
-        </ul>
-
-        <!-- Account Actions -->
-        <ul class="navbar-nav align-items-lg-center gap-lg-2">
-
-          <!-- Notifications -->
-          <li class="nav-item">
-            <a
-              href="{% url 'notification_list' %}"
-              class="notification-link {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}"
-              title="Notifications"
-              aria-label="Notifications{% if unread_count %}, {{ unread_count }} unread{% endif %}"
-            >
-              <i class="bi bi-bell" aria-hidden="true"></i>
-
-              {% if unread_count %}
-                <span class="notification-count">
-                  {% if unread_count > 99 %}
-                    99+
-                  {% else %}
-                    {{ unread_count }}
-                  {% endif %}
-                </span>
-              {% endif %}
-            </a>
-          </li>
-
-          <!-- Account Dropdown -->
-          <li class="nav-item dropdown">
-
-            <a
-              class="nav-link dropdown-toggle d-flex align-items-center gap-2"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i class="bi bi-person-circle fs-5"></i>
-
-              <span>
-                {{ request.user.get_full_name|default:request.user.username }}
-              </span>
-            </a>
-
-            <ul class="dropdown-menu dropdown-menu-end">
-
-              <li>
-                <h6 class="dropdown-header">
-                  My Account
-                </h6>
-              </li>
-
-              <li>
-                <a
-                  class="dropdown-item"
-                  href="{% url 'savings_history' %}"
-                >
-                  <i class="bi bi-piggy-bank me-2"></i>
-                  My Savings
+                <a class="navbar-brand" href="{% url 'portal_home' %}">
+                    <span class="client-brand-icon" aria-hidden="true">
+                        <i class="bi bi-bank2"></i>
+                    </span>
+                    Bayan Bank
                 </a>
-              </li>
 
-              <li>
-                <a
-                  class="dropdown-item"
-                  href="{% url 'my_loans' %}"
-                >
-                  <i class="bi bi-cash-stack me-2"></i>
-                  My Loans
-                </a>
-              </li>
+                <!-- NAVIGATION LINKS -->
+                <ul class="client-sidebar-nav">
 
-              <li>
-                <a
-                  class="dropdown-item"
-                  href="{% url 'client_profile' %}"
-                >
-                  <i class="bi bi-person me-2"></i>
-                  My Profile
-                </a>
-              </li>
+                    <li>
+                        <a
+                            class="client-sidebar-link {% if request.resolver_match.url_name == 'portal_home' %}active{% endif %}"
+                            href="{% url 'portal_home' %}"
+                        >
+                            <i class="bi bi-grid" aria-hidden="true"></i>
+                            Dashboard
+                        </a>
+                    </li>
 
-              <li>
-                <hr class="dropdown-divider">
-              </li>
+                    <li>
+                        <a
+                            class="client-sidebar-link {% if request.resolver_match.url_name == 'client_bank_page' or request.resolver_match.url_name == 'client_bank_transfer' %}active{% endif %}"
+                            href="{% url 'client_bank_page' %}"
+                        >
+                            <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                            Transactions
+                        </a>
+                    </li>
 
-              <li>
-                <form method="post" action="{% url 'logout' %}">
-                  {% csrf_token %}
+                    <li>
+                        <a
+                            class="client-sidebar-link {% if request.resolver_match.url_name == 'my_loans' or request.resolver_match.url_name == 'loan_detail' or request.resolver_match.url_name == 'apply_loan' or request.resolver_match.url_name == 'accept_agreement' %}active{% endif %}"
+                            href="{% url 'my_loans' %}"
+                        >
+                            <i class="bi bi-credit-card" aria-hidden="true"></i>
+                            My Loans
+                        </a>
+                    </li>
 
-                  <button
-                    type="submit"
-                    class="dropdown-item text-danger"
-                  >
-                    <i class="bi bi-box-arrow-right me-2"></i>
-                    Logout
-                  </button>
-                </form>
-              </li>
+                    <li>
+                        <a
+                            class="client-sidebar-link {% if request.resolver_match.url_name == 'portal_savings' or request.resolver_match.url_name == 'savings_history' %}active{% endif %}"
+                            href="{% url 'portal_savings' %}"
+                        >
+                            <i class="bi bi-wallet2" aria-hidden="true"></i>
+                            Savings
+                        </a>
+                    </li>
 
-            </ul>
-          </li>
+                    <li>
+                        <a
+                            class="client-sidebar-link {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}"
+                            href="{% url 'notification_list' %}"
+                        >
+                            <i class="bi bi-bell" aria-hidden="true"></i>
+                            Notifications
+                        </a>
+                    </li>
 
-        </ul>
+                </ul>
 
-      </div>
+                <!-- SIDEBAR USER AND LOGOUT -->
+                {% if request.user.is_authenticated %}
+                <div class="client-sidebar-user">
+
+                    <span class="client-sidebar-user-avatar">
+                        {{ request.user.get_full_name|default:request.user.username|first|upper }}
+                    </span>
+
+                    <div class="client-sidebar-user-info">
+                        <strong>
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </strong>
+                        <span>Client</span>
+                    </div>
+
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="client-sidebar-logout" aria-label="Logout" title="Logout">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </form>
+
+                </div>
+                {% endif %}
+
+            </div>
+        </nav>
+
+        <!-- MAIN WORKSPACE -->
+        <div class="client-workspace">
+
+            <!-- TOP BAR -->
+            <header class="client-topbar navbar navbar-light">
+
+                <div class="client-topbar-left">
+                    <button
+                        class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#clientNavbar"
+                        aria-controls="clientNavbar"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation"
+                    >
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+
+                <ul class="navbar-nav align-items-center">
+
+                    <!-- NOTIFICATIONS -->
+                    <li class="nav-item">
+                        <a
+                            href="{% url 'notification_list' %}"
+                            class="notification-link"
+                            title="Notifications"
+                            aria-label="Notifications{% if unread_count %}, {{ unread_count }} unread{% endif %}"
+                        >
+                            <i class="bi bi-bell" aria-hidden="true"></i>
+
+                            {% if unread_count %}
+                                <span class="notification-count">
+                                    {% if unread_count > 99 %}
+                                        99+
+                                    {% else %}
+                                        {{ unread_count }}
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+                        </a>
+                    </li>
+
+                    <!-- ACCOUNT DROPDOWN -->
+                    <li class="nav-item dropdown">
+
+                        <a
+                            class="client-account-toggle dropdown-toggle"
+                            href="#"
+                            role="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                        >
+                            <span class="client-avatar" aria-hidden="true">
+                                <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+                            </span>
+
+                            <span class="client-account-name">
+                                {{ request.user.get_full_name|default:request.user.username }}
+                            </span>
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end">
+
+                            <li>
+                                <h6 class="dropdown-header">My Account</h6>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'portal_home' %}">
+                                    <i class="bi bi-speedometer2 me-2"></i>
+                                    Dashboard
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'savings_history' %}">
+                                    <i class="bi bi-piggy-bank me-2"></i>
+                                    My Savings
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'my_loans' %}">
+                                    <i class="bi bi-cash-stack me-2"></i>
+                                    My Loans
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'client_bank_page' %}">
+                                    <i class="bi bi-arrow-left-right me-2"></i>
+                                    Transactions
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'client_profile' %}">
+                                    <i class="bi bi-person me-2"></i>
+                                    My Profile
+                                </a>
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>
+                                        Logout
+                                    </button>
+                                </form>
+                            </li>
+
+                        </ul>
+                    </li>
+
+                </ul>
+            </header>
+
+            <!-- PAGE CONTENT -->
+            <main class="client-main">
+
+                {% if request.resolver_match.url_name != 'portal_home' %}
+
+                    <header class="client-page-heading">
+
+                        <a
+                            href="{% url 'portal_home' %}"
+                            class="client-back"
+                            aria-label="Back to dashboard"
+                        >
+                            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                        </a>
+
+                        <h1>
+                            {% if request.resolver_match.url_name == 'my_loans' %}
+                                Loans
+                            {% elif request.resolver_match.url_name == 'savings_history' %}
+                                Savings
+                            {% elif request.resolver_match.url_name == 'client_bank_page' or request.resolver_match.url_name == 'client_bank_transfer' %}
+                                Transfer & Transactions
+                            {% elif request.resolver_match.url_name == 'loan_detail' %}
+                                Loan Details
+                            {% elif request.resolver_match.url_name == 'client_profile' %}
+                                Profile
+                            {% elif request.resolver_match.url_name == 'edit_client_profile' %}
+                                Edit Profile
+                            {% elif request.resolver_match.url_name == 'change_password' %}
+                                Change Password
+                            {% elif request.resolver_match.url_name == 'notification_list' %}
+                                Notifications
+                            {% elif request.resolver_match.url_name == 'apply_loan' %}
+                                Apply for a Loan
+                            {% elif request.resolver_match.url_name == 'upload_id' %}
+                                Upload Identification
+                            {% elif request.resolver_match.url_name == 'accept_agreement' %}
+                                Loan Agreement
+                            {% else %}
+                                My Account
+                            {% endif %}
+                        </h1>
+
+                    </header>
+
+                {% endif %}
+
+                <!-- DJANGO MESSAGES -->
+                {% for message in messages %}
+                    <div
+                        class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show"
+                        role="alert"
+                    >
+                        {{ message }}
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                {% endfor %}
+
+                {% block content %}{% endblock %}
+
+            </main>
+        </div>
     </div>
-  </nav>
 
-  <!-- Main Content -->
-  <main class="container client-main">
+    {% block chatbot %}{% endblock %}
 
-    {% if request.resolver_match.url_name != 'portal_home' %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-      <header class="client-page-heading">
-
-        <a
-          href="{% url 'portal_home' %}"
-          class="client-back"
-          aria-label="Back to dashboard"
-        >
-          <i class="bi bi-arrow-left" aria-hidden="true"></i>
-        </a>
-
-        <h1>
-          {% if request.resolver_match.url_name == 'my_loans' %}
-            Loans
-          {% elif request.resolver_match.url_name == 'savings_history' %}
-            Savings
-          {% elif request.resolver_match.url_name == 'client_bank_page' or request.resolver_match.url_name == 'client_bank_transfer' %}
-            Transfer & Transactions
-          {% elif request.resolver_match.url_name == 'loan_detail' %}
-            Loan Details
-          {% elif request.resolver_match.url_name == 'client_profile' %}
-            Profile
-          {% elif request.resolver_match.url_name == 'edit_client_profile' %}
-            Edit Profile
-          {% elif request.resolver_match.url_name == 'change_password' %}
-            Change Password
-          {% elif request.resolver_match.url_name == 'notification_list' %}
-            Notifications
-          {% elif request.resolver_match.url_name == 'apply_loan' %}
-            Apply for a Loan
-          {% elif request.resolver_match.url_name == 'upload_id' %}
-            Upload Identification
-          {% elif request.resolver_match.url_name == 'accept_agreement' %}
-            Loan Agreement
-          {% else %}
-            My Account
-          {% endif %}
-        </h1>
-
-      </header>
-
-    {% endif %}
-
-    <!-- Django Messages -->
-    {% for message in messages %}
-
-      <div
-        class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show"
-        role="alert"
-      >
-        {{ message }}
-
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-        ></button>
-      </div>
-
-    {% endfor %}
-
-    {% block content %}{% endblock %}
-
-  </main>
-
-  <!-- Floating Kabayan Chatbot Shortcut -->
-  {% if request.user.is_authenticated and request.user.role.name == 'client' %}
-    {% if request.resolver_match.url_name != 'chat_page' %}
-      <a
-        href="{% url 'chatbot:chat_page' %}"
-        class="kabayan-float-button"
-        aria-label="Chat with Kabayan, Bayan Bank AI Assistant"
-        title="Ask Kabayan"
-      >
-        <span class="kabayan-float-icon">
-          <i class="bi bi-chat-dots-fill" aria-hidden="true"></i>
-        </span>
-
-        <span class="kabayan-float-text">
-          <strong>Ask Kabayan</strong>
-          <small>How can I help?</small>
-        </span>
-      </a>
-    {% endif %}
-  {% endif %}
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  {% block scripts %}{% endblock %}
+    {% block scripts %}{% endblock %}
 
 </body>
 </html>
